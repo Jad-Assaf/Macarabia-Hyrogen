@@ -273,12 +273,12 @@ button {
 .product-price {
   font-size: 1rem;
   font-weight: 600;
-  color: #ff5722;
+  color: #000;
   min-height: 43px;
 }
 
 .discountedPrice {
-  color: #4a4a4a;
+  color: rgb(255, 79, 79);
   text-decoration: line-through;
 }
 
@@ -964,8 +964,8 @@ button.reset:hover:not(:has(> *)) {
   cursor: pointer;
   width: 30px;
   height: 30px;
-  color: #000;
-  fill: #000;
+  color: #fff;
+  fill: #fff;
 }
 
 .main-search {
