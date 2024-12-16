@@ -273,7 +273,7 @@ button {
 .product-price {
   font-size: 1rem;
   font-weight: 600;
-  color: #000;
+  color: #232323;
   min-height: 43px;
 }
 
@@ -1084,20 +1084,20 @@ button.reset:hover:not(:has(> *)) {
 
 .search-result-title {
   font-size: 15px;
-  color: #3c476e;
+  color: #232323;
 }
 
 .search-result-txt:hover {
   .search-result-title {
-    color: #3b82f6;
+    color: #1c1c1c;
   }
 
   .search-result-description {
-    color: black;
+    color: #333;
   }
 
   .search-result-price {
-    color: #ff5722;
+    color: #1c1c1c;
   }
 }
 
