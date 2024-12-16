@@ -641,6 +641,7 @@ button.reset:hover:not(:has(> *)) {
   position: sticky;
   top: 0;
   z-index: 999;
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 3px 3px 0px;
 }
 
 /* Mobile Menu Overlay */
@@ -963,8 +964,8 @@ button.reset:hover:not(:has(> *)) {
   cursor: pointer;
   width: 30px;
   height: 30px;
-  color: #2172af;
-  fill: #2172af;
+  color: #000;
+  fill: #000;
 }
 
 .main-search {
