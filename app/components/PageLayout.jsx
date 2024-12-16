@@ -28,10 +28,10 @@ const shopMenuData = [
 ];
 
 const policiesMenuData = [
-  { title: "Exchange Policy", link: "/policies/refund-policy" },
-  { title: "Shipping Policy", link: "/policies/shipping-policy" },
-  { title: "Privacy Policy", link: "/policies/privacy-policy" },
-  { title: "Terms of Service", link: "/policies/terms-of-service" },
+  { title: "Exchange Policy", link: "/pages/refund-and-warranty-policy" },
+  { title: "Shipping Policy", link: "/pages/shipping-policy" },
+  { title: "Privacy Policy", link: "/pages/privacy-policy" },
+  { title: "Terms of Service", link: "/pages/terms-of-service" },
   { title: "Contact Us", link: "/contact" },
 ];
 

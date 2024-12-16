@@ -90,7 +90,7 @@ async function loadCriticalData({ context }) {
   try {
     // Fetch header data using the HEADER_QUERY
     const header = await storefront.query(HEADER_QUERY, {
-      variables: { headerMenuHandle: 'new-main-menu' },
+      variables: { headerMenuHandle: 'main-menu' },
     });
 
     // Process nested menus to extract images
@@ -116,7 +116,7 @@ function loadDeferredData({ context }) {
   const footer = storefront
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
-      variables: { footerMenuHandle: 'footer' },
+      variables: { footerMenuHandle: 'footer-menu' },
     })
     .catch((error) => {
       console.error(error);
