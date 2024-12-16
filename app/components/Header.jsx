@@ -64,7 +64,7 @@ export function Header({ header, isLoggedIn, cart, publicStoreDomain }) {
       <header className="header">
         <div className="header-top">
           <button className="mobile-menu-toggle" onClick={toggleMobileMenu}>
-            <svg width="30px" height="30px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#2172af"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5 6H12H19M5 12H19M5 18H19" stroke="#2172af" stroke-width="2" stroke-linecap="round"></path> </g></svg>
+            <svg width="30px" height="30px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5 6H12H19M5 12H19M5 18H19" stroke="#000" stroke-width="2" stroke-linecap="round"></path> </g></svg>
           </button>
 
           <NavLink prefetch="intent" to="/" className="logo-link" end>
@@ -171,7 +171,7 @@ export function Header({ header, isLoggedIn, cart, publicStoreDomain }) {
                           }}
                         >
                           <svg
-                            fill="#2172af"
+                            fill="#000"
                             height="12px"
                             width="12px"
                             version="1.1"
@@ -276,7 +276,7 @@ export function Header({ header, isLoggedIn, cart, publicStoreDomain }) {
           <div className="mobile-menu-overlay">
             <button className="mobile-menu-close" onClick={closeMobileMenu}>
               <svg
-                fill="#2172af"
+                fill="#000"
                 height="12px"
                 width="12px"
                 version="1.1"
@@ -314,7 +314,7 @@ export function Header({ header, isLoggedIn, cart, publicStoreDomain }) {
                     {item.title}
                     <span className="mobile-menu-arrow">
                       <svg
-                        fill="#2172af"
+                        fill="#000"
                         height="14px"
                         width="14px"
                         version="1.1"
@@ -323,7 +323,7 @@ export function Header({ header, isLoggedIn, cart, publicStoreDomain }) {
                         xmlns:xlink="http://www.w3.org/1999/xlink"
                         viewBox="0 0 24.00 24.00"
                         xml:space="preserve"
-                        stroke="#2172af"
+                        stroke="#000"
                         stroke-width="0.00024000000000000003"
                       >
                         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
@@ -346,7 +346,7 @@ export function Header({ header, isLoggedIn, cart, publicStoreDomain }) {
               <div className="mobile-submenu-drawer" data-id={activeSubmenu}>
                 <button className="back-button" onClick={closeSubmenu}>
                   <svg
-                    fill="#2172af"
+                    fill="#000"
                     height="14px"
                     width="14px"
                     version="1.1"
