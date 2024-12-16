@@ -76,7 +76,7 @@ export default function RecentlyViewedProducts({ currentProductId }) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Shopify-Storefront-Access-Token': 'e00803cf918c262c99957f078d8b6d44',
+                'X-Shopify-Storefront-Access-Token': 'c34c6525896450dac5813b07d50e97f1',
             },
             body: JSON.stringify({
                 query,
