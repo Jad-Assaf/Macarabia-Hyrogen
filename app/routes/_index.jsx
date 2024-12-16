@@ -13,7 +13,7 @@ const cache = new Map();
  * @type {MetaFunction}
  */
 export const meta = () => {
-  return [{ title: '961 SOUQ | Home' }];
+  return [{ title: 'Macarabia | Home' }];
 };
 
 /**
