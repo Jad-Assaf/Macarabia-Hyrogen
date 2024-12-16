@@ -1,4 +1,6 @@
-import {CartForm} from '@shopify/hydrogen';
+import { CartForm } from '@shopify/hydrogen';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 
 /**
  * @param {{
@@ -16,8 +18,16 @@ export function AddToCartButton({
   lines,
   onClick,
 }) {
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const handleAnimation = (e) => {
+    setIsAnimating(true);
+    if (onClick) onClick(e);
+    setTimeout(() => setIsAnimating(false), 300); // Reset animation after 300ms
+  };
+
   return (
-    <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
+    <CartForm route="/cart" inputs={{ lines }} action={CartForm.ACTIONS.LinesAdd}>
       {(fetcher) => (
         <>
           <input
@@ -25,13 +35,16 @@ export function AddToCartButton({
             type="hidden"
             value={JSON.stringify(analytics)}
           />
-          <button
+          <motion.button
             type="submit"
-            onClick={onClick}
+            onClick={handleAnimation}
             disabled={disabled ?? fetcher.state !== 'idle'}
+            className={`add-to-cart-button ${disabled ? 'disabled' : ''} ${fetcher.state !== 'idle' ? 'loading' : ''}`}
+            animate={isAnimating ? { scale: 1.1 } : { scale: 1 }}
+            transition={{ duration: 1 }}
           >
             {children}
-          </button>
+          </motion.button>
         </>
       )}
     </CartForm>

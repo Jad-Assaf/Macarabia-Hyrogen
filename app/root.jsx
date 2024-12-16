@@ -1,5 +1,5 @@
-import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
-import {defer} from '@shopify/remix-oxygen';
+import { useNonce, getShopAnalytics, Analytics } from '@shopify/hydrogen';
+import { defer } from '@shopify/remix-oxygen';
 import {
   Links,
   Meta,
@@ -9,12 +9,16 @@ import {
   useRouteLoaderData,
   ScrollRestoration,
   isRouteErrorResponse,
+  useNavigation,  // Added useNavigation for route tracking
 } from '@remix-run/react';
 import favicon from '~/assets/favicon.svg';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
-import {PageLayout} from '~/components/PageLayout';
-import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import tailwindCss from './styles/tailwind.css?url';
+import { PageLayout } from '~/components/PageLayout';
+import { FOOTER_QUERY, HEADER_QUERY } from '~/lib/fragments';
+import { useEffect, useState } from 'react';
+
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -26,28 +30,19 @@ export const shouldRevalidate = ({
   nextUrl,
   defaultShouldRevalidate,
 }) => {
-  // revalidate when a mutation is performed e.g add to cart, login...
   if (formMethod && formMethod !== 'GET') return true;
-
-  // revalidate when manually revalidating via useRevalidator
   if (currentUrl.toString() === nextUrl.toString()) return true;
-
   return defaultShouldRevalidate;
 };
 
 export function links() {
   return [
-    {rel: 'stylesheet', href: resetStyles},
-    {rel: 'stylesheet', href: appStyles},
-    {
-      rel: 'preconnect',
-      href: 'https://cdn.shopify.com',
-    },
-    {
-      rel: 'preconnect',
-      href: 'https://shop.app',
-    },
-    {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    { rel: 'stylesheet', href: appStyles },
+    { rel: 'stylesheet', href: resetStyles },
+    { rel: 'stylesheet', href: tailwindCss },
+    { rel: 'preconnect', href: 'https://cdn.shopify.com' },
+    { rel: 'preconnect', href: 'https://shop.app' },
+    { rel: 'icon', type: 'image/svg+xml', href: favicon },
   ];
 }
 
@@ -55,13 +50,9 @@ export function links() {
  * @param {LoaderFunctionArgs} args
  */
 export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
-  const {storefront, env} = args.context;
+  const { storefront, env } = args.context;
 
   return defer({
     ...deferredData,
@@ -74,8 +65,7 @@ export async function loader(args) {
     consent: {
       checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
       storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
-      withPrivacyBanner: false,
-      // localize the privacy banner
+      withPrivacyBanner: true,
       country: args.context.storefront.i18n.country,
       language: args.context.storefront.i18n.language,
     },
@@ -83,48 +73,56 @@ export async function loader(args) {
 }
 
 /**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- * @param {LoaderFunctionArgs}
+ * Load data necessary for rendering content above the fold.
  */
-async function loadCriticalData({context}) {
-  const {storefront} = context;
+const processMenuItems = (items) => {
+  return items.map((item) => ({
+    ...item,
+    imageUrl: item.resource?.image?.src || null, // Extract image URL if available
+    altText: item.resource?.image?.altText || item.title, // Use altText or fallback to title
+    items: item.items ? processMenuItems(item.items) : [], // Recursively process submenus
+  }));
+};
 
-  const [header] = await Promise.all([
-    storefront.query(HEADER_QUERY, {
-      cache: storefront.CacheLong(),
-      variables: {
-        headerMenuHandle: 'main-menu', // Adjust to your header menu handle
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
 
-  return {header};
+  try {
+    // Fetch header data using the HEADER_QUERY
+    const header = await storefront.query(HEADER_QUERY, {
+      variables: { headerMenuHandle: 'new-main-menu' },
+    });
+
+    // Process nested menus to extract images
+    if (header?.menu?.items) {
+      header.menu.items = processMenuItems(header.menu.items);
+    }
+
+    console.log('Processed Menu Items:', header.menu.items);
+
+    return { header };
+  } catch (error) {
+    console.error('Error fetching header data:', error);
+    return { header: null }; // Fallback in case of error
+  }
 }
 
 /**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {LoaderFunctionArgs}
+ * Load data for rendering content below the fold.
  */
-function loadDeferredData({context}) {
-  const {storefront, customerAccount, cart} = context;
+function loadDeferredData({ context }) {
+  const { storefront, customerAccount, cart } = context;
 
-  // defer the footer query (below the fold)
   const footer = storefront
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
-      variables: {
-        footerMenuHandle: 'footer', // Adjust to your footer menu handle
-      },
+      variables: { footerMenuHandle: 'footer' },
     })
     .catch((error) => {
-      // Log query errors, but don't throw them so the page can still render
       console.error(error);
       return null;
     });
+
   return {
     cart: cart.get(),
     isLoggedIn: customerAccount.isLoggedIn(),
@@ -133,12 +131,41 @@ function loadDeferredData({context}) {
 }
 
 /**
- * @param {{children?: React.ReactNode}}
+ * Layout component for the application.
  */
-export function Layout({children}) {
+export function Layout({ children }) {
   const nonce = useNonce();
-  /** @type {RootLoader} */
   const data = useRouteLoaderData('root');
+  const navigation = useNavigation();
+  const [nprogress, setNProgress] = useState(null); // Store NProgress instance
+
+  useEffect(() => {
+    // Load NProgress once and set it in the state
+    const loadNProgress = async () => {
+      const { default: NProgress } = await import('nprogress');
+      await import('nprogress/nprogress.css');
+      NProgress.configure({ showSpinner: true });
+      setNProgress(NProgress); // Set NProgress once it's loaded
+    };
+
+    if (!nprogress) {
+      loadNProgress(); // Only load NProgress the first time
+    }
+
+    // Handle the route loading state
+    if (navigation.state === 'loading' && nprogress) {
+      nprogress.start(); // Start progress bar
+    } else if (nprogress) {
+      nprogress.done(); // Finish progress bar
+    }
+
+    return () => {
+      // Clean up NProgress when component unmounts or state changes
+      if (nprogress) {
+        nprogress.done();
+      }
+    };
+  }, [navigation.state, nprogress]); 
 
   return (
     <html lang="en">
@@ -167,10 +194,16 @@ export function Layout({children}) {
   );
 }
 
+/**
+ * Main app component rendering the current route.
+ */
 export default function App() {
   return <Outlet />;
 }
 
+/**
+ * Error boundary component for catching route errors.
+ */
 export function ErrorBoundary() {
   const error = useRouteError();
   let errorMessage = 'Unknown error';
