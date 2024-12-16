@@ -69,7 +69,7 @@ export function Header({ header, isLoggedIn, cart, publicStoreDomain }) {
 
           <NavLink prefetch="intent" to="/" className="logo-link" end>
             <Image
-              src="https://cdn.shopify.com/s/files/1/0552/0883/7292/files/logonew_1c8474b8-d0a3-4a90-a3fa-494ce9ca846f.jpg?v=1619452140"
+              src="https://cdn.shopify.com/s/files/1/0858/6821/6639/files/macarabialogo01_303ae373-185d-40f3-8271-df151d977a10.png?v=1706447237"
               alt={`${shop.name} Logo`}
               className="header-logo"
               width="150px"
