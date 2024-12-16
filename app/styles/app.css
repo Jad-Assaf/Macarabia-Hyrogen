@@ -1710,8 +1710,8 @@ button.layout-buttons.first-btn.active svg * {
 }
 
 .layout-buttons.active {
-  background-color: #2172af;
-  border-color: #2172af;
+  background-color: #000;
+  border-color: #000;
 }
 
 button.layout-buttons.first-btn svg {

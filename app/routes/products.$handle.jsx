@@ -252,7 +252,7 @@ export default function Product() {
             <h3>Exchange Policy</h3>
             <p>We operate a 3-day exchange policy, granting you 3 days from receipt of your item to initiate an exchange.</p>
             <p>To qualify for an exchange, your item must remain in its original condition, unworn or unused, with tags intact, and in its original sealed packaging. Additionally, you will need to provide a receipt or proof of purchase.</p>
-            <p>To initiate an exchange, please contact us at admin@961souq.com. Upon approval of your exchange request, we will furnish you with an exchange shipping label along with comprehensive instructions for package return. Please note that exchanges initiated without prior authorization will not be accepted.</p>
+            <p>To initiate an exchange, please contact us at admin@macarabia.me. Upon approval of your exchange request, we will furnish you with an exchange shipping label along with comprehensive instructions for package return. Please note that exchanges initiated without prior authorization will not be accepted.</p>
             <p>Should you encounter any damages or issues upon receiving your order, please inspect the item immediately and notify us promptly. We will swiftly address any defects, damages, or incorrect shipments to ensure your satisfaction.</p>
             <h5>Exceptions / Non-exchangeable Items</h5>
             <p>Certain items are exempt from our exchange policy, including perishable goods (such as headsets, earphones, and network card wifi routers), custom-made products (such as special orders or personalized items), and pre-ordered goods. For queries regarding specific items, please reach out to us.</p>
@@ -271,9 +271,9 @@ export default function Product() {
           <div className="product-section">
             <h3>Operational Warranty Terms and Conditions</h3>
             <h3>Warranty Coverage</h3>
-            <p>This warranty applies to All Products, purchased from 961 Souq. The warranty covers defects in materials and workmanship under normal use for the period specified at the time of purchase. Warranty periods vary based on the product category.</p>
+            <p>This warranty applies to All Products, purchased from Macarabia. The warranty covers defects in materials and workmanship under normal use for the period specified at the time of purchase. Warranty periods vary based on the product category.</p>
             <h3>What is Covered</h3>
-            <p>During the warranty period, 961 Souq will repair or replace, at no charge, any parts that are found to be defective due to faulty materials or poor workmanship. This warranty is valid only for the original purchaser and is non-transferable.</p>
+            <p>During the warranty period, Macarabia will repair or replace, at no charge, any parts that are found to be defective due to faulty materials or poor workmanship. This warranty is valid only for the original purchaser and is non-transferable.</p>
             <h3>What is Not Covered</h3>
             <p >This warranty does not cover:</p>
             <ul>
@@ -286,11 +286,11 @@ export default function Product() {
             <h3>Warranty Claim Process</h3>
             <p>To make a claim under this warranty:</p>
             <ol>
-              <li>Contact admin@961souq.com with proof of purchase and a detailed description of the issue.</li>
-              <li>961 Souq will assess the product and, if deemed defective, repair or replace the item at no cost.</li>
+              <li>Contact admin@macarabia.me with proof of purchase and a detailed description of the issue.</li>
+              <li>Macarabia will assess the product and, if deemed defective, repair or replace the item at no cost.</li>
             </ol>
             <h3>Limitations and Exclusions</h3>
-            <p>This warranty is limited to repair or replacement. 961 Souq will not be liable for any indirect, consequential, or incidental damages, including loss of data or loss of profits.</p>
+            <p>This warranty is limited to repair or replacement. Macarabia will not be liable for any indirect, consequential, or incidental damages, including loss of data or loss of profits.</p>
           </div>
         </CSSTransition>
         <Analytics.ProductView
