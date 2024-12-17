@@ -1,4 +1,5 @@
 import {flattenConnection} from '@shopify/hydrogen';
+import React from 'react';
 
 const MAX_URLS_PER_PAGE = 250; // Shopify API limit per request
 const GOOGLE_SITEMAP_LIMIT = 50000; // Google sitemap limit for URLs
@@ -36,51 +37,73 @@ export async function loader({request, context: {storefront}, params}) {
       });
       break;
     default:
-      // Default: Main sitemap linking to all other sitemaps
-      return new Response(generateMainSitemap({baseUrl}), {
-        headers: {'Content-Type': 'application/xml'},
-      });
+      // Default: Return React-based Styled Sitemap
+      return {baseUrl, products, collections, pages};
   }
 
-  // Generate and return the correct sitemap
+  // Generate the correct sitemap
   const sitemap = generateSitemap({products, collections, pages, baseUrl});
 
-  return new Response(sitemap, {
-    headers: {
-      'Content-Type': 'application/xml',
-      'Cache-Control': `max-age=${60 * 60 * 24}`, // Cache for 24 hours
+  // Add inline XSL support for better styling in XML
+  return new Response(
+    `<?xml version="1.0" encoding="UTF-8"?>
+     <?xml-stylesheet type="text/xsl" href="/sitemap.xsl" ?>
+     ${sitemap}`,
+    {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': `max-age=${60 * 60 * 24}`, // Cache for 24 hours
+      },
     },
-  });
+  );
 }
 
 /**
- * Generate the main sitemap linking to other sitemaps.
+ * React-based Styled Sitemap
  */
-function generateMainSitemap({baseUrl}) {
-  const sitemaps = [
-    {url: `${baseUrl}/sitemap-products.xml`, lastMod: new Date().toISOString()},
-    {
-      url: `${baseUrl}/sitemap-collections.xml`,
-      lastMod: new Date().toISOString(),
-    },
-    {url: `${baseUrl}/sitemap-pages.xml`, lastMod: new Date().toISOString()},
-  ];
+export default function StyledSitemap({products, collections, pages, baseUrl}) {
+  return (
+    <div style={{fontFamily: 'Arial, sans-serif', margin: '20px'}}>
+      <h1>Sitemap</h1>
 
-  return `
-  <?xml-stylesheet type="text/xsl" href="/sitemap.xsl" ?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      ${sitemaps
-        .map(({url, lastMod}) =>
-          `
-        <url>
-          <loc>${url}</loc>
-          <lastmod>${lastMod}</lastmod>
-        </url>
-      `.trim(),
-        )
-        .join('\n')}
-    </urlset>
-  `.trim();
+      <section>
+        <h2>Products</h2>
+        <ul>
+          {products.map((product) => (
+            <li key={product.handle}>
+              <a href={`${baseUrl}/products/${product.handle}`}>
+                {product.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2>Collections</h2>
+        <ul>
+          {collections.map((collection) => (
+            <li key={collection.handle}>
+              <a href={`${baseUrl}/collections/${collection.handle}`}>
+                {collection.handle}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2>Pages</h2>
+        <ul>
+          {pages.map((page) => (
+            <li key={page.handle}>
+              <a href={`${baseUrl}/pages/${page.handle}`}>{page.handle}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
 }
 
 /**
@@ -151,9 +174,6 @@ function generateSitemap({products, collections, pages, baseUrl}) {
   `.trim();
 }
 
-/**
- * Render a single URL tag for the sitemap.
- */
 function renderUrlTag({url, lastMod, changeFreq, image}) {
   const imageTag = image
     ? `
@@ -175,9 +195,6 @@ function renderUrlTag({url, lastMod, changeFreq, image}) {
   `.trim();
 }
 
-/**
- * XML-safe encoding for strings.
- */
 function xmlEncode(string) {
   return string.replace(/[&<>'"]/g, (char) => `&#${char.charCodeAt(0)};`);
 }
