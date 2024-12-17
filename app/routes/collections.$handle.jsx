@@ -6,6 +6,7 @@ import {
   Money,
   Analytics,
   VariantSelector,
+  getSeoMeta,
 } from '@shopify/hydrogen';
 import { useVariantUrl } from '~/lib/variants';
 import { PaginatedResourceSection } from '~/components/PaginatedResourceSection';
@@ -26,27 +27,28 @@ import '../styles/CollectionSlider.css'
  */
 export const meta = ({data}) => {
   const seo = data?.seo;
+  const collection = data?.collection;
 
-  return {
-    title: seo?.title || 'Default Collection Title',
+  return getSeoMeta({
+    title: seo?.title || `${collection?.title || 'Collection'} | Macarabia`,
     description:
-      seo?.description || 'Explore our latest collection at Macarabia.',
+      seo?.description ||
+      collection?.description ||
+      'Explore our latest collection at Macarabia.',
+    url: `https://macarabia.me/collections/${collection?.handle || ''}`,
+    image: seo?.image || 'https://your-site.com/default-collection-image.jpg',
     openGraph: {
-      title: seo?.title,
-      description: seo?.description,
-      url: `https://macarabia.me/collections/${data?.collection?.handle || ''}`,
-      image: seo?.image || 'https://your-site.com/default-collection-image.jpg',
       type: 'website',
     },
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: seo?.title || 'Collection',
-      description: seo?.description || '',
+      name: seo?.title || collection?.title || 'Collection',
+      description: seo?.description || collection?.description || '',
       image: seo?.image || '',
-      url: `https://macarabia.me/collections/${data?.collection?.handle || ''}`,
+      url: `https://macarabia.me/collections/${collection?.handle || ''}`,
     },
-  };
+  });
 };
 
 /**
