@@ -29,12 +29,22 @@ export const meta = ({data}) => {
   const seo = data?.seo;
   const collection = data?.collection;
 
+  // Utility to truncate text
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    return text.length > maxLength
+      ? `${text.slice(0, maxLength).trim()}...`
+      : text;
+  };
+
   return getSeoMeta({
     title: seo?.title || `${collection?.title || 'Collection'} | Macarabia`,
-    description:
+    description: truncateText(
       seo?.description ||
-      collection?.description ||
-      'Explore our latest collection at Macarabia.',
+        collection?.description ||
+        'Explore our latest collection at Macarabia.',
+      155,
+    ),
     url: `https://macarabia.me/collections/${collection?.handle || ''}`,
     image: seo?.image || 'https://your-site.com/default-collection-image.jpg',
     openGraph: {
@@ -44,7 +54,10 @@ export const meta = ({data}) => {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
       name: seo?.title || collection?.title || 'Collection',
-      description: seo?.description || collection?.description || '',
+      description: truncateText(
+        seo?.description || collection?.description || '',
+        155,
+      ),
       image: seo?.image || '',
       url: `https://macarabia.me/collections/${collection?.handle || ''}`,
     },
