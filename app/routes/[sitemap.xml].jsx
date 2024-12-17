@@ -67,7 +67,7 @@ function generateMainSitemap({baseUrl}) {
   ];
 
   return `
-  <?xml-stylesheet type="text/xsl" href="/styles/sitemap.xsl" ?>
+  <?xml-stylesheet type="text/xsl" href="/sitemap.xsl" ?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       ${sitemaps
         .map(({url, lastMod}) =>
