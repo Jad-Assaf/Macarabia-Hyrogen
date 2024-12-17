@@ -19,8 +19,48 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import { ProductMetafields } from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 
-export const meta = ({ data }) => {
-  return [{ title: `Hydrogen | ${data?.product.title ?? ''}` }];
+export const meta = ({data}) => {
+  const product = data?.product;
+
+  // Safely access the first image from the images.edges array
+  const firstImage = product?.images?.edges?.[0]?.node?.url;
+
+  return getSeoMeta({
+    title: product?.title
+      ? `Macarabia | ${product.title}`
+      : 'Macarabia - Product',
+    description:
+      product?.description ||
+      'Explore this premium product available at Macarabia.',
+    url: `https://macarabia.me/products/${product?.handle || ''}`,
+    image: firstImage || 'https://your-site.com/default-image.jpg', // Use first image or fallback
+    twitterCard: 'summary_large_image',
+    openGraph: {
+      title: product?.title || 'Macarabia - Product',
+      description: product?.description || 'Explore this premium product.',
+      url: `https://macarabia.me/products/${product?.handle || ''}`,
+      image: firstImage || 'https://your-site.com/default-image.jpg',
+      type: 'product',
+    },
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product?.title || 'Macarabia Product',
+      description: product?.description || 'Product available at Macarabia.',
+      url: `https://macarabia.me/products/${product?.handle || ''}`,
+      image: firstImage || 'https://your-site.com/default-image.jpg',
+      offers: {
+        '@type': 'Offer',
+        price: product?.priceRange?.minVariantPrice?.amount || '0.00',
+        priceCurrency:
+          product?.priceRange?.minVariantPrice?.currencyCode || 'USD',
+        availability: product?.availableForSale
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+        url: `https://macarabia.me/products/${product?.handle || ''}`,
+      },
+    },
+  });
 };
 
 export async function loader(args) {
@@ -30,45 +70,59 @@ export async function loader(args) {
   return defer({ ...deferredData, ...criticalData });
 }
 
-async function loadCriticalData({ context, params, request }) {
-  const { handle } = params;
-  const { storefront } = context;
+async function loadCriticalData({context, params, request}) {
+  const {handle} = params;
+  const {storefront} = context;
 
   if (!handle) {
     throw new Error('Expected product handle to be defined');
   }
 
-  const { product } = await storefront.query(PRODUCT_QUERY, {
-    variables: { handle, selectedOptions: getSelectedProductOptions(request) || [] },
+  // Fetch product data
+  const {product} = await storefront.query(PRODUCT_QUERY, {
+    variables: {
+      handle,
+      selectedOptions: getSelectedProductOptions(request) || [],
+    },
   });
 
   if (!product?.id) {
-    throw new Response('Product not found', { status: 404 });
+    throw new Response('Product not found', {status: 404});
   }
 
+  // Select the first variant as the default if applicable
   const firstVariant = product.variants.nodes[0];
   const firstVariantIsDefault = Boolean(
     firstVariant.selectedOptions.find(
-      (option) => option.name === 'Title' && option.value === 'Default Title'
-    )
+      (option) => option.name === 'Title' && option.value === 'Default Title',
+    ),
   );
 
   if (firstVariantIsDefault) {
     product.selectedVariant = firstVariant;
   } else if (!product.selectedVariant) {
-    throw redirectToFirstVariant({ product, request });
+    throw redirectToFirstVariant({product, request});
   }
 
-  const productType = product.productType || 'General';
+  // Extract the first image from the product's images
+  const firstImage = product.images?.edges?.[0]?.node?.url || null;
 
   // Fetch related products
-  const { products } = await storefront.query(RELATED_PRODUCTS_QUERY, {
-    variables: { productType },
+  const productType = product.productType || 'General';
+  const {products} = await storefront.query(RELATED_PRODUCTS_QUERY, {
+    variables: {productType},
   });
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
 
-  return { product, relatedProducts };
+  // Return product data including the first image
+  return {
+    product: {
+      ...product, // Include the original product data
+      firstImage, // Add the first image URL here
+    },
+    relatedProducts,
+  };
 }
 
 function loadDeferredData({ context, params }) {
