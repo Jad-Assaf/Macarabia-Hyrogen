@@ -80,18 +80,25 @@ async function fetchAllResources({storefront, query, field}) {
 function generateMainSitemap({baseUrl}) {
   const urls = [
     {loc: `${baseUrl}/sitemap-products.xml`, lastMod: new Date().toISOString()},
-    {loc: `${baseUrl}/sitemap-collections.xml`, lastMod: new Date().toISOString()},
+    {
+      loc: `${baseUrl}/sitemap-collections.xml`,
+      lastMod: new Date().toISOString(),
+    },
     {loc: `${baseUrl}/sitemap-pages.xml`, lastMod: new Date().toISOString()},
   ];
 
   return `
     <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      ${urls.map(({loc, lastMod}) => `
+      ${urls
+        .map(
+          ({loc, lastMod}) => `
         <sitemap>
           <loc>${loc}</loc>
           <lastmod>${lastMod}</lastmod>
         </sitemap>
-      `).join('')}
+      `,
+        )
+        .join('')}
     </sitemapindex>
   `.trim();
 }
@@ -102,18 +109,28 @@ function generateMainSitemap({baseUrl}) {
 function generateProductSitemap({products, baseUrl}) {
   return `
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      ${products.map((product) => `
+      ${products
+        .map(
+          (product) => `
         <url>
           <loc>${baseUrl}/products/${xmlEncode(product.handle)}</loc>
           <lastmod>${product.updatedAt}</lastmod>
-          ${product.featuredImage ? `
+          ${
+            product.featuredImage
+              ? `
             <image:image>
               <image:loc>${xmlEncode(product.featuredImage.url)}</image:loc>
               <image:title>${xmlEncode(product.title)}</image:title>
-              <image:caption>${xmlEncode(product.featuredImage.altText || '')}</image:caption>
-            </image:image>` : ''}
+              <image:caption>${xmlEncode(
+                product.featuredImage.altText || '',
+              )}</image:caption>
+            </image:image>`
+              : ''
+          }
         </url>
-      `).join('')}
+      `,
+        )
+        .join('')}
     </urlset>
   `.trim();
 }
@@ -124,12 +141,16 @@ function generateProductSitemap({products, baseUrl}) {
 function generateCollectionSitemap({collections, baseUrl}) {
   return `
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      ${collections.map((collection) => `
+      ${collections
+        .map(
+          (collection) => `
         <url>
           <loc>${baseUrl}/collections/${xmlEncode(collection.handle)}</loc>
           <lastmod>${collection.updatedAt}</lastmod>
         </url>
-      `).join('')}
+      `,
+        )
+        .join('')}
     </urlset>
   `.trim();
 }
@@ -140,12 +161,16 @@ function generateCollectionSitemap({collections, baseUrl}) {
 function generatePageSitemap({pages, baseUrl}) {
   return `
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      ${pages.map((page) => `
+      ${pages
+        .map(
+          (page) => `
         <url>
           <loc>${baseUrl}/pages/${xmlEncode(page.handle)}</loc>
           <lastmod>${page.updatedAt}</lastmod>
         </url>
-      `).join('')}
+      `,
+        )
+        .join('')}
     </urlset>
   `.trim();
 }
