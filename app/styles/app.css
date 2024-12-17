@@ -1602,7 +1602,7 @@ button#headlessui-menu-button-\:R3lab5\: {
   }
 
   .collection h4 {
-    font-size: 13px;
+    font-size: 14px !important;
   }
 
   .grid-cols-2 .products-grid{
