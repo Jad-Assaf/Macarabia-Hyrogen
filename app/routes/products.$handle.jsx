@@ -20,45 +20,37 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import { ProductMetafields } from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 
-export const meta = ({data}) => {
+export const meta = ({ data }) => {
   const product = data?.product;
 
-  // Safely access the first image from the images.edges array
-  const firstImage = product?.images?.edges?.[0]?.node?.url;
-
   return getSeoMeta({
-    title: product?.title
-      ? `Macarabia | ${product.title}`
-      : 'Macarabia - Product',
-    description:
-      product?.description ||
-      'Explore this premium product available at Macarabia.',
+    title: product?.seoTitle || 'Macarabia - Product',
+    description: product?.seoDescription || 'Explore this premium product at Macarabia.',
     url: `https://macarabia.me/products/${product?.handle || ''}`,
-    image: firstImage || 'https://your-site.com/default-image.jpg', // Use first image or fallback
+    image: product?.firstImage || 'https://your-site.com/default-image.jpg',
     twitterCard: 'summary_large_image',
     openGraph: {
-      title: product?.title || 'Macarabia - Product',
-      description: product?.description || 'Explore this premium product.',
+      title: product?.seoTitle || 'Macarabia - Product',
+      description: product?.seoDescription || 'Explore this premium product.',
       url: `https://macarabia.me/products/${product?.handle || ''}`,
-      image: firstImage || 'https://your-site.com/default-image.jpg',
+      image: product?.firstImage || 'https://your-site.com/default-image.jpg',
       type: 'product',
     },
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Product',
-      name: product?.title || 'Macarabia Product',
-      description: product?.description || 'Product available at Macarabia.',
-      url: `https://macarabia.me/products/${product?.handle || ''}`,
-      image: firstImage || 'https://your-site.com/default-image.jpg',
+      name: product?.seoTitle || 'Macarabia Product',
+      description: product?.seoDescription || 'Discover this product.',
+      url: `https://macarabia.me/products/${product?.handle}`,
+      image: product?.firstImage || 'https://your-site.com/default-image.jpg',
       offers: {
         '@type': 'Offer',
-        price: product?.priceRange?.minVariantPrice?.amount || '0.00',
-        priceCurrency:
-          product?.priceRange?.minVariantPrice?.currencyCode || 'USD',
+        price: product?.variantPrice?.amount || '0.00',
+        priceCurrency: product?.variantPrice?.currencyCode || 'USD',
         availability: product?.availableForSale
           ? 'https://schema.org/InStock'
           : 'https://schema.org/OutOfStock',
-        url: `https://macarabia.me/products/${product?.handle || ''}`,
+        url: `https://macarabia.me/products/${product?.handle}`,
       },
     },
   });
@@ -105,7 +97,7 @@ async function loadCriticalData({context, params, request}) {
     throw redirectToFirstVariant({product, request});
   }
 
-  // Extract the first image from the product's images
+  // Extract the first image
   const firstImage = product.images?.edges?.[0]?.node?.url || null;
 
   // Fetch related products
@@ -116,11 +108,14 @@ async function loadCriticalData({context, params, request}) {
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
 
-  // Return product data including the first image
+  // Return necessary product data including SEO, first image, and variant price
   return {
     product: {
-      ...product, // Include the original product data
-      firstImage, // Add the first image URL here
+      ...product,
+      firstImage, // Add the first image URL
+      seoTitle: product.seo?.title || product.title, // Use SEO title or fallback
+      seoDescription: product.seo?.description || product.description, // Use SEO description or fallback
+      variantPrice: firstVariant?.price || product.priceRange?.minVariantPrice, // Variant price
     },
     relatedProducts,
   };
