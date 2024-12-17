@@ -11,6 +11,7 @@ import {
   isRouteErrorResponse,
   useNavigation,  // Added useNavigation for route tracking
 } from '@remix-run/react';
+import favicon from '~/assets/macarabia-favicon-black_32x32.jpg';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import tailwindCss from './styles/tailwind.css?url';
@@ -37,11 +38,11 @@ export const shouldRevalidate = ({
 export function links() {
   return [
     { rel: 'stylesheet', href: appStyles },
-    // { rel: 'stylesheet', href: resetStyles },
+    { rel: 'stylesheet', href: resetStyles },
     { rel: 'stylesheet', href: tailwindCss },
     { rel: 'preconnect', href: 'https://cdn.shopify.com' },
     { rel: 'preconnect', href: 'https://shop.app' },
-    { rel: 'icon', type: 'image/svg+xml', href: "d40293-4.myshopify.com/cdn/shop/files/macarabia-favicon-black_32x32.jpg?v=1711011484"},
+    { rel: 'icon', type: 'image/svg+xml', href: favicon },
   ];
 }
 
