@@ -1598,6 +1598,7 @@ button#headlessui-menu-button-\:R3lab5\: {
 
   .grid-cols-1 .product-description {
     font-size: 10px;
+    display: none !important;
   }
 
   .collection h4 {
