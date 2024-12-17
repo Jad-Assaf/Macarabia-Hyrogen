@@ -47,7 +47,6 @@ export async function loader({request, context: {storefront}, params}) {
   // Add inline XSL support for better styling in XML
   return new Response(
     `<?xml version="1.0" encoding="UTF-8"?>
-     <?xml-stylesheet type="text/xsl" href="/sitemap.xsl" ?>
      ${sitemap}`,
     {
       headers: {
