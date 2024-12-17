@@ -53,6 +53,56 @@ export async function loader({request, context: {storefront}, params}) {
   });
 }
 
+const INLINE_XSL = `
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:template match="/">
+    <html>
+      <head>
+        <title>Styled Sitemap</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+          }
+          h1 {
+            color: #333;
+          }
+          a {
+            color: #0066cc;
+            text-decoration: none;
+          }
+          a:hover {
+            text-decoration: underline;
+          }
+          ul {
+            list-style-type: none;
+            padding: 0;
+          }
+          li {
+            margin: 10px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>XML Sitemap</h1>
+        <ul>
+          <xsl:for-each select="//url">
+            <li>
+              <a href="{loc}">
+                <xsl:value-of select="loc" />
+              </a>
+              <small>(Last Modified: <xsl:value-of select="lastmod" />)</small>
+            </li>
+          </xsl:for-each>
+        </ul>
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>
+`.trim();
+
 /**
  * Generate the main sitemap linking to other sitemaps.
  */
@@ -67,15 +117,19 @@ function generateMainSitemap({baseUrl}) {
   ];
 
   return `
+    <?xml version="1.0" encoding="UTF-8"?>
+    <?xml-stylesheet type="text/xsl" href="data:text/xsl;base64,${Buffer.from(
+      INLINE_XSL,
+    ).toString('base64')}"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       ${sitemaps
         .map(({url, lastMod}) =>
           `
-        <url>
-          <loc>${url}</loc>
-          <lastmod>${lastMod}</lastmod>
-        </url>
-      `.trim(),
+          <url>
+            <loc>${url}</loc>
+            <lastmod>${lastMod}</lastmod>
+          </url>
+        `.trim(),
         )
         .join('\n')}
     </urlset>
@@ -141,10 +195,11 @@ function generateSitemap({products, collections, pages, baseUrl}) {
   ];
 
   return `
-    <urlset
-      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-      xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-    >
+    <?xml version="1.0" encoding="UTF-8"?>
+    <?xml-stylesheet type="text/xsl" href="data:text/xsl;base64,${Buffer.from(
+      INLINE_XSL,
+    ).toString('base64')}"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       ${urls.map(renderUrlTag).join('\n')}
     </urlset>
   `.trim();
