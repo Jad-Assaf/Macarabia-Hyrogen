@@ -22,60 +22,79 @@ export async function loader({request, context: {storefront}, params}) {
         query: PRODUCTS_QUERY,
         field: 'products',
       });
-      break;
+      return serveStyledSitemap({
+        title: 'Products Sitemap',
+        items: products.map((p) => ({
+          loc: `${baseUrl}/products/${p.handle}`,
+          lastMod: p.updatedAt,
+        })),
+        style: PRODUCTS_STYLE,
+      });
+
     case 'collections':
       collections = await fetchAllResources({
         storefront,
         query: COLLECTIONS_QUERY,
         field: 'collections',
       });
-      break;
+      return serveStyledSitemap({
+        title: 'Collections Sitemap',
+        items: collections.map((c) => ({
+          loc: `${baseUrl}/collections/${c.handle}`,
+          lastMod: c.updatedAt,
+        })),
+        style: COLLECTIONS_STYLE,
+      });
+
     case 'pages':
       pages = await fetchAllResources({
         storefront,
         query: PAGES_QUERY,
         field: 'pages',
       });
-      break;
+      return serveStyledSitemap({
+        title: 'Pages Sitemap',
+        items: pages.map((pg) => ({
+          loc: `${baseUrl}/pages/${pg.handle}`,
+          lastMod: pg.updatedAt,
+        })),
+        style: PAGES_STYLE,
+      });
+
     default:
-      return new Response(generateMainStyledSitemap({baseUrl}), {
-        headers: {'Content-Type': 'text/html'},
+      return serveStyledSitemap({
+        title: 'Main Sitemap',
+        items: [
+          {
+            loc: `${baseUrl}/sitemap-products.xml`,
+            lastMod: new Date().toISOString(),
+          },
+          {
+            loc: `${baseUrl}/sitemap-collections.xml`,
+            lastMod: new Date().toISOString(),
+          },
+          {
+            loc: `${baseUrl}/sitemap-pages.xml`,
+            lastMod: new Date().toISOString(),
+          },
+        ],
+        style: MAIN_STYLE,
       });
   }
-
-  // Always render styled HTML sitemap
-  const styledHtml = renderStyledSitemap({
-    products,
-    collections,
-    pages,
-    baseUrl,
-  });
-  return new Response(styledHtml, {
-    headers: {'Content-Type': 'text/html'},
-  });
 }
 
 /**
  * React Component: Styled Sitemap
  */
-function SitemapPage({urls, title}) {
+function SitemapPage({title, urls, style}) {
   return (
     <html>
       <head>
-        <title>{title} Sitemap</title>
-        <style>
-          {`
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #333; }
-            a { color: #0066cc; text-decoration: none; }
-            a:hover { text-decoration: underline; }
-            ul { list-style-type: none; padding: 0; }
-            li { margin: 10px 0; }
-          `}
-        </style>
+        <title>{title}</title>
+        <style>{style}</style>
       </head>
       <body>
-        <h1>{title} Sitemap</h1>
+        <h1>{title}</h1>
         <ul>
           {urls.map((url) => (
             <li key={url.loc}>
@@ -90,45 +109,15 @@ function SitemapPage({urls, title}) {
 }
 
 /**
- * Render Styled Sitemap using React Server-Side Rendering.
+ * Serve Styled Sitemap with React SSR
  */
-function renderStyledSitemap({products, collections, pages, baseUrl}) {
-  const urls = [
-    ...products.map((p) => ({
-      loc: `${baseUrl}/products/${p.handle}`,
-      lastMod: p.updatedAt,
-    })),
-    ...collections.map((c) => ({
-      loc: `${baseUrl}/collections/${c.handle}`,
-      lastMod: c.updatedAt,
-    })),
-    ...pages.map((pg) => ({
-      loc: `${baseUrl}/pages/${pg.handle}`,
-      lastMod: pg.updatedAt,
-    })),
-  ];
-
-  return `<!DOCTYPE html>${ReactDOMServer.renderToString(
-    <SitemapPage urls={urls} title="XML Sitemap" />,
-  )}`;
-}
-
-/**
- * Generate the Main Styled Sitemap linking to other sitemaps.
- */
-function generateMainStyledSitemap({baseUrl}) {
-  const urls = [
-    {loc: `${baseUrl}/sitemap-products.xml`, lastMod: new Date().toISOString()},
-    {
-      loc: `${baseUrl}/sitemap-collections.xml`,
-      lastMod: new Date().toISOString(),
-    },
-    {loc: `${baseUrl}/sitemap-pages.xml`, lastMod: new Date().toISOString()},
-  ];
-
-  return `<!DOCTYPE html>${ReactDOMServer.renderToString(
-    <SitemapPage urls={urls} title="Main Sitemap" />,
-  )}`;
+function serveStyledSitemap({title, items, style}) {
+  const html = ReactDOMServer.renderToString(
+    <SitemapPage title={title} urls={items} style={style} />,
+  );
+  return new Response(`<!DOCTYPE html>${html}`, {
+    headers: {'Content-Type': 'text/html'},
+  });
 }
 
 /**
@@ -154,23 +143,46 @@ async function fetchAllResources({storefront, query, field}) {
   return allNodes.slice(0, GOOGLE_SITEMAP_LIMIT);
 }
 
-// GraphQL Queries
+/**
+ * Styling for Each Sitemap
+ */
+const MAIN_STYLE = `
+  body { background: #f9f9f9; color: #333; font-family: Arial; margin: 2rem; }
+  h1 { color: #0044cc; text-align: center; }
+  a { color: #0044cc; font-weight: bold; }
+  ul { list-style: square; }
+`;
+
+const PRODUCTS_STYLE = `
+  body { background: #e8f5e9; color: #1b5e20; font-family: 'Courier New'; margin: 2rem; }
+  h1 { color: #388e3c; text-decoration: underline; }
+  a { color: #1b5e20; text-transform: uppercase; }
+  li { margin-bottom: 8px; }
+`;
+
+const COLLECTIONS_STYLE = `
+  body { background: #fff3e0; color: #bf360c; font-family: 'Georgia'; margin: 2rem; }
+  h1 { color: #e64a19; text-align: center; font-style: italic; }
+  a { color: #bf360c; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  li { margin-bottom: 10px; }
+`;
+
+const PAGES_STYLE = `
+  body { background: #ede7f6; color: #311b92; font-family: 'Verdana'; margin: 2rem; }
+  h1 { color: #512da8; text-align: center; }
+  a { color: #311b92; text-decoration: underline; }
+  li { margin-bottom: 12px; }
+`;
+
+/**
+ * GraphQL Queries
+ */
 const PRODUCTS_QUERY = `#graphql
   query Products($first: Int!, $after: String) {
     products(first: $first, after: $after, query: "published_status:'online_store:visible'") {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        handle
-        updatedAt
-        title
-        featuredImage {
-          url
-          altText
-        }
-      }
+      pageInfo { hasNextPage endCursor }
+      nodes { handle updatedAt }
     }
   }
 `;
@@ -178,14 +190,8 @@ const PRODUCTS_QUERY = `#graphql
 const COLLECTIONS_QUERY = `#graphql
   query Collections($first: Int!, $after: String) {
     collections(first: $first, after: $after, query: "published_status:'online_store:visible'") {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        handle
-        updatedAt
-      }
+      pageInfo { hasNextPage endCursor }
+      nodes { handle updatedAt }
     }
   }
 `;
@@ -193,14 +199,8 @@ const COLLECTIONS_QUERY = `#graphql
 const PAGES_QUERY = `#graphql
   query Pages($first: Int!, $after: String) {
     pages(first: $first, after: $after, query: "published_status:'published'") {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        handle
-        updatedAt
-      }
+      pageInfo { hasNextPage endCursor }
+      nodes { handle updatedAt }
     }
   }
 `;
