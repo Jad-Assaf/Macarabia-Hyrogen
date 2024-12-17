@@ -116,7 +116,7 @@ async function loadCriticalData({ context, params, request }) {
       title: product.title,
       description: product.description,
       handle: product.handle,
-      featuredImage: product.featuredImage,
+      // featuredImage: product.featuredImage,
       priceRange: product.priceRange,
       availableForSale: product.availableForSale,
     },
