@@ -24,8 +24,29 @@ import '../styles/CollectionSlider.css'
 /**
  * @type {MetaFunction<typeof loader>}
  */
-export const meta = ({ data }) => {
-  return [{ title: `Hydrogen | ${data?.collection.title ?? ''} Collection` }];
+export const meta = ({data}) => {
+  const seo = data?.seo;
+
+  return {
+    title: seo?.title || 'Default Collection Title',
+    description:
+      seo?.description || 'Explore our latest collection at Macarabia.',
+    openGraph: {
+      title: seo?.title,
+      description: seo?.description,
+      url: `https://macarabia.me/collections/${data?.collection?.handle || ''}`,
+      image: seo?.image || 'https://your-site.com/default-collection-image.jpg',
+      type: 'website',
+    },
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: seo?.title || 'Collection',
+      description: seo?.description || '',
+      image: seo?.image || '',
+      url: `https://macarabia.me/collections/${data?.collection?.handle || ''}`,
+    },
+  };
 };
 
 /**
@@ -42,11 +63,11 @@ export async function loader(args) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  * @param {LoaderFunctionArgs}
  */
-export async function loadCriticalData({ context, params, request }) {
-  const { handle } = params;
-  const { storefront } = context;
+export async function loadCriticalData({context, params, request}) {
+  const {handle} = params;
+  const {storefront} = context;
   const searchParams = new URL(request.url).searchParams;
-  const paginationVariables = getPaginationVariables(request, { pageBy: 20 });
+  const paginationVariables = getPaginationVariables(request, {pageBy: 20});
 
   // Set default sort to 'newest' if no sort parameter is provided
   const sort = searchParams.get('sort') || 'newest';
@@ -80,7 +101,7 @@ export async function loadCriticalData({ context, params, request }) {
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith(FILTER_URL_PREFIX)) {
       const filterKey = key.replace(FILTER_URL_PREFIX, '');
-      filters.push({ [filterKey]: JSON.parse(value) });
+      filters.push({[filterKey]: JSON.parse(value)});
     }
   }
 
@@ -90,7 +111,7 @@ export async function loadCriticalData({ context, params, request }) {
 
   try {
     // Fetch main collection
-    const { collection } = await storefront.query(COLLECTION_QUERY, {
+    const {collection} = await storefront.query(COLLECTION_QUERY, {
       variables: {
         handle,
         first: 20,
@@ -102,7 +123,7 @@ export async function loadCriticalData({ context, params, request }) {
     });
 
     if (!collection) {
-      throw new Response(`Collection ${handle} not found`, { status: 404 });
+      throw new Response(`Collection ${handle} not found`, {status: 404});
     }
 
     let menu = null;
@@ -110,11 +131,11 @@ export async function loadCriticalData({ context, params, request }) {
 
     try {
       const menuResult = await storefront.query(MENU_QUERY, {
-        variables: { handle },
+        variables: {handle},
       });
       menu = menuResult.menu;
     } catch (error) {
-      console.error("Error fetching menu:", error);
+      console.error('Error fetching menu:', error);
     }
 
     if (menu && menu.items && menu.items.length > 0) {
@@ -123,19 +144,27 @@ export async function loadCriticalData({ context, params, request }) {
           menu.items.map(async (item) => {
             try {
               const sanitizedHandle = sanitizeHandle(item.title);
-              const { collection } = await storefront.query(COLLECTION_BY_HANDLE_QUERY, {
-                variables: { handle: sanitizedHandle },
-              });
+              const {collection} = await storefront.query(
+                COLLECTION_BY_HANDLE_QUERY,
+                {
+                  variables: {handle: sanitizedHandle},
+                },
+              );
               return collection;
             } catch (error) {
-              console.error(`Error fetching collection for ${item.title}:`, error);
+              console.error(
+                `Error fetching collection for ${item.title}:`,
+                error,
+              );
               return null;
             }
-          })
+          }),
         );
-        sliderCollections = sliderCollections.filter(collection => collection !== null);
+        sliderCollections = sliderCollections.filter(
+          (collection) => collection !== null,
+        );
       } catch (error) {
-        console.error("Error fetching slider collections:", error);
+        console.error('Error fetching slider collections:', error);
       }
     }
 
@@ -147,15 +176,26 @@ export async function loadCriticalData({ context, params, request }) {
         const filterValue = JSON.parse(value);
         appliedFilters.push({
           label: `${value}`,
-          filter: { [filterKey]: filterValue },
+          filter: {[filterKey]: filterValue},
         });
       }
     });
 
-    return { collection, appliedFilters, sliderCollections };
+    // Extend return object with SEO and image data
+    return {
+      collection,
+      appliedFilters,
+      sliderCollections,
+      seo: {
+        title: collection?.seo?.title || `${collection.title} Collection`,
+        description:
+          collection?.seo?.description || collection.description || '',
+        image: collection?.image?.url || null,
+      },
+    };
   } catch (error) {
-    console.error("Error fetching collection:", error);
-    throw new Response("Error fetching collection", { status: 500 });
+    console.error('Error fetching collection:', error);
+    throw new Response('Error fetching collection', {status: 500});
   }
 }
 
@@ -705,6 +745,15 @@ const COLLECTION_QUERY = `#graphql
       id
       handle
       title
+      description
+      seo {
+        title
+        description
+      }
+      image {
+        url
+        altText
+      }
       products(
         first: $first,
         last: $last,
