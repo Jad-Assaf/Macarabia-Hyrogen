@@ -1,7 +1,9 @@
 import {flattenConnection} from '@shopify/hydrogen';
+import React from 'react';
+import ReactDOMServer from 'react-dom/server';
 
-const MAX_URLS_PER_PAGE = 250; // Shopify API limit per request
-const GOOGLE_SITEMAP_LIMIT = 50000; // Google sitemap limit for URLs
+const MAX_URLS_PER_PAGE = 250;
+const GOOGLE_SITEMAP_LIMIT = 50000;
 
 /**
  * @param {LoaderFunctionArgs} args
@@ -36,54 +38,101 @@ export async function loader({request, context: {storefront}, params}) {
       });
       break;
     default:
-      // Default: Main sitemap linking to all other sitemaps
-      return new Response(generateMainSitemap({baseUrl}), {
-        headers: {'Content-Type': 'application/xml'},
+      return new Response(generateMainStyledSitemap({baseUrl}), {
+        headers: {'Content-Type': 'text/html'},
       });
   }
 
-  // Generate and return the correct sitemap
-  const sitemap = generateSitemap({products, collections, pages, baseUrl});
-
-  return new Response(sitemap, {
-    headers: {
-      'Content-Type': 'application/xml',
-      'Cache-Control': `max-age=${60 * 60 * 24}`, // Cache for 24 hours
-    },
+  // Always render styled HTML sitemap
+  const styledHtml = renderStyledSitemap({
+    products,
+    collections,
+    pages,
+    baseUrl,
+  });
+  return new Response(styledHtml, {
+    headers: {'Content-Type': 'text/html'},
   });
 }
 
 /**
- * Generate the main sitemap linking to other sitemaps.
+ * React Component: Styled Sitemap
  */
-function generateMainSitemap({baseUrl}) {
-  const sitemaps = [
-    {url: `${baseUrl}/sitemap-products.xml`, lastMod: new Date().toISOString()},
-    {
-      url: `${baseUrl}/sitemap-collections.xml`,
-      lastMod: new Date().toISOString(),
-    },
-    {url: `${baseUrl}/sitemap-pages.xml`, lastMod: new Date().toISOString()},
-  ];
-
-  return `
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      ${sitemaps
-        .map(({url, lastMod}) =>
-          `
-        <url>
-          <loc>${url}</loc>
-          <lastmod>${lastMod}</lastmod>
-        </url>
-      `.trim(),
-        )
-        .join('\n')}
-    </urlset>
-  `.trim();
+function SitemapPage({urls, title}) {
+  return (
+    <html>
+      <head>
+        <title>{title} Sitemap</title>
+        <style>
+          {`
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            a { color: #0066cc; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+            ul { list-style-type: none; padding: 0; }
+            li { margin: 10px 0; }
+          `}
+        </style>
+      </head>
+      <body>
+        <h1>{title} Sitemap</h1>
+        <ul>
+          {urls.map((url) => (
+            <li key={url.loc}>
+              <a href={url.loc}>{url.loc}</a>
+              {url.lastMod && <small> (Last Modified: {url.lastMod})</small>}
+            </li>
+          ))}
+        </ul>
+      </body>
+    </html>
+  );
 }
 
 /**
- * Fetch all paginated resources using flattenConnection.
+ * Render Styled Sitemap using React Server-Side Rendering.
+ */
+function renderStyledSitemap({products, collections, pages, baseUrl}) {
+  const urls = [
+    ...products.map((p) => ({
+      loc: `${baseUrl}/products/${p.handle}`,
+      lastMod: p.updatedAt,
+    })),
+    ...collections.map((c) => ({
+      loc: `${baseUrl}/collections/${c.handle}`,
+      lastMod: c.updatedAt,
+    })),
+    ...pages.map((pg) => ({
+      loc: `${baseUrl}/pages/${pg.handle}`,
+      lastMod: pg.updatedAt,
+    })),
+  ];
+
+  return `<!DOCTYPE html>${ReactDOMServer.renderToString(
+    <SitemapPage urls={urls} title="XML Sitemap" />,
+  )}`;
+}
+
+/**
+ * Generate the Main Styled Sitemap linking to other sitemaps.
+ */
+function generateMainStyledSitemap({baseUrl}) {
+  const urls = [
+    {loc: `${baseUrl}/sitemap-products.xml`, lastMod: new Date().toISOString()},
+    {
+      loc: `${baseUrl}/sitemap-collections.xml`,
+      lastMod: new Date().toISOString(),
+    },
+    {loc: `${baseUrl}/sitemap-pages.xml`, lastMod: new Date().toISOString()},
+  ];
+
+  return `<!DOCTYPE html>${ReactDOMServer.renderToString(
+    <SitemapPage urls={urls} title="Main Sitemap" />,
+  )}`;
+}
+
+/**
+ * Fetch resources with pagination.
  */
 async function fetchAllResources({storefront, query, field}) {
   let allNodes = [];
@@ -91,94 +140,18 @@ async function fetchAllResources({storefront, query, field}) {
 
   do {
     const response = await storefront.query(query, {
-      variables: {
-        first: MAX_URLS_PER_PAGE,
-        after: nextPageCursor,
-      },
+      variables: {first: MAX_URLS_PER_PAGE, after: nextPageCursor},
     });
-
     const connection = response?.[field];
     if (!connection) break;
 
-    const nodes = flattenConnection(connection); // Flatten the nodes
-    allNodes = allNodes.concat(nodes);
-
+    allNodes = allNodes.concat(flattenConnection(connection));
     nextPageCursor = connection.pageInfo.hasNextPage
       ? connection.pageInfo.endCursor
       : null;
   } while (nextPageCursor && allNodes.length < GOOGLE_SITEMAP_LIMIT);
 
-  return allNodes.slice(0, GOOGLE_SITEMAP_LIMIT); // Enforce Google’s limit
-}
-
-/**
- * Generate the sitemap XML.
- */
-function generateSitemap({products, collections, pages, baseUrl}) {
-  const urls = [
-    ...products.map((product) => ({
-      url: `${baseUrl}/products/${xmlEncode(product.handle)}`,
-      lastMod: product.updatedAt,
-      changeFreq: 'daily',
-      image: product.featuredImage
-        ? {
-            url: xmlEncode(product.featuredImage.url),
-            title: xmlEncode(product.title),
-            caption: xmlEncode(product.featuredImage.altText || ''),
-          }
-        : null,
-    })),
-    ...collections.map((collection) => ({
-      url: `${baseUrl}/collections/${xmlEncode(collection.handle)}`,
-      lastMod: collection.updatedAt,
-      changeFreq: 'daily',
-    })),
-    ...pages.map((page) => ({
-      url: `${baseUrl}/pages/${xmlEncode(page.handle)}`,
-      lastMod: page.updatedAt,
-      changeFreq: 'weekly',
-    })),
-  ];
-
-  return `
-    <urlset
-      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-      xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-    >
-      ${urls.map(renderUrlTag).join('\n')}
-    </urlset>
-  `.trim();
-}
-
-/**
- * Render a single URL tag for the sitemap.
- */
-function renderUrlTag({url, lastMod, changeFreq, image}) {
-  const imageTag = image
-    ? `
-    <image:image>
-      <image:loc>${image.url}</image:loc>
-      <image:title>${image.title}</image:title>
-      <image:caption>${image.caption}</image:caption>
-    </image:image>
-  `.trim()
-    : '';
-
-  return `
-    <url>
-      <loc>${url}</loc>
-      <lastmod>${lastMod}</lastmod>
-      <changefreq>${changeFreq}</changefreq>
-      ${imageTag}
-    </url>
-  `.trim();
-}
-
-/**
- * XML-safe encoding for strings.
- */
-function xmlEncode(string) {
-  return string.replace(/[&<>'"]/g, (char) => `&#${char.charCodeAt(0)};`);
+  return allNodes.slice(0, GOOGLE_SITEMAP_LIMIT);
 }
 
 // GraphQL Queries
