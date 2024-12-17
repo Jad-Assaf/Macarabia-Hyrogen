@@ -18,52 +18,9 @@ import { RELATED_PRODUCTS_QUERY } from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
 import { ProductMetafields } from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
-import {getSeoMeta} from '@shopify/hydrogen';
 
-export const meta = ({data}) => {
-  const product = data?.product;
-
-  return getSeoMeta({
-    title: product?.title
-      ? `Macarabia | ${product.title}`
-      : 'Macarabia - Product',
-    description:
-      product?.description ||
-      'Explore this premium product available at Macarabia.',
-    url: `https://macarabia.me/products/${product?.handle || ''}`,
-    image:
-      product?.featuredImage?.url || 'https://your-site.com/default-image.jpg',
-    twitterCard: 'summary_large_image',
-    openGraph: {
-      title: product?.title || 'Macarabia - Product',
-      description: product?.description || 'Explore this premium product.',
-      url: `https://macarabia.me/products/${product?.handle || ''}`,
-      image:
-        product?.featuredImage?.url ||
-        'https://your-site.com/default-image.jpg',
-      type: 'product',
-    },
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: product?.title || 'Macarabia Product',
-      description: product?.description || 'Product available at Macarabia.',
-      url: `https://macarabia.me/products/${product?.handle || ''}`,
-      image:
-        product?.featuredImage?.url ||
-        'https://your-site.com/default-image.jpg',
-      offers: {
-        '@type': 'Offer',
-        price: product?.priceRange?.minVariantPrice?.amount || '0.00',
-        priceCurrency:
-          product?.priceRange?.minVariantPrice?.currencyCode || 'USD',
-        availability: product?.availableForSale
-          ? 'https://schema.org/InStock'
-          : 'https://schema.org/OutOfStock',
-        url: `https://macarabia.me/products/${product?.handle || ''}`,
-      },
-    },
-  });
+export const meta = ({ data }) => {
+  return [{ title: `Hydrogen | ${data?.product.title ?? ''}` }];
 };
 
 export async function loader(args) {
@@ -111,17 +68,7 @@ async function loadCriticalData({ context, params, request }) {
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
 
-  return {
-    product: {
-      title: product.title,
-      description: product.description,
-      handle: product.handle,
-      // featuredImage: product.featuredImage,
-      priceRange: product.priceRange,
-      availableForSale: product.availableForSale,
-    },
-    relatedProducts,
-  };
+  return { product, relatedProducts };
 }
 
 function loadDeferredData({ context, params }) {
