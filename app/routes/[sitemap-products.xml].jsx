@@ -1,3 +1,5 @@
-import {loader as sitemapLoader} from './sitemap.xml';
+import {loader as sharedLoader} from './sitemap.xml';
 
-export {sitemapLoader as loader};
+export function loader(args) {
+  return sharedLoader({...args, params: {type: 'products'}});
+}
