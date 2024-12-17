@@ -4,7 +4,7 @@ import {flattenConnection} from '@shopify/hydrogen';
  * the google limit is 50K, however, the storefront API
  * allows querying only 250 resources per pagination page
  */
-const MAX_URLS = 250;
+const MAX_URLS = 10000;
 
 /**
  * @param {LoaderFunctionArgs}
