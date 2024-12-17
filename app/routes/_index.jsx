@@ -17,7 +17,7 @@ export const meta = ({data}) => {
   return getSeoMeta({
     title: data?.title || 'Default Title',
     description: data?.description || 'Default description for this page.',
-    url: data?.url || 'https://your-site.com',
+    url: data?.url || 'https://macarabia.me',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
@@ -26,7 +26,6 @@ export const meta = ({data}) => {
     },
   });
 };
-
 
 /**
  * @param {LoaderFunctionArgs} args
@@ -116,6 +115,9 @@ export async function loader(args) {
 
   const newData = {
     banners,
+    title: criticalData.title,
+    description: criticalData.description,
+    url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
       menuCollections: criticalData.menuCollections,
