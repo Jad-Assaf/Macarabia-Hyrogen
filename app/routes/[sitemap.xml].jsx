@@ -37,14 +37,21 @@ export async function loader({request, context: {storefront}, params}) {
       });
       break;
     default:
-      // Default: Return React-based Styled Sitemap
+      // Always ensure arrays are defined
+      products = [];
+      collections = [];
+      pages = [];
       return {baseUrl, products, collections, pages};
   }
 
-  // Generate the correct sitemap
-  const sitemap = generateSitemap({products, collections, pages, baseUrl});
+  // Generate and return the correct sitemap
+  const sitemap = generateSitemap({
+    products: products || [],
+    collections: collections || [],
+    pages: pages || [],
+    baseUrl,
+  });
 
-  // Add inline XSL support for better styling in XML
   return new Response(
     `<?xml version="1.0" encoding="UTF-8"?>
      ${sitemap}`,
