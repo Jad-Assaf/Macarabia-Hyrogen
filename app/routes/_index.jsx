@@ -6,6 +6,7 @@ import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
 import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
+import { getSeoMeta } from '@shopify/hydrogen';
 
 const cache = new Map();
 
@@ -13,14 +14,19 @@ const cache = new Map();
  * @type {MetaFunction}
  */
 export const meta = ({data}) => {
-  return [
-    {title: data?.title || 'Macarabia | Home'},
-    {
-      name: 'description',
-      content: data?.description || 'Default description for Macarabia.',
+  return getSeoMeta({
+    title: data?.title || 'Default Title',
+    description: data?.description || 'Default description for this page.',
+    url: data?.url || 'https://your-site.com',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: data?.title || 'Default Title',
+      description: data?.description || 'Default description',
     },
-  ];
+  });
 };
+
 
 /**
  * @param {LoaderFunctionArgs} args
@@ -166,6 +172,7 @@ async function loadCriticalData({context}) {
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
+    url: 'https://macarabia.me',
   };
 }
 
