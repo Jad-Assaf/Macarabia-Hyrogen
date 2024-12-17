@@ -236,6 +236,7 @@ button {
   .grid-cols-4 .product-card,
   .grid-cols-5 .product-card {
     min-height: unset;
+    min-width: 180px;
   }
 }
 
@@ -1543,7 +1544,8 @@ button#headlessui-menu-button-\:R3lab5\: {
 
 /* Product Item Sizing Based on Grid Columns */
 .grid-cols-1 .product-item-collection {
-  min-width: 100%;
+  min-width: 95%;
+  margin: auto;
 }
 
 /* Keep Product Card Height Consistent */
