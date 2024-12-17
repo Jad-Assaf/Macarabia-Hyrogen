@@ -64,7 +64,7 @@ export function Header({ header, isLoggedIn, cart, publicStoreDomain }) {
       <header className="header">
         <div className="header-top">
           <button className="mobile-menu-toggle" onClick={toggleMobileMenu}>
-            <svg width="30px" height="30px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5 6H12H19M5 12H19M5 18H19" stroke="#000" stroke-width="2" stroke-linecap="round"></path> </g></svg>
+            <svg width="30px" height="30px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5 6H12H19M5 12H19M5 18H19" stroke="#fff" stroke-width="2" stroke-linecap="round"></path> </g></svg>
           </button>
 
           <NavLink prefetch="intent" to="/" className="logo-link" end>
