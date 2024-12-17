@@ -1604,7 +1604,7 @@ button#headlessui-menu-button-\:R3lab5\: {
     font-size: 13px;
   }
 
-  .grid-cols-1 .products-grid{
+  .grid-cols-2 .products-grid{
     gap: 1rem;
   }
 }
