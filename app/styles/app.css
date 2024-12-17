@@ -1603,6 +1603,10 @@ button#headlessui-menu-button-\:R3lab5\: {
   .collection h4 {
     font-size: 13px;
   }
+
+  .grid-cols-1 .products-grid{
+    gap: 1rem;
+  }
 }
 
 .grid-cols-1 .product-description {
