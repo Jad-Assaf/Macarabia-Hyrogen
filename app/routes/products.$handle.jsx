@@ -6,6 +6,7 @@ import {
   Analytics,
   useOptimisticVariant,
   Money,
+  getSeoMeta,
 } from '@shopify/hydrogen';
 import { getVariantUrl } from '~/lib/variants';
 import { ProductPrice } from '~/components/ProductPrice';
