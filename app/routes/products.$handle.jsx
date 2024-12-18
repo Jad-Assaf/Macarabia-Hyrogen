@@ -317,9 +317,9 @@ export default function Product() {
                   selectedVariant={selectedVariant}
                   variants={data?.product?.variants.nodes || []}
                   quantity={quantity} />
-                  <DirectCheckoutButton
+                  {/* <DirectCheckoutButton
                     selectedVariant={selectedVariant}
-                    quantity={quantity} />
+                    quantity={quantity} /> */}
                 </>
               )}
             </Await>
