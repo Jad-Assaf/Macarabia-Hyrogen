@@ -22,23 +22,6 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
-    directives: {
-      defaultSrc: ["'self'"], // Default policy for other types of content
-      scriptSrc: [
-        "'self'", // Allow scripts from the same origin
-        `'nonce-${nonce}'`, // Allow inline scripts with the generated nonce
-        'https://www.clarity.ms', // Allow Microsoft Clarity scripts
-        'https://www.googletagmanager.com', // Allow Google Tag Manager
-      ],
-      connectSrc: [
-        "'self'",
-        'https://www.clarity.ms',
-        'https://www.google-analytics.com',
-      ],
-      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles (if needed)
-      imgSrc: ["'self'", 'https://www.clarity.ms'], // Allow images
-      frameSrc: ['https://www.youtube.com'], // Example for iframe sources
-    },
   });
 
   const body = await renderToReadableStream(
@@ -49,7 +32,8 @@ export default async function handleRequest(
       nonce,
       signal: request.signal,
       onError(error) {
-        console.error('Error during server-side rendering:', error);
+        // eslint-disable-next-line no-console
+        console.error(error);
         responseStatusCode = 500;
       },
     },
