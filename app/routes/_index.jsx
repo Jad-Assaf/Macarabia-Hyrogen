@@ -368,9 +368,9 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      {/* {newArrivalsCollection && (
+      {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
-      )} */}
+      )}
       <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
