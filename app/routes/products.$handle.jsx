@@ -22,49 +22,109 @@ import RecentlyViewedProducts from '../components/RecentlyViewed';
 
 export const meta = ({data}) => {
   const product = data?.product;
+  const variants = product?.variants?.nodes || [];
+  const currentVariant = variants[0] || {};
 
   return getSeoMeta({
-    title: product?.seoTitle || 'Macarabia - Product',
+    title: product?.seoTitle || product?.title || 'Macarabia Product',
     description:
-      product?.seoDescription || 'Explore this premium product at Macarabia.',
-    url: `https://macarabia.me/products/${product?.handle || ''}`,
+      product?.seoDescription ||
+      product?.description ||
+      'Discover this product.',
+    url: `https://macarabia.me/products/${product?.handle}`,
     image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
-    twitterCard: 'summary_large_image',
-    openGraph: {
-      title: product?.seoTitle || 'Macarabia - Product',
-      description: product?.seoDescription || 'Explore this premium product.',
-      url: `https://macarabia.me/products/${product?.handle || ''}`,
-      image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
-      type: 'product',
-    },
     jsonLd: [
       {
-        '@context': 'https://schema.org',
+        '@context': 'http://schema.org/',
         '@type': 'Product',
-        name: product?.seoTitle || product?.title || 'Macarabia Product',
-        description:
-          product?.seoDescription ||
-          product?.description ||
-          'Discover this product.',
+        name: product?.title,
         url: `https://macarabia.me/products/${product?.handle}`,
-        image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
-        sku: product?.selectedVariant?.sku || 'N/A',
+        sku: currentVariant?.sku || product?.id,
+        productID: product?.id,
         brand: {
           '@type': 'Brand',
           name: product?.vendor || 'Macarabia',
         },
-        offers: {
+        description: product?.description || '',
+        image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
+        offers: variants.map((variant) => ({
           '@type': 'Offer',
-          price: product?.variantPrice?.amount || '0.00',
-          priceCurrency: product?.variantPrice?.currencyCode || 'USD',
-          availability: product?.availableForSale
-            ? 'https://schema.org/InStock'
-            : 'https://schema.org/OutOfStock',
-          url: `https://macarabia.me/products/${product?.handle}`,
-        },
+          priceCurrency:
+            product?.priceRange?.minVariantPrice?.currencyCode || 'USD',
+          price: variant?.price?.amount || '0.00',
+          itemCondition: 'http://schema.org/NewCondition',
+          availability: variant?.availableForSale
+            ? 'http://schema.org/InStock'
+            : 'http://schema.org/OutOfStock',
+          url: `https://macarabia.me/products/${product?.handle}?variant=${variant?.id}`,
+          image: variant?.image?.url || product?.firstImage || '',
+          name: `${product?.title} - ${variant?.title || ''}`,
+          sku: variant?.sku || variant?.id,
+          gtin12:
+            variant?.barcode?.length === 12 ? variant?.barcode : undefined,
+          gtin13:
+            variant?.barcode?.length === 13 ? variant?.barcode : undefined,
+          gtin14:
+            variant?.barcode?.length === 14 ? variant?.barcode : undefined,
+          priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0],
+          shippingDetails: {
+            '@type': 'OfferShippingDetails',
+            shippingRate: {
+              '@type': 'MonetaryAmount',
+              value: '5.00',
+              currency: 'USD',
+            },
+            shippingDestination: {
+              '@type': 'DefinedRegion',
+              addressCountry: 'LB',
+            },
+            deliveryTime: {
+              '@type': 'ShippingDeliveryTime',
+              handlingTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 0,
+                maxValue: 3,
+                unitCode: 'DAY',
+              },
+              transitTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 1,
+                maxValue: 5,
+                unitCode: 'DAY',
+              },
+            },
+          },
+          hasMerchantReturnPolicy: {
+            '@type': 'MerchantReturnPolicy',
+            applicableCountry: 'LB',
+            returnPolicyCategory:
+              'https://schema.org/MerchantReturnFiniteReturnWindow',
+            merchantReturnDays: 5,
+            returnMethod: 'https://schema.org/ReturnByMail',
+            returnFees: 'https://schema.org/FreeReturn',
+          },
+        })),
+        aggregateRating: product?.metafields?.spr?.reviews
+          ? {
+              '@type': 'AggregateRating',
+              ratingValue: parseFloat(
+                product.metafields.spr.reviews
+                  .split('"ratingValue": "')[1]
+                  ?.split('"')[0] || 0,
+              ),
+              ratingCount: parseInt(
+                product.metafields.spr.reviews
+                  .split('"reviewCount": "')[1]
+                  ?.split('"')[0] || 0,
+                10,
+              ),
+            }
+          : undefined,
       },
       {
-        '@context': 'http://schema.org',
+        '@context': 'http://schema.org/',
         '@type': 'BreadcrumbList',
         itemListElement: [
           {
