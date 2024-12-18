@@ -20,39 +20,68 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import { ProductMetafields } from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 
-export const meta = ({ data }) => {
+export const meta = ({data}) => {
   const product = data?.product;
 
   return getSeoMeta({
     title: product?.seoTitle || 'Macarabia - Product',
-    description: product?.seoDescription || 'Explore this premium product at Macarabia.',
+    description:
+      product?.seoDescription || 'Explore this premium product at Macarabia.',
     url: `https://macarabia.me/products/${product?.handle || ''}`,
-    image: product?.firstImage || 'https://your-site.com/default-image.jpg',
+    image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
     twitterCard: 'summary_large_image',
     openGraph: {
       title: product?.seoTitle || 'Macarabia - Product',
       description: product?.seoDescription || 'Explore this premium product.',
       url: `https://macarabia.me/products/${product?.handle || ''}`,
-      image: product?.firstImage || 'https://your-site.com/default-image.jpg',
+      image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
       type: 'product',
     },
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: product?.seoTitle || 'Macarabia Product',
-      description: product?.seoDescription || 'Discover this product.',
-      url: `https://macarabia.me/products/${product?.handle}`,
-      image: product?.firstImage || 'https://your-site.com/default-image.jpg',
-      offers: {
-        '@type': 'Offer',
-        price: product?.variantPrice?.amount || '0.00',
-        priceCurrency: product?.variantPrice?.currencyCode || 'USD',
-        availability: product?.availableForSale
-          ? 'https://schema.org/InStock'
-          : 'https://schema.org/OutOfStock',
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product?.seoTitle || product?.title || 'Macarabia Product',
+        description:
+          product?.seoDescription ||
+          product?.description ||
+          'Discover this product.',
         url: `https://macarabia.me/products/${product?.handle}`,
+        image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
+        sku: product?.selectedVariant?.sku || 'N/A',
+        brand: {
+          '@type': 'Brand',
+          name: product?.vendor || 'Macarabia',
+        },
+        offers: {
+          '@type': 'Offer',
+          price: product?.variantPrice?.amount || '0.00',
+          priceCurrency: product?.variantPrice?.currencyCode || 'USD',
+          availability: product?.availableForSale
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock',
+          url: `https://macarabia.me/products/${product?.handle}`,
+        },
       },
-    },
+      {
+        '@context': 'http://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://macarabia.me',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: product?.title || 'Product',
+            item: `https://macarabia.me/products/${product?.handle}`,
+          },
+        ],
+      },
+    ],
   });
 };
 
