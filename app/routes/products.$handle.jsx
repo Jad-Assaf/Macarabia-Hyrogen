@@ -19,6 +19,7 @@ import { RELATED_PRODUCTS_QUERY } from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
 import { ProductMetafields } from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
+import { getCache, setCache } from '~/lib/cache';
 
 export const meta = ({data}) => {
   const product = data?.product;
@@ -153,10 +154,25 @@ export const meta = ({data}) => {
 };
 
 export async function loader(args) {
+  const cacheKey = `product-${args.params.handle}`;
+  const cacheTTL = 86400 * 1000; // 24 hours
+
+  // Check cache
+  const cachedData = getCache(cacheKey);
+  if (cachedData) {
+    return defer(cachedData);
+  }
+
+  // Fetch fresh data
   const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
 
-  return defer({ ...deferredData, ...criticalData });
+  const freshData = {...deferredData, ...criticalData};
+
+  // Cache the fresh data
+  setCache(cacheKey, freshData, cacheTTL);
+
+  return defer(freshData);
 }
 
 async function loadCriticalData({context, params, request}) {

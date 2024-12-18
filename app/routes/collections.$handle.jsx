@@ -21,6 +21,7 @@ import { AddToCartButton } from '../components/AddToCartButton';
 import { useAside } from '~/components/Aside';
 import { motion, useAnimation, useInView } from 'framer-motion';
 import '../styles/CollectionSlider.css'
+import { getCache, setCache } from '~/lib/cache';
 
 /**
  * @type {MetaFunction<typeof loader>}
@@ -186,9 +187,25 @@ export const meta = ({data}) => {
  * @param {LoaderFunctionArgs} args
  */
 export async function loader(args) {
+  const cacheKey = `collection-${args.params.handle}`;
+  const cacheTTL = 86400 * 1000; // 24 hours
+
+  // Check cache
+  const cachedData = getCache(cacheKey);
+  if (cachedData) {
+    return defer(cachedData);
+  }
+
+  // Fetch fresh data
   const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
-  return defer({ ...deferredData, ...criticalData });
+
+  const freshData = {...deferredData, ...criticalData};
+
+  // Cache the fresh data
+  setCache(cacheKey, freshData, cacheTTL);
+
+  return defer(freshData);
 }
 
 /**
