@@ -25,8 +25,15 @@ export const meta = ({data}) => {
   const variants = product?.variants?.nodes || [];
   const currentVariant = variants[0] || {};
 
+  // Helper to truncate title
+  const truncate = (text, maxLength) =>
+    text?.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
+
   return getSeoMeta({
-    title: product?.seoTitle || product?.title || 'Macarabia Product',
+    title: truncate(
+      product?.seoTitle || product?.title || 'Macarabia Product',
+      140,
+    ),
     description:
       product?.seoDescription ||
       product?.description ||
@@ -37,7 +44,7 @@ export const meta = ({data}) => {
       {
         '@context': 'http://schema.org/',
         '@type': 'Product',
-        name: product?.title,
+        name: truncate(product?.title, 140),
         url: `https://macarabia.me/products/${product?.handle}`,
         sku: currentVariant?.sku || product?.id,
         productID: product?.id,
@@ -58,7 +65,7 @@ export const meta = ({data}) => {
             : 'http://schema.org/OutOfStock',
           url: `https://macarabia.me/products/${product?.handle}?variant=${variant?.id}`,
           image: variant?.image?.url || product?.firstImage || '',
-          name: `${product?.title} - ${variant?.title || ''}`,
+          name: truncate(`${product?.title} - ${variant?.title || ''}`, 140),
           sku: variant?.sku || variant?.id,
           gtin12:
             variant?.barcode?.length === 12 ? variant?.barcode : undefined,
@@ -136,7 +143,7 @@ export const meta = ({data}) => {
           {
             '@type': 'ListItem',
             position: 2,
-            name: product?.title || 'Product',
+            name: truncate(product?.title || 'Product', 140),
             item: `https://macarabia.me/products/${product?.handle}`,
           },
         ],
