@@ -193,10 +193,6 @@ export function Layout({children}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta
-          http-equiv="Content-Security-Policy"
-          content="default-src 'self' https://cdn.shopify.com https://shopify.com 'nonce-08103010419c4393c4aeabc825388628'; script-src 'self' https://www.clarity.ms 'nonce-08103010419c4393c4aeabc825388628';"
-        />
         <Meta />
         <Links />
       </head>
