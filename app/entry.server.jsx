@@ -19,8 +19,25 @@ export default async function handleRequest(
 ) {
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
-      // checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
+    },
+    directives: {
+      defaultSrc: ["'self'"], // Default policy
+      scriptSrc: [
+        "'self'", // Allow same-origin scripts
+        `'nonce-${nonce}'`, // Allow inline scripts with this nonce
+        'https://www.clarity.ms', // Microsoft Clarity
+        'https://www.googletagmanager.com', // Google Tag Manager
+      ],
+      connectSrc: [
+        "'self'",
+        'https://www.clarity.ms',
+        'https://www.google-analytics.com',
+      ],
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles (if needed)
+      imgSrc: ["'self'", 'https://www.clarity.ms'], // Allow images
+      frameSrc: ['https://www.youtube.com'], // Example: if you're using YouTube embeds
+      // Add other directives as required
     },
   });
 
