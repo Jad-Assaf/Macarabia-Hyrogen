@@ -18,6 +18,7 @@ import tailwindCss from './styles/tailwind.css?url';
 import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {useEffect, useState} from 'react';
+import Clarity from '@microsoft/clarity';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
