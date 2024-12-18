@@ -26,7 +26,6 @@ import '../styles/CollectionSlider.css'
  * @type {MetaFunction<typeof loader>}
  */
 export const meta = ({data}) => {
-  const seo = data?.seo;
   const collection = data?.collection;
 
   // Utility to truncate text
@@ -38,26 +37,103 @@ export const meta = ({data}) => {
   };
 
   return getSeoMeta({
-    title: seo?.title || `${collection?.title || 'Collection'} | Macarabia`,
+    title: `${collection?.title || 'Collection'} | Macarabia`,
     description: truncateText(
-      seo?.description ||
-        collection?.description ||
-        'Explore our latest collection at Macarabia.',
+      collection?.description || 'Explore our latest collection at Macarabia.',
       155,
     ),
     url: `https://macarabia.me/collections/${collection?.handle || ''}`,
-    image: seo?.image || 'https://macarabia.me/default-collection-image.jpg',
+    image:
+      collection?.image?.url ||
+      'https://macarabia.me/default-collection-image.jpg',
     jsonLd: [
       // CollectionPage Schema
       {
         '@context': 'http://schema.org/',
         '@type': 'CollectionPage',
-        name: seo?.title || collection?.title || 'Collection',
+        name: collection?.title || 'Collection',
         url: `https://macarabia.me/collections/${collection?.handle || ''}`,
-        description: truncateText(
-          seo?.description || collection?.description || '',
-          155,
-        ),
+        description: truncateText(collection?.description || '', 155),
+        image: {
+          '@type': 'ImageObject',
+          url:
+            collection?.image?.url ||
+            'https://macarabia.me/default-collection-image.jpg',
+        },
+        hasPart: collection?.products?.nodes?.slice(0, 20).map((product) => ({
+          '@type': 'Product',
+          name: truncateText(product?.title || 'Product', 140),
+          url: `https://macarabia.me/products/${product?.handle}`,
+          sku: product?.variants?.[0]?.sku || product?.variants?.[0]?.id || '',
+          gtin12:
+            product?.variants?.[0]?.barcode?.length === 12
+              ? product?.variants?.[0]?.barcode
+              : undefined,
+          gtin13:
+            product?.variants?.[0]?.barcode?.length === 13
+              ? product?.variants?.[0]?.barcode
+              : undefined,
+          gtin14:
+            product?.variants?.[0]?.barcode?.length === 14
+              ? product?.variants?.[0]?.barcode
+              : undefined,
+          productID: product?.id,
+          brand: {
+            '@type': 'Brand',
+            name: product?.vendor || 'Macarabia',
+          },
+          description: truncateText(product?.description || '', 500),
+          image: `https://macarabia.me/products/${product?.featuredImage?.url}`,
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: product?.variants?.[0]?.price?.currencyCode || 'USD',
+            price: product?.variants?.[0]?.price?.amount || '0.00',
+            itemCondition: 'http://schema.org/NewCondition',
+            availability: product?.availableForSale
+              ? 'http://schema.org/InStock'
+              : 'http://schema.org/OutOfStock',
+            url: `https://macarabia.me/products/${product?.handle}`,
+            priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split('T')[0],
+            shippingDetails: {
+              '@type': 'OfferShippingDetails',
+              shippingRate: {
+                '@type': 'MonetaryAmount',
+                value: '5.00',
+                currency: 'USD',
+              },
+              shippingDestination: {
+                '@type': 'DefinedRegion',
+                addressCountry: 'LB',
+              },
+              deliveryTime: {
+                '@type': 'ShippingDeliveryTime',
+                handlingTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 0,
+                  maxValue: 3,
+                  unitCode: 'DAY',
+                },
+                transitTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: 1,
+                  maxValue: 5,
+                  unitCode: 'DAY',
+                },
+              },
+            },
+            hasMerchantReturnPolicy: {
+              '@type': 'MerchantReturnPolicy',
+              applicableCountry: 'LB',
+              returnPolicyCategory:
+                'https://schema.org/MerchantReturnFiniteReturnWindow',
+              merchantReturnDays: 5,
+              returnMethod: 'https://schema.org/ReturnByMail',
+              returnFees: 'https://schema.org/FreeReturn',
+            },
+          },
+        })),
       },
       // BreadcrumbList Schema
       {
@@ -87,18 +163,20 @@ export const meta = ({data}) => {
         name: collection?.title || 'Collection',
         description: truncateText(collection?.description || '', 155),
         url: `https://macarabia.me/collections/${collection?.handle || ''}`,
-        itemListElement: collection?.products?.nodes.map((product, index) => ({
-          '@type': 'ListItem',
-          position: index + 1,
-          url: `https://macarabia.me/products/${product.handle}`,
-          name: product.title,
-          image: {
-            '@type': 'ImageObject',
-            url:
-              product.images?.nodes?.[0]?.url ||
-              'https://macarabia.me/default-product-image.jpg',
-          },
-        })),
+        itemListElement: collection?.products?.nodes
+          ?.slice(0, 20)
+          .map((product, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            url: `https://macarabia.me/products/${product?.handle}`,
+            name: truncateText(product?.title || 'Product', 140),
+            image: {
+              '@type': 'ImageObject',
+              url:
+                product?.featuredImage?.url ||
+                'https://macarabia.me/default-product-image.jpg',
+            },
+          })),
       },
     ],
   });
