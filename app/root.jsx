@@ -18,7 +18,7 @@ import tailwindCss from './styles/tailwind.css?url';
 import { PageLayout } from '~/components/PageLayout';
 import { FOOTER_QUERY, HEADER_QUERY } from '~/lib/fragments';
 import { useEffect, useState } from 'react';
-
+import {getCache, setCache} from './cache';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -50,11 +50,25 @@ export function links() {
  * @param {LoaderFunctionArgs} args
  */
 export async function loader(args) {
+  const cacheKey = 'root-data';
+  const cacheTTL = 86400 * 1000; // 24 hours
+
+  // Check if data is cached
+  const cachedData = getCache(cacheKey);
+  if (cachedData) {
+    return defer(cachedData, {
+      headers: {
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
+      },
+    });
+  }
+
+  // Load fresh data
   const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
   const { storefront, env } = args.context;
 
-  return defer({
+  const freshData = {
     ...deferredData,
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
@@ -68,6 +82,15 @@ export async function loader(args) {
       withPrivacyBanner: true,
       country: args.context.storefront.i18n.country,
       language: args.context.storefront.i18n.language,
+    },
+  };
+
+  // Store the fresh data in the cache
+  setCache(cacheKey, freshData, cacheTTL);
+
+  return defer(freshData, {
+    headers: {
+      'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
     },
   });
 }
