@@ -18,15 +18,29 @@ export const meta = ({data}) => {
     title: data?.title || 'Default Title',
     description: data?.description || 'Default description for this page.',
     url: data?.url || 'https://macarabia.me',
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'WebPage',
-      name: data?.title || 'Default Title',
-      description: data?.description || 'Default description',
-    },
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: data?.title || 'Default Title',
+        description: data?.description || 'Default description',
+        url: data?.url || 'https://macarabia.me',
+      },
+      {
+        '@context': 'http://schema.org',
+        '@type': 'WebSite',
+        name: 'Macarabia.me',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target:
+            'https://d40293-4.myshopify.com/search?q={search_term_string}',
+          'query-input': 'required name=search_term_string',
+        },
+        url: 'https://d40293-4.myshopify.com',
+      },
+    ],
   });
 };
-
 /**
  * @param {LoaderFunctionArgs} args
  */
