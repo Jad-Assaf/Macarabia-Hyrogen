@@ -255,17 +255,8 @@ export default function Product() {
   const [quantity, setQuantity] = useState(1);
   const [subtotal, setSubtotal] = useState(0);
 
-  const incrementQuantity = () => {
-    if (quantity < 5) {
-      setQuantity(quantity + 1);
-    }
-  };
-
-  const decrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-    }
-  };
+  const incrementQuantity = () => setQuantity(prev => prev + 1);
+  const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
   const [activeTab, setActiveTab] = useState('description');
 
@@ -281,7 +272,6 @@ export default function Product() {
 
   const hasDiscount = selectedVariant?.compareAtPrice &&
     selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
-    
 
   return (
     <div className="product">
@@ -327,9 +317,9 @@ export default function Product() {
                   selectedVariant={selectedVariant}
                   variants={data?.product?.variants.nodes || []}
                   quantity={quantity} />
-                  {/* <DirectCheckoutButton
+                  <DirectCheckoutButton
                     selectedVariant={selectedVariant}
-                    quantity={quantity} /> */}
+                    quantity={quantity} />
                 </>
               )}
             </Await>
