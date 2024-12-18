@@ -46,10 +46,7 @@ export const meta = ({data}) => {
       155,
     ),
     url: `https://macarabia.me/collections/${collection?.handle || ''}`,
-    image: seo?.image || 'https://your-site.com/default-collection-image.jpg',
-    openGraph: {
-      type: 'website',
-    },
+    image: seo?.image || 'https://macarabia.me/default-collection-image.jpg',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
@@ -60,6 +57,24 @@ export const meta = ({data}) => {
       ),
       image: seo?.image || '',
       url: `https://macarabia.me/collections/${collection?.handle || ''}`,
+      itemListElement: collection?.products?.nodes.map((product, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `https://macarabia.me/products/${product.handle}`,
+        name: product.title,
+        image:
+          product.images?.nodes?.[0]?.url ||
+          'https://macarabia.me/default-product-image.jpg',
+        offers: {
+          '@type': 'Offer',
+          priceCurrency:
+            product.priceRange?.minVariantPrice?.currencyCode || 'USD',
+          price: product.priceRange?.minVariantPrice?.amount || '0.00',
+          availability: product.availableForSale
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock',
+        },
+      })),
     },
   });
 };
