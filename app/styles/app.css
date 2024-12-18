@@ -1196,10 +1196,12 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .cart-remove {
-  border: 1px solid #000;
   width: 90px;
   border-radius: 30px;
-  background: #f1f1f1;
+  background: #fa5656;
+  color: #fff;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px, rgba(0, 0, 0, 0.3) 0px 7px 13px -3px, rgba(0, 0, 0, 0.2) 0px -3px 0px inset;
+  padding: 0 0 3px 0;
 }
 
 .cart-discount {
@@ -1605,7 +1607,7 @@ button#headlessui-menu-button-\:R3lab5\: {
     font-size: 14px !important;
   }
 
-  .grid-cols-2 .products-grid{
+  .grid-cols-2 .products-grid {
     gap: 1rem;
   }
 }
