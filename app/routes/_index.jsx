@@ -32,15 +32,15 @@ export const meta = ({data}) => {
         name: 'Macarabia.me',
         potentialAction: {
           '@type': 'SearchAction',
-          target:
-            'https://d40293-4.myshopify.com/search?q={search_term_string}',
+          target: 'https://macarabia.me/search?q={search_term_string}',
           'query-input': 'required name=search_term_string',
         },
-        url: 'https://d40293-4.myshopify.com',
+        url: 'https://macarabia.me',
       },
     ],
   });
 };
+
 /**
  * @param {LoaderFunctionArgs} args
  */
