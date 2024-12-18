@@ -171,7 +171,7 @@ export function Layout({children}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <script
+        {/* <script
           type="text/javascript"
           dangerouslySetInnerHTML={{
             __html: `
@@ -182,7 +182,7 @@ export function Layout({children}) {
               })(window, document, "clarity", "script", "pfyepst8v5");
             `,
           }}
-        />
+        /> */}
         <Meta />
         <Links />
       </head>
