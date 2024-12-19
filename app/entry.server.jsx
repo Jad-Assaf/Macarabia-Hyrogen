@@ -18,10 +18,11 @@ export default async function handleRequest(
   context,
 ) {
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
-    shop: {
-      checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
-      storeDomain: context.env.PUBLIC_STORE_DOMAIN,
-    },
+    scriptSrc: [
+      "'self'",
+      'https://www.clarity.ms',
+      'https://*.clarity.ms',
+    ],
   });
 
   const body = await renderToReadableStream(
@@ -32,7 +33,6 @@ export default async function handleRequest(
       nonce,
       signal: request.signal,
       onError(error) {
-        // eslint-disable-next-line no-console
         console.error(error);
         responseStatusCode = 500;
       },
