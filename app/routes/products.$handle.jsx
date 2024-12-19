@@ -254,10 +254,13 @@ export default function Product() {
 
   const [quantity, setQuantity] = useState(1);
   const [subtotal, setSubtotal] = useState(0);
-  const [currentImage, setCurrentImage] = useState(selectedVariant?.image);
-  const [currentPrice, setCurrentPrice] = useState(selectedVariant?.price);
 
-  // Update subtotal when quantity or selected variant changes
+  const incrementQuantity = () => setQuantity((prev) => prev + 1);
+  const decrementQuantity = () =>
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+
+  const [activeTab, setActiveTab] = useState('description');
+
   useEffect(() => {
     if (selectedVariant && selectedVariant.price) {
       const price = parseFloat(selectedVariant.price.amount);
@@ -265,36 +268,46 @@ export default function Product() {
     }
   }, [quantity, selectedVariant]);
 
-  // Update image and price on variant change
+  // Trigger image and price refresh on variant change
   useEffect(() => {
-    setCurrentImage(selectedVariant?.image);
-    setCurrentPrice(selectedVariant?.price);
+    if (selectedVariant) {
+      const variantImage =
+        selectedVariant.image?.url || product.firstImage || null;
+      const variantPrice = selectedVariant.price.amount;
+
+      // Update image and price dynamically
+      document.querySelector('.product-image img').src = variantImage;
+      document.querySelector('.product-price').textContent = `$${variantPrice}`;
+    }
   }, [selectedVariant]);
 
-  const incrementQuantity = () => setQuantity((prev) => prev + 1);
-  const decrementQuantity = () =>
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  const {title, descriptionHtml, images} = product;
+
+  const hasDiscount =
+    selectedVariant?.compareAtPrice &&
+    selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
 
   return (
     <div className="product">
       <div className="ProductPageTop">
         <ProductImages
-          images={product.images.edges}
-          selectedVariantImage={currentImage}
+          images={images.edges}
+          selectedVariantImage={selectedVariant?.image}
         />
         <div className="product-main">
-          <h1>{product.title}</h1>
+          <h1>{title}</h1>
           <div className="price-container">
-            <small className="product-price">
-              <Money data={currentPrice} />
+            <small
+              className={`product-price ${hasDiscount ? 'discounted' : ''}`}
+            >
+              <Money data={selectedVariant.price} />
             </small>
-            {selectedVariant.compareAtPrice && (
+            {hasDiscount && selectedVariant.compareAtPrice && (
               <small className="discountedPrice">
                 <Money data={selectedVariant.compareAtPrice} />
               </small>
             )}
           </div>
-
           <div className="quantity-selector">
             <p>Quantity</p>
             <button onClick={decrementQuantity} className="quantity-btn">
