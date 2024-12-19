@@ -17,42 +17,48 @@ export default async function handleRequest(
   remixContext,
   context,
 ) {
-  const {nonce, header, NonceProvider} = createContentSecurityPolicy({
-    shop: {
-      checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
-      storeDomain: context.env.PUBLIC_STORE_DOMAIN,
-    },
-    additionalDomains: [
-      'https://www.clarity.ms', // Add your additional domains here
-      'https://*.clarity.ms',
-    ],
-  });
-
-  const body = await renderToReadableStream(
-    <NonceProvider>
-      <RemixServer context={remixContext} url={request.url} />
-    </NonceProvider>,
-    {
-      nonce,
-      signal: request.signal,
-      onError(error) {
-        console.error(error);
-        responseStatusCode = 500;
+  try {
+    const {nonce, header, NonceProvider} = createContentSecurityPolicy({
+      shop: {
+        checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
+        storeDomain: context.env.PUBLIC_STORE_DOMAIN,
       },
-    },
-  );
+      scriptSrc: [
+        "'self'",
+        `'nonce-${nonce}'`,
+        'https://www.clarity.ms',
+        'https://*.clarity.ms',
+      ],
+      connectSrc: ["'self'", 'https://www.clarity.ms', 'https://*.clarity.ms'],
+    });
 
-  if (isbot(request.headers.get('user-agent'))) {
-    await body.allReady;
+    console.log('CSP Header:', header);
+
+    const body = await renderToReadableStream(
+      <NonceProvider>
+        <RemixServer context={remixContext} url={request.url} />
+      </NonceProvider>,
+      {
+        nonce,
+        signal: request.signal,
+        onError(error) {
+          console.error('Render Error:', error);
+          responseStatusCode = 500;
+        },
+      },
+    );
+
+    responseHeaders.set('Content-Security-Policy', header);
+    responseHeaders.set('Content-Type', 'text/html');
+
+    return new Response(body, {
+      headers: responseHeaders,
+      status: responseStatusCode,
+    });
+  } catch (error) {
+    console.error('Server Error:', error);
+    return new Response('Internal Server Error', {status: 500});
   }
-
-  responseHeaders.set('Content-Type', 'text/html');
-  responseHeaders.set('Content-Security-Policy', header);
-
-  return new Response(body, {
-    headers: responseHeaders,
-    status: responseStatusCode,
-  });
 }
 
 /** @typedef {import('@shopify/remix-oxygen').EntryContext} EntryContext */
