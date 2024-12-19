@@ -167,6 +167,8 @@ async function loadCriticalData({context, params, request}) {
     throw new Error('Expected product handle to be defined');
   }
 
+  console.log('Fetching product data for handle:', handle);
+
   // Fetch product data
   const {product} = await storefront.query(PRODUCT_QUERY, {
     variables: {
@@ -175,12 +177,11 @@ async function loadCriticalData({context, params, request}) {
     },
   });
 
-  console.log('Selected Options:', getSelectedProductOptions(request));
-
-
   if (!product?.id) {
     throw new Response('Product not found', {status: 404});
   }
+
+  console.log('Product fetched:', product);
 
   // Select the first variant as the default if applicable
   const firstVariant = product.variants.nodes[0];
@@ -192,20 +193,26 @@ async function loadCriticalData({context, params, request}) {
 
   if (firstVariantIsDefault) {
     product.selectedVariant = firstVariant;
+    console.log('First variant is default:', firstVariant);
   } else if (!product.selectedVariant) {
+    console.log('Redirecting to first variant');
     throw redirectToFirstVariant({product, request});
   }
 
   // Extract the first image
   const firstImage = product.images?.edges?.[0]?.node?.url || null;
+  console.log('First image URL:', firstImage);
 
   // Fetch related products
   const productType = product.productType || 'General';
+  console.log('Fetching related products for product type:', productType);
+
   const {products} = await storefront.query(RELATED_PRODUCTS_QUERY, {
     variables: {productType},
   });
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
+  console.log('Related products fetched:', relatedProducts);
 
   // Return necessary product data including SEO, first image, and variant price
   return {
