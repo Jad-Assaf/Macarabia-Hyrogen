@@ -181,14 +181,6 @@ async function loadCriticalData({context, params, request}) {
 
   // Select the first variant as the default if applicable
   const firstVariant = product.variants.nodes[0];
-
-  // Log first variant to check if it exists
-  console.log('First variant:', firstVariant);
-
-  // Log price details
-  console.log('First variant price:', firstVariant?.price);
-  console.log('Product price range:', product.priceRange);
-
   const firstVariantIsDefault = Boolean(
     firstVariant.selectedOptions.find(
       (option) => option.name === 'Title' && option.value === 'Default Title',
@@ -203,9 +195,6 @@ async function loadCriticalData({context, params, request}) {
 
   // Extract the first image
   const firstImage = product.images?.edges?.[0]?.node?.url || null;
-
-  // Log first image URL
-  console.log('First image URL:', firstImage);
 
   // Fetch related products
   const productType = product.productType || 'General';
@@ -227,7 +216,6 @@ async function loadCriticalData({context, params, request}) {
     relatedProducts,
   };
 }
-
 
 function loadDeferredData({ context, params }) {
   const { storefront } = context;
@@ -258,24 +246,29 @@ function redirectToFirstVariant({ product, request }) {
 }
 
 export default function Product() {
-  const { product, variants } = useLoaderData();
-  const selectedVariant = useOptimisticVariant(product.selectedVariant, variants);
+  const { product, variants, relatedProducts } = useLoaderData();
+  const selectedVariant = useOptimisticVariant(
+    product.selectedVariant,
+    variants
+  );
 
   const [quantity, setQuantity] = useState(1);
   const [subtotal, setSubtotal] = useState(0);
-  const [currentImage, setCurrentImage] = useState(selectedVariant?.image || product?.images?.edges?.[0]?.node);
 
-  // Update subtotal and image when selectedVariant changes
+  const incrementQuantity = () => setQuantity(prev => prev + 1);
+  const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+
+  const [activeTab, setActiveTab] = useState('description');
+
   useEffect(() => {
-    if (selectedVariant) {
-      const price = parseFloat(selectedVariant.price.amount || 0);
+    if (selectedVariant && selectedVariant.price) {
+      const price = parseFloat(selectedVariant.price.amount);
       setSubtotal(price * quantity);
-      setCurrentImage(selectedVariant.image || product?.images?.edges?.[0]?.node);
     }
-  }, [selectedVariant, quantity, product]);
+  }, [quantity, selectedVariant]);
 
-  const incrementQuantity = () => setQuantity((prev) => prev + 1);
-  const decrementQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+
+  const { title, descriptionHtml, images } = product;
 
   const hasDiscount = selectedVariant?.compareAtPrice &&
     selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
@@ -283,23 +276,20 @@ export default function Product() {
   return (
     <div className="product">
       <div className="ProductPageTop">
-        <ProductImages
-          images={product.images.edges}
-          selectedVariantImage={currentImage} // Updated prop for dynamic image
-        />
+        <ProductImages images={images.edges}
+          selectedVariantImage={selectedVariant?.image} />
         <div className="product-main">
-          <h1>{product.title}</h1>
+          <h1>{title}</h1>
           <div className="price-container">
             <small className={`product-price ${hasDiscount ? 'discounted' : ''}`}>
               <Money data={selectedVariant.price} />
             </small>
-            {hasDiscount && (
+            {hasDiscount && selectedVariant.compareAtPrice && (
               <small className="discountedPrice">
                 <Money data={selectedVariant.compareAtPrice} />
               </small>
             )}
           </div>
-
           <div className="quantity-selector">
             <p>Quantity</p>
             <button onClick={decrementQuantity} className="quantity-btn">-</button>
