@@ -17,27 +17,13 @@ export default async function handleRequest(
   remixContext,
   context,
 ) {
-  // Create the Content Security Policy with custom directives
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'", 'https://cdn.shopify.com', 'https://shopify.com'],
-      scriptSrc: [
-        "'self'",
-        `'nonce-${nonce}'`,
-        'https://www.clarity.ms', // Allow Microsoft Clarity scripts
-      ],
-      styleSrc: [
-        "'self'",
-        'https://cdn.shopify.com',
-        'https://fonts.googleapis.com',
-      ],
-      imgSrc: ["'self'", 'https://cdn.shopify.com', 'data:'], // Allow inlined images
-      connectSrc: ["'self'", 'https://www.clarity.ms'], // Allow Clarity connections
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'], // Allow font loading
+    shop: {
+      checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
+      storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
   });
 
-  // Render the app
   const body = await renderToReadableStream(
     <NonceProvider>
       <RemixServer context={remixContext} url={request.url} />
@@ -57,7 +43,6 @@ export default async function handleRequest(
     await body.allReady;
   }
 
-  // Set headers for response
   responseHeaders.set('Content-Type', 'text/html');
   responseHeaders.set('Content-Security-Policy', header);
 
