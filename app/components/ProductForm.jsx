@@ -31,7 +31,16 @@ export function ProductForm({
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-    setSelectedOptions((prev) => ({...prev, [name]: value}));
+    setSelectedOptions((prev) => {
+      const newOptions = {...prev, [name]: value};
+
+      // Update the URL with selected options
+      const queryParams = new URLSearchParams(newOptions).toString();
+      const newUrl = `${location.pathname}?${queryParams}`;
+      window.history.replaceState(null, '', newUrl);
+
+      return newOptions;
+    });
   };
 
   // Determine the updated selected variant
