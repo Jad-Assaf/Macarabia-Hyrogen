@@ -32,21 +32,8 @@ export function ProductForm({
   // Update selected options on change
   const handleOptionChange = (name, value) => {
     setSelectedOptions((prev) => ({...prev, [name]: value}));
-
-    // Update the selected variant in the parent component
-    const newVariant = variants.find((variant) =>
-      Object.entries({...selectedOptions, [name]: value}).every(
-        ([name, value]) =>
-          variant.selectedOptions.some(
-            (opt) => opt.name === name && opt.value === value,
-          ),
-      ),
-    );
-
-    if (newVariant) {
-      onVariantChange(newVariant); // Call the function to update the selected variant
-    }
   };
+
   // Determine the updated selected variant
   const updatedVariant = variants.find((variant) =>
     Object.entries(selectedOptions).every(([name, value]) =>
