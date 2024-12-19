@@ -22,6 +22,13 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
+    scriptSrc: [
+      "'self'",
+      `'nonce-${nonce}'`,
+      'https://www.clarity.ms', // Add Clarity's domain
+      'https://*.clarity.ms', // Allow subdomains for Clarity
+    ],
+    connectSrc: ["'self'", 'https://www.clarity.ms', 'https://*.clarity.ms'],
   });
 
   const body = await renderToReadableStream(
