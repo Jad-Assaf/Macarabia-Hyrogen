@@ -22,18 +22,15 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
-    directives: {
-      'script-src': [
-        "'self'",
-        "'unsafe-inline'", // Temporarily allow inline scripts
-      ],
-      'connect-src': ["'self'"],
-      'style-src': [
-        "'self'",
-        "'unsafe-inline'", // Temporarily allow inline styles
-      ],
-    },
   });
+
+  const cspHeader = `
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' *.clarity.ms *.microsoft.com 'nonce-${nonce}';
+  connect-src 'self' *.clarity.ms *.microsoft.com;
+  style-src 'self' 'unsafe-inline';
+`;
+
   const body = await renderToReadableStream(
     <NonceProvider>
       <RemixServer context={remixContext} url={request.url} />
@@ -54,7 +51,7 @@ export default async function handleRequest(
   }
 
   responseHeaders.set('Content-Type', 'text/html');
-  responseHeaders.set('Content-Security-Policy', header);
+  responseHeaders.set('Content-Security-Policy', cspHeader.trim());
 
   return new Response(body, {
     headers: responseHeaders,
