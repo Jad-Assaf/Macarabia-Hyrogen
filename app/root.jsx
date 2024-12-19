@@ -1,5 +1,5 @@
-import {useNonce, getShopAnalytics, Analytics, Script} from '@shopify/hydrogen';
-import {defer} from '@shopify/remix-oxygen';
+import { useNonce, getShopAnalytics, Analytics } from '@shopify/hydrogen';
+import { defer } from '@shopify/remix-oxygen';
 import {
   Links,
   Meta,
@@ -9,16 +9,16 @@ import {
   useRouteLoaderData,
   ScrollRestoration,
   isRouteErrorResponse,
-  useNavigation,
-  LiveReload, // Added useNavigation for route tracking
+  useNavigation,  // Added useNavigation for route tracking
 } from '@remix-run/react';
 import favicon from '~/assets/macarabia-favicon-black_32x32.jpg';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import tailwindCss from './styles/tailwind.css?url';
-import {PageLayout} from '~/components/PageLayout';
-import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
-import {useEffect, useState} from 'react';
+import { PageLayout } from '~/components/PageLayout';
+import { FOOTER_QUERY, HEADER_QUERY } from '~/lib/fragments';
+import { useEffect, useState } from 'react';
+
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -37,12 +37,12 @@ export const shouldRevalidate = ({
 
 export function links() {
   return [
-    {rel: 'stylesheet', href: appStyles},
-    {rel: 'stylesheet', href: resetStyles},
-    {rel: 'stylesheet', href: tailwindCss},
-    {rel: 'preconnect', href: 'https://cdn.shopify.com'},
-    {rel: 'preconnect', href: 'https://shop.app'},
-    {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    { rel: 'stylesheet', href: appStyles },
+    { rel: 'stylesheet', href: resetStyles },
+    { rel: 'stylesheet', href: tailwindCss },
+    { rel: 'preconnect', href: 'https://cdn.shopify.com' },
+    { rel: 'preconnect', href: 'https://shop.app' },
+    { rel: 'icon', type: 'image/svg+xml', href: favicon },
   ];
 }
 
@@ -52,7 +52,7 @@ export function links() {
 export async function loader(args) {
   const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
-  const {storefront, env} = args.context;
+  const { storefront, env } = args.context;
 
   return defer({
     ...deferredData,
@@ -84,13 +84,13 @@ const processMenuItems = (items) => {
   }));
 };
 
-async function loadCriticalData({context}) {
-  const {storefront} = context;
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
 
   try {
     // Fetch header data using the HEADER_QUERY
     const header = await storefront.query(HEADER_QUERY, {
-      variables: {headerMenuHandle: 'main-menu'},
+      variables: { headerMenuHandle: 'main-menu' },
     });
 
     // Process nested menus to extract images
@@ -100,23 +100,23 @@ async function loadCriticalData({context}) {
 
     console.log('Processed Menu Items:', header.menu.items);
 
-    return {header};
+    return { header };
   } catch (error) {
     console.error('Error fetching header data:', error);
-    return {header: null}; // Fallback in case of error
+    return { header: null }; // Fallback in case of error
   }
 }
 
 /**
  * Load data for rendering content below the fold.
  */
-function loadDeferredData({context}) {
-  const {storefront, customerAccount, cart} = context;
+function loadDeferredData({ context }) {
+  const { storefront, customerAccount, cart } = context;
 
   const footer = storefront
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
-      variables: {footerMenuHandle: 'footer-menu'},
+      variables: { footerMenuHandle: 'footer-menu' },
     })
     .catch((error) => {
       console.error(error);
@@ -133,7 +133,7 @@ function loadDeferredData({context}) {
 /**
  * Layout component for the application.
  */
-export function Layout({children}) {
+export function Layout({ children }) {
   const nonce = useNonce();
   const data = useRouteLoaderData('root');
   const navigation = useNavigation();
@@ -142,9 +142,9 @@ export function Layout({children}) {
   useEffect(() => {
     // Load NProgress once and set it in the state
     const loadNProgress = async () => {
-      const {default: NProgress} = await import('nprogress');
+      const { default: NProgress } = await import('nprogress');
       await import('nprogress/nprogress.css');
-      NProgress.configure({showSpinner: true});
+      NProgress.configure({ showSpinner: true });
       setNProgress(NProgress); // Set NProgress once it's loaded
     };
 
@@ -165,7 +165,7 @@ export function Layout({children}) {
         nprogress.done();
       }
     };
-  }, [navigation.state, nprogress]);
+  }, [navigation.state, nprogress]); 
 
   return (
     <html lang="en">
@@ -189,16 +189,6 @@ export function Layout({children}) {
         )}
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
-        <LiveReload nonce={nonce} />
-        <Script nonce={nonce}>
-          {`
-            (function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "pfyepst8v5");
-          `}
-        </Script>
       </body>
     </html>
   );
