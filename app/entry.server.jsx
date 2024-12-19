@@ -26,6 +26,7 @@ export default async function handleRequest(
     scriptSrc: [
       "'self'", // Allow scripts from the same origin
       'https://www.clarity.ms', // Allow scripts from clarity.ms
+      'https://*.clarity.ms', // Allow scripts from clarity.ms
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
       // Add more sources as needed
     ],
