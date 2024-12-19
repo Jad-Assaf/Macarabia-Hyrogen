@@ -1,9 +1,9 @@
-import { Link, useLocation } from '@remix-run/react';
-import { CartForm, VariantSelector } from '@shopify/hydrogen';
-import { motion } from 'framer-motion';
-import React, { useEffect, useState } from 'react';
-import { AddToCartButton } from '~/components/AddToCartButton';
-import { useAside } from '~/components/Aside';
+import {Link, useLocation} from '@remix-run/react';
+import {CartForm, VariantSelector} from '@shopify/hydrogen';
+import {motion} from 'framer-motion';
+import React, {useEffect, useState} from 'react';
+import {AddToCartButton} from '~/components/AddToCartButton';
+import {useAside} from '~/components/Aside';
 
 /**
  * @param {{
@@ -12,12 +12,24 @@ import { useAside } from '~/components/Aside';
  *   variants: Array<ProductVariantFragment>;
  * }}
  */
-export function ProductForm({ product, selectedVariant, variants, quantity = 1 }) {
-  const { open } = useAside();
-
-  const safeQuantity = typeof quantity === 'number' && quantity > 0 ? quantity : 1;
-
+export function ProductForm({
+  product,
+  selectedVariant,
+  variants,
+  quantity = 1,
+}) {
+  const {open} = useAside();
+  const safeQuantity =
+    typeof quantity === 'number' && quantity > 0 ? quantity : 1;
   const location = useLocation();
+
+  // Initialize selectedOptions state to track the selected options
+  const [selectedOptions, setSelectedOptions] = useState(
+    product.options.reduce((acc, option) => {
+      acc[option.name] = ''; // Initialize each option with an empty string or default value
+      return acc;
+    }, {}),
+  );
 
   // Check if we're on the product page
   const isProductPage = location.pathname.includes('/products/');
@@ -73,21 +85,8 @@ export function ProductForm({ product, selectedVariant, variants, quantity = 1 }
     </svg>
   );
 
+  // Construct WhatsApp share URL
   const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I would like to buy ${product.title} https://macarabia.me${location.pathname}`;
-
-  const [selectedOptions, setSelectedOptions] = useState(
-    product.options.reduce((acc, option) => {
-      acc[option.name] = null;
-      return acc;
-    }, {})
-  );
-
-  const handleOptionChange = (optionName, value) => {
-    setSelectedOptions((prev) => ({
-      ...prev,
-      [optionName]: value,
-    }));
-  };
 
   return (
     <>
@@ -96,35 +95,37 @@ export function ProductForm({ product, selectedVariant, variants, quantity = 1 }
         options={product.options.filter((option) => option.values.length > 1)}
         variants={variants}
       >
-        {({ option }) => (
+        {({option}) => (
           <ProductOptions
             key={option.name}
             option={option}
-            variants={variants}
             selectedOptions={selectedOptions}
-            onChange={handleOptionChange}
+            setSelectedOptions={setSelectedOptions} // Pass down the function to update selected options
           />
         )}
       </VariantSelector>
+
       <div className="product-form">
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
-          onClick={() => open('cart')}
-          lines={selectedVariant
-            ? [
-                {
-                  merchandiseId: selectedVariant.id,
-                  quantity: safeQuantity,
-                  selectedOptions: Object.entries(selectedOptions).map(([name, value]) => ({
-                    name,
-                    value,
-                  })),
-                },
-              ]
-            : []}
+          onClick={() => {
+            open('cart');
+          }}
+          lines={
+            selectedVariant
+              ? [
+                  {
+                    merchandiseId: selectedVariant.id,
+                    quantity: safeQuantity, // Use safeQuantity instead of quantity
+                    selectedVariant,
+                  },
+                ]
+              : []
+          }
         >
           {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
         </AddToCartButton>
+
         {isProductPage && (
           <a
             href={whatsappShareUrl}
@@ -142,42 +143,63 @@ export function ProductForm({ product, selectedVariant, variants, quantity = 1 }
 }
 
 /**
- * @param {{option: VariantOption, variants: Array<ProductVariantFragment>, selectedOptions: Object, onChange: Function}}
+ * @param {{option: VariantOption, selectedOptions: Object, setSelectedOptions: Function}}
  */
-function ProductOptions({ option, variants, selectedOptions, onChange }) {
-  const filteredValues = option.values.filter(({ value }) =>
-    variants.some((variant) =>
-      variant.selectedOptions.every(
-        (opt) =>
-          (opt.name === option.name && opt.value === value) ||
-          selectedOptions[opt.name] === opt.value
-      )
-    )
-  );
+function ProductOptions({ option, selectedOptions, setSelectedOptions }) {
+  const handleOptionSelect = (value) => {
+    setSelectedOptions(prevState => ({
+      ...prevState,
+      [option.name]: value,
+    }));
+  };
 
   return (
     <div className="product-options" key={option.name}>
-      <h5 className="OptionName">{option.name}</h5>
+      <h5 className='OptionName'>{option.name}: <span className='OptionValue'>{option.value}</span></h5>
       <div className="product-options-grid">
-        {filteredValues.map(({ value, isAvailable, isActive, to }) => (
-          <Link
-            key={value}
-            to={to}
-            className={`product-options-item ${isActive ? 'active' : ''}`}
-            onClick={() => onChange(option.name, value)}
-            style={{
-              opacity: isAvailable ? 1 : 0.5,
-            }}
-          >
-            {value}
-          </Link>
-        ))}
+        {option.values.map(({ value, isAvailable, isActive, to, variant }) => {
+          // Check if the option is 'Color' and if the variant has an image
+          const isColorOption = option.name.toLowerCase() === 'color';
+          const variantImage = isColorOption && variant?.image?.url;
+
+          return (
+            <Link
+              className="product-options-item"
+              key={option.name + value}
+              prefetch="intent"
+              preventScrollReset
+              replace
+              to={to}
+              onClick={() => handleOptionSelect(value)} // Update selected option on click
+              style={{
+                border: isActive ? '1px solid #000' : '1px solid transparent',
+                opacity: isAvailable ? 1 : 0.3,
+                borderRadius: '20px',
+                transition: 'all 0.3s ease-in-out',
+                backgroundColor: isActive ? '#e6f2ff' : '#f0f0f0',
+                boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                transform: isActive ? 'scale(0.98)' : 'scale(1)',
+              }}
+            >
+              {variantImage ? (
+                <img
+                  src={variantImage}
+                  alt={value}
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                />
+              ) : (
+                value
+              )}
+            </Link>
+          );
+        })}
       </div>
+      <br />
     </div>
   );
 }
 
-export function DirectCheckoutButton({ selectedVariant, quantity }) {
+export function DirectCheckoutButton({selectedVariant, quantity}) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false); // Track whether redirect is needed
 
@@ -222,8 +244,8 @@ export function DirectCheckoutButton({ selectedVariant, quantity }) {
             disabled={isUnavailable || fetcher.state !== 'idle'}
             className={`buy-now-button ${isUnavailable ? 'disabled' : ''}`}
             onClick={handleAnimation}
-            animate={isAnimating ? { scale: 1.05 } : { scale: 1 }}
-            transition={{ duration: 0.3 }}
+            animate={isAnimating ? {scale: 1.05} : {scale: 1}}
+            transition={{duration: 0.3}}
           >
             Buy Now
           </motion.button>
