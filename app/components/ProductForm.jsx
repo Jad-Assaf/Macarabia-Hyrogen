@@ -17,7 +17,6 @@ export function ProductForm({
   selectedVariant: initialSelectedVariant,
   variants,
   quantity = 1,
-  onVariantChange,
 }) {
   const {open} = useAside();
   const location = useLocation();
@@ -48,7 +47,6 @@ export function ProductForm({
       onVariantChange(newVariant); // Call the function to update the selected variant
     }
   };
-
   // Determine the updated selected variant
   const updatedVariant = variants.find((variant) =>
     Object.entries(selectedOptions).every(([name, value]) =>
@@ -185,7 +183,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
               selectedOptions[option.name] === value ? 'active' : ''
             }`}
             disabled={!isAvailable}
-            onClick={() => onOptionChange(option.name, value)} // Ensure this is correct
+            onClick={() => onOptionChange(option.name, value)}
             style={{
               border:
                 selectedOptions[option.name] === value
