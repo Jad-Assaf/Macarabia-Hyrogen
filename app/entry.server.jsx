@@ -22,7 +22,18 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
-    scriptSrc: ["'self'", 'https://www.clarity.ms', 'https://*.clarity.ms'],
+    scriptSrc: [
+      "'self'",
+      'https://cdn.shopify.com',
+      'https://www.clarity.ms',
+      'https://*.clarity.ms',
+    ],
+    scriptSrcElem: [
+      "'self'",
+      'https://cdn.shopify.com',
+      'https://www.clarity.ms',
+      'https://*.clarity.ms',
+    ],
   });
 
   const body = await renderToReadableStream(
