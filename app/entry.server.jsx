@@ -28,7 +28,13 @@ export default async function handleRequest(
       'https://www.clarity.ms', // Allow scripts from clarity.ms
       'https://*.clarity.ms', // Allow scripts from clarity.ms
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
-      'https://d40293-4.myshopify.com', // Allow scripts from Shopify CDN
+      // Add more sources as needed
+    ],
+    connectSrc: [
+      "'self'", // Allow connections to the same origin
+      'https://x.clarity.ms', // Allow connections to Clarity
+      'https://*.clarity.ms', // Allow connections to any subdomain of clarity.ms
+      'https://monorail-edge.shopifysvc.com', // Allow Shopify service connections
       // Add more sources as needed
     ],
   });
