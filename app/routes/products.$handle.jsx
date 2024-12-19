@@ -274,16 +274,16 @@ export default function Product() {
 
   const [activeTab, setActiveTab] = useState('description');
 
+  const handleVariantChange = (variant) => {
+    setSelectedVariant(variant);
+  };
+
   useEffect(() => {
     if (selectedVariant && selectedVariant.price) {
       const price = parseFloat(selectedVariant.price.amount);
       setSubtotal(price * quantity);
     }
   }, [quantity, selectedVariant]);
-
-  const handleVariantChange = (variant) => {
-    setSelectedVariant(variant);
-  };
 
   const {title, descriptionHtml, images} = product;
 
