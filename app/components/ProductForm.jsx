@@ -14,7 +14,7 @@ import {useAside} from '~/components/Aside';
  */
 export function ProductForm({
   product,
-  selectedVariant: initialSelectedVariant,
+  selectedVariant, // Refactor here to use `selectedVariant`
   variants,
   quantity = 1,
 }) {
