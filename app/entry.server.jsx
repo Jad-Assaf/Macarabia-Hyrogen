@@ -22,8 +22,18 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
+    directives: {
+      'script-src': [
+        "'self'",
+        "'unsafe-inline'", // Temporarily allow inline scripts
+      ],
+      'connect-src': ["'self'"],
+      'style-src': [
+        "'self'",
+        "'unsafe-inline'", // Temporarily allow inline styles
+      ],
+    },
   });
-
   const body = await renderToReadableStream(
     <NonceProvider>
       <RemixServer context={remixContext} url={request.url} />
