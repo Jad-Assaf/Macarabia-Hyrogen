@@ -24,15 +24,11 @@ export default async function handleRequest(
     },
     scriptSrc: [
       "'self'",
-      'https://cdn.shopify.com',
       'https://www.clarity.ms',
-      'https://*.clarity.ms',
     ],
     scriptSrcElem: [
       "'self'",
-      'https://cdn.shopify.com',
       'https://www.clarity.ms',
-      'https://*.clarity.ms',
     ],
   });
 
