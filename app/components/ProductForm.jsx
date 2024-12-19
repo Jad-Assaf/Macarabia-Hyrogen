@@ -43,6 +43,7 @@ export function ProductForm({
     ),
   );
 
+  // Ensure fallback quantity is safe
   const safeQuantity =
     typeof quantity === 'number' && quantity > 0 ? quantity : 1;
 
@@ -52,7 +53,7 @@ export function ProductForm({
   // WhatsApp SVG as a component
   const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 175.216 175.552">
-      {/* SVG contents unchanged */}
+      {/* Add your gradient, filters, and paths here */}
     </svg>
   );
 
@@ -114,27 +115,38 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
         <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({value, isAvailable, isActive}) => (
+        {option.values.map(({value, isAvailable}) => (
           <button
             key={option.name + value}
-            className={`product-options-item ${isActive ? 'active' : ''}`}
+            className={`product-options-item ${
+              selectedOptions[option.name] === value ? 'active' : ''
+            }`}
             disabled={!isAvailable}
             onClick={() => onOptionChange(option.name, value)}
             style={{
-              border: isActive ? '1px solid #000' : '1px solid transparent',
+              border:
+                selectedOptions[option.name] === value
+                  ? '1px solid #000'
+                  : '1px solid transparent',
               opacity: isAvailable ? 1 : 0.3,
               borderRadius: '20px',
               transition: 'all 0.3s ease-in-out',
-              backgroundColor: isActive ? '#e6f2ff' : '#f0f0f0',
-              boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-              transform: isActive ? 'scale(0.98)' : 'scale(1)',
+              backgroundColor:
+                selectedOptions[option.name] === value ? '#e6f2ff' : '#f0f0f0',
+              boxShadow:
+                selectedOptions[option.name] === value
+                  ? '0 2px 4px rgba(0,0,0,0.1)'
+                  : 'none',
+              transform:
+                selectedOptions[option.name] === value
+                  ? 'scale(0.98)'
+                  : 'scale(1)',
             }}
           >
             {value}
           </button>
         ))}
       </div>
-      <br />
     </div>
   );
 }
