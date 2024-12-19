@@ -24,12 +24,11 @@ export default async function handleRequest(
     },
     scriptSrc: [
       "'self'",
-      'https://www.clarity.ms',
+      `'nonce-${nonce}'`,
+      'https://www.clarity.ms', // Add Clarity's domain
+      'https://*.clarity.ms', // Allow subdomains for Clarity
     ],
-    scriptSrcElem: [
-      "'self'",
-      'https://www.clarity.ms',
-    ],
+    connectSrc: ["'self'", 'https://www.clarity.ms', 'https://*.clarity.ms'],
   });
 
   const body = await renderToReadableStream(
