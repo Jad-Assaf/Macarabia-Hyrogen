@@ -18,11 +18,11 @@ export default async function handleRequest(
   context,
 ) {
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
-    scriptSrc: [
-      "'self'",
-      'https://www.clarity.ms',
-      'https://*.clarity.ms',
-    ],
+    shop: {
+      checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
+      storeDomain: context.env.PUBLIC_STORE_DOMAIN,
+    },
+    scriptSrc: ["'self'", 'https://www.clarity.ms', 'https://*.clarity.ms'],
   });
 
   const body = await renderToReadableStream(
