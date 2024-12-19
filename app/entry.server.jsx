@@ -22,16 +22,6 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
-    directives: {
-      'script-src': [
-        "'self'",
-        "'nonce-" + nonce + "'",
-        '*.clarity.ms',
-        '*.microsoft.com',
-      ],
-      'connect-src': ["'self'", '*.clarity.ms', '*.microsoft.com'],
-      'style-src': ["'self'", "'nonce-" + nonce + "'", "'unsafe-inline'"],
-    },
   });
 
   const body = await renderToReadableStream(
