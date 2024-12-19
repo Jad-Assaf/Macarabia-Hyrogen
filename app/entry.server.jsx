@@ -24,8 +24,10 @@ export default async function handleRequest(
     },
     // Add your custom script sources here
     scriptSrc: [
-      "'self'",
-      'https://www.clarity.ms',
+      "'self'", // Allow scripts from the same origin
+      'https://www.clarity.ms', // Allow scripts from clarity.ms
+      'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      // Add more sources as needed
     ],
   });
 
