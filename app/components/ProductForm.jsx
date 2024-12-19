@@ -14,9 +14,10 @@ import {useAside} from '~/components/Aside';
  */
 export function ProductForm({
   product,
-  selectedVariant, // Refactor here to use `selectedVariant`
+  selectedVariant: initialSelectedVariant,
   variants,
   quantity = 1,
+  onVariantChange,
 }) {
   const {open} = useAside();
   const location = useLocation();
@@ -32,6 +33,20 @@ export function ProductForm({
   // Update selected options on change
   const handleOptionChange = (name, value) => {
     setSelectedOptions((prev) => ({...prev, [name]: value}));
+
+    // Update the selected variant in the parent component
+    const newVariant = variants.find((variant) =>
+      Object.entries({...selectedOptions, [name]: value}).every(
+        ([name, value]) =>
+          variant.selectedOptions.some(
+            (opt) => opt.name === name && opt.value === value,
+          ),
+      ),
+    );
+
+    if (newVariant) {
+      onVariantChange(newVariant); // Call the function to update the selected variant
+    }
   };
 
   // Determine the updated selected variant
