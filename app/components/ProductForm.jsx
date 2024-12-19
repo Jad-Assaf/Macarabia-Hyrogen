@@ -185,7 +185,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
               selectedOptions[option.name] === value ? 'active' : ''
             }`}
             disabled={!isAvailable}
-            onClick={() => onOptionChange(option.name, value)}
+            onClick={() => onOptionChange(option.name, value)} // Ensure this is correct
             style={{
               border:
                 selectedOptions[option.name] === value
