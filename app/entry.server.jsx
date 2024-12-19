@@ -24,13 +24,6 @@ export default async function handleRequest(
     },
   });
 
-  const cspHeader = `
-  default-src 'self';
-  script-src 'self' 'unsafe-inline' *.clarity.ms *.microsoft.com 'nonce-${nonce}';
-  connect-src 'self' *.clarity.ms *.microsoft.com;
-  style-src 'self' 'unsafe-inline';
-`;
-
   const body = await renderToReadableStream(
     <NonceProvider>
       <RemixServer context={remixContext} url={request.url} />
@@ -51,7 +44,7 @@ export default async function handleRequest(
   }
 
   responseHeaders.set('Content-Type', 'text/html');
-  responseHeaders.set('Content-Security-Policy', cspHeader.trim());
+  responseHeaders.set('Content-Security-Policy', header);
 
   return new Response(body, {
     headers: responseHeaders,
