@@ -17,20 +17,12 @@ export default async function handleRequest(
   remixContext,
   context,
 ) {
-  const { nonce, NonceProvider } = createContentSecurityPolicy({
+  const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
   });
-
-  // Construct the CSP header manually
-  const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'nonce-${nonce}' *.clarity.ms *.microsoft.com;
-    connect-src 'self' *.clarity.ms *.microsoft.com;
-    style-src 'self' 'unsafe-inline';
-  `.trim();
 
   const body = await renderToReadableStream(
     <NonceProvider>
@@ -40,6 +32,7 @@ export default async function handleRequest(
       nonce,
       signal: request.signal,
       onError(error) {
+        // eslint-disable-next-line no-console
         console.error(error);
         responseStatusCode = 500;
       },
@@ -51,7 +44,7 @@ export default async function handleRequest(
   }
 
   responseHeaders.set('Content-Type', 'text/html');
-  responseHeaders.set('Content-Security-Policy', cspHeader);
+  responseHeaders.set('Content-Security-Policy', header);
 
   return new Response(body, {
     headers: responseHeaders,
