@@ -28,6 +28,7 @@ export default async function handleRequest(
       'https://www.clarity.ms', // Allow scripts from clarity.ms
       'https://*.clarity.ms', // Allow scripts from clarity.ms
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      'https://d40293-4.myshopify.com', // Allow scripts from Shopify CDN
       // Add more sources as needed
     ],
   });
