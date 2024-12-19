@@ -12,7 +12,12 @@ import { useAside } from '~/components/Aside';
  *   variants: Array<ProductVariantFragment>;
  * }}
  */
-export function ProductForm({ product, selectedVariant, variants, quantity = 1 }) {
+export function ProductForm({
+  product,
+  selectedVariant,
+  variants,
+  quantity = 1,
+}) {
   const [selectedOptions, setSelectedOptions] = useState(() => {
     const initialOptions = {};
     product.options.forEach((option) => {
@@ -21,18 +26,17 @@ export function ProductForm({ product, selectedVariant, variants, quantity = 1 }
     return initialOptions;
   });
 
-  // Update selected options dynamically based on availability
   const handleOptionChange = (optionName, value) => {
-    const updatedOptions = { ...selectedOptions, [optionName]: value };
+    const updatedOptions = {...selectedOptions, [optionName]: value};
 
     // Check if the new combination is valid
     const isValidCombination = variants.some((variant) =>
       variant.selectedOptions.every(
-        (opt) => updatedOptions[opt.name] === opt.value
-      )
+        (opt) => updatedOptions[opt.name] === opt.value,
+      ),
     );
 
-    // If valid, update options; otherwise, adjust dependent options
+    // If valid, update; otherwise, adjust dependent options
     if (isValidCombination) {
       setSelectedOptions(updatedOptions);
     } else {
@@ -41,18 +45,17 @@ export function ProductForm({ product, selectedVariant, variants, quantity = 1 }
     }
   };
 
-  // Adjust dependent options to find a valid combination
   const adjustOptions = (options, variants) => {
     const validVariant = variants.find((variant) =>
       variant.selectedOptions.every(
-        (opt) => options[opt.name] === opt.value || !options[opt.name]
-      )
+        (opt) => options[opt.name] === opt.value || !options[opt.name],
+      ),
     );
 
     if (validVariant) {
       const adjustedOptions = {};
       validVariant.selectedOptions.forEach(
-        (opt) => (adjustedOptions[opt.name] = opt.value)
+        (opt) => (adjustedOptions[opt.name] = opt.value),
       );
       return adjustedOptions;
     }
@@ -61,58 +64,101 @@ export function ProductForm({ product, selectedVariant, variants, quantity = 1 }
   };
 
   return (
-    <div className="product-form">
-      {product.options.map((option) => (
-        <div key={option.name} className="product-option">
-          <h5>
-            {option.name}: {selectedOptions[option.name]}
-          </h5>
-          <div className="option-values">
-            {option.values.map((value) => {
-              const isActive = selectedOptions[option.name] === value.value;
-              const isAvailable = variants.some((variant) =>
-                variant.selectedOptions.every(
-                  (opt) =>
-                    (opt.name === option.name && opt.value === value.value) ||
-                    selectedOptions[opt.name] === opt.value
-                )
-              );
-
-              return (
-                <button
-                  key={value.value}
-                  onClick={() => handleOptionChange(option.name, value.value)}
-                  disabled={!isAvailable}
-                  style={{
-                    background: isActive ? '#e6f2ff' : '#f0f0f0',
-                    opacity: isAvailable ? 1 : 0.3,
-                  }}
-                >
-                  {value.value}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-
-      <AddToCartButton
-        disabled={!selectedVariant || !selectedVariant.availableForSale}
-        lines={
-          selectedVariant
-            ? [
-                {
-                  merchandiseId: selectedVariant.id,
-                  quantity,
-                  selectedOptions,
-                },
-              ]
-            : []
-        }
+    <>
+      <VariantSelector
+        handle={product.handle}
+        options={product.options.filter((option) => option.values.length > 1)}
+        variants={variants}
       >
-        {selectedVariant?.availableForSale ? 'Add to Cart' : 'Sold Out'}
-      </AddToCartButton>
-    </div>
+        {({option}) => (
+          <div key={option.name} className="product-options">
+            <h5 className="OptionName">
+              {option.name}:{' '}
+              <span className="OptionValue">
+                {selectedOptions[option.name]}
+              </span>
+            </h5>
+            <div className="product-options-grid">
+              {option.values.map(
+                ({value, isAvailable, isActive, to, variant}) => {
+                  const isActive = selectedOptions[option.name] === value;
+                  const isAvailable = variants.some((variant) =>
+                    variant.selectedOptions.every(
+                      (opt) =>
+                        (opt.name === option.name && opt.value === value) ||
+                        selectedOptions[opt.name] === opt.value,
+                    ),
+                  );
+
+                  return (
+                    <Link
+                      className="product-options-item"
+                      key={option.name + value}
+                      prefetch="intent"
+                      preventScrollReset
+                      replace
+                      to={to}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleOptionChange(option.name, value);
+                      }}
+                      style={{
+                        border: isActive
+                          ? '1px solid #000'
+                          : '1px solid transparent',
+                        opacity: isAvailable ? 1 : 0.3,
+                        borderRadius: '20px',
+                        transition: 'all 0.3s ease-in-out',
+                        backgroundColor: isActive ? '#e6f2ff' : '#f0f0f0',
+                        boxShadow: isActive
+                          ? '0 2px 4px rgba(0,0,0,0.1)'
+                          : 'none',
+                        transform: isActive ? 'scale(0.98)' : 'scale(1)',
+                      }}
+                    >
+                      {value}
+                    </Link>
+                  );
+                },
+              )}
+            </div>
+          </div>
+        )}
+      </VariantSelector>
+
+      <div className="product-form">
+        <AddToCartButton
+          disabled={!selectedVariant || !selectedVariant.availableForSale}
+          onClick={() => {
+            open('cart');
+          }}
+          lines={
+            selectedVariant
+              ? [
+                  {
+                    merchandiseId: selectedVariant.id,
+                    quantity,
+                    selectedOptions,
+                  },
+                ]
+              : []
+          }
+        >
+          {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+        </AddToCartButton>
+        {isProductPage && (
+          <a
+            href={whatsappShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="whatsapp-share-button"
+            aria-label="Share on WhatsApp"
+          >
+            <WhatsAppIcon />
+          </a>
+        )}
+      </div>
+    </>
   );
 }
 
