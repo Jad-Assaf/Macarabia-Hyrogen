@@ -175,6 +175,8 @@ async function loadCriticalData({context}) {
     item.title.toLowerCase().replace(/\s+/g, '-'),
   );
 
+  menuHandles.unshift('apple'); // Add the "apple" handle at the start
+
   const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([
       fetchCollectionsByHandles(context, menuHandles),
