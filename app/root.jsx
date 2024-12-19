@@ -1,4 +1,4 @@
-import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
+import {useNonce, getShopAnalytics, Analytics, Script} from '@shopify/hydrogen';
 import {defer} from '@shopify/remix-oxygen';
 import {
   Links,
@@ -140,27 +140,6 @@ export function Layout({children}) {
   const [nprogress, setNProgress] = useState(null); // Store NProgress instance
 
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        (function (c, l, a, r, i, t, y) {
-          c[a] =
-            c[a] ||
-            function () {
-              (c[a].q = c[a].q || []).push(arguments);
-            };
-          t = l.createElement(r);
-          t.async = 1;
-          t.src = 'https://www.clarity.ms/tag/' + i;
-          y = l.getElementsByTagName(r)[0];
-          y.parentNode.insertBefore(t, y);
-        })(window, document, 'clarity', 'script', 'pfyepst8v5');
-      }
-    } catch (error) {
-      console.error('Clarity initialization error:', error);
-    }
-  }, []);
-
-  useEffect(() => {
     // Load NProgress once and set it in the state
     const loadNProgress = async () => {
       const {default: NProgress} = await import('nprogress');
@@ -197,6 +176,15 @@ export function Layout({children}) {
         <Links />
       </head>
       <body>
+        <Script nonce={nonce} type="text/javascript">
+          {`
+            (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", "pfyepst8v5");
+          `}
+        </Script>
         {data ? (
           <Analytics.Provider
             cart={data.cart}

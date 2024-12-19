@@ -17,79 +17,47 @@ export default async function handleRequest(
   remixContext,
   context,
 ) {
-  // Ensure environment variables are set
-  if (!context.env.PUBLIC_CHECKOUT_DOMAIN || !context.env.PUBLIC_STORE_DOMAIN) {
-    console.error(
-      'Missing environment variables: PUBLIC_CHECKOUT_DOMAIN or PUBLIC_STORE_DOMAIN',
-    );
-    return new Response('Server Error: Missing environment variables', {
-      status: 500,
-    });
+  // Create the Content Security Policy with custom directives
+  const {nonce, header, NonceProvider} = createContentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'", 'https://cdn.shopify.com', 'https://shopify.com'],
+      scriptSrc: [
+        "'self'",
+        `'nonce-${nonce}'`,
+        'https://www.clarity.ms', // Allow Microsoft Clarity scripts
+      ],
+      styleSrc: [
+        "'self'",
+        'https://cdn.shopify.com',
+        'https://fonts.googleapis.com',
+      ],
+      imgSrc: ["'self'", 'https://cdn.shopify.com', 'data:'], // Allow inlined images
+      connectSrc: ["'self'", 'https://www.clarity.ms'], // Allow Clarity connections
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'], // Allow font loading
+    },
+  });
+
+  // Render the app
+  const body = await renderToReadableStream(
+    <NonceProvider>
+      <RemixServer context={remixContext} url={request.url} />
+    </NonceProvider>,
+    {
+      nonce,
+      signal: request.signal,
+      onError(error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
+        responseStatusCode = 500;
+      },
+    },
+  );
+
+  if (isbot(request.headers.get('user-agent'))) {
+    await body.allReady;
   }
 
-  // Configure CSP
-  let nonce, header, NonceProvider;
-  try {
-    const csp = createContentSecurityPolicy({
-      shop: {
-        checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
-        storeDomain: context.env.PUBLIC_STORE_DOMAIN,
-      },
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          `'nonce-${nonce}'`,
-          'https://www.clarity.ms',
-          'https://www.googletagmanager.com',
-        ],
-        connectSrc: [
-          "'self'",
-          'https://www.clarity.ms',
-          'https://www.google-analytics.com',
-        ],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'https://www.clarity.ms'],
-        frameSrc: ['https://www.youtube.com'], // Example iframe source
-      },
-    });
-
-    nonce = csp.nonce;
-    header = csp.header;
-    NonceProvider = csp.NonceProvider;
-  } catch (error) {
-    console.error('Error generating CSP:', error);
-    return new Response('Server Error: Failed to generate CSP', {status: 500});
-  }
-
-  // Render the React app to a readable stream
-  let body;
-  try {
-    body = await renderToReadableStream(
-      <NonceProvider>
-        <RemixServer context={remixContext} url={request.url} />
-      </NonceProvider>,
-      {
-        nonce,
-        signal: request.signal,
-        onError(error) {
-          console.error('Error during rendering:', error);
-          responseStatusCode = 500;
-        },
-      },
-    );
-
-    if (isbot(request.headers.get('user-agent'))) {
-      await body.allReady;
-    }
-  } catch (error) {
-    console.error('Error during server-side rendering:', error);
-    return new Response('Server Error: Rendering failed', {
-      status: 500,
-    });
-  }
-
-  // Set headers and return response
+  // Set headers for response
   responseHeaders.set('Content-Type', 'text/html');
   responseHeaders.set('Content-Security-Policy', header);
 
