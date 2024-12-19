@@ -279,6 +279,12 @@ export default function Product() {
     }
   }, [quantity, selectedVariant]);
 
+  useEffect(() => {
+    if (selectedVariant) {
+      // Logic to reload the page when the selectedVariant changes
+      window.location.reload();
+    }
+  }, [selectedVariant]);
 
   const { title, descriptionHtml, images } = product;
 
