@@ -222,7 +222,7 @@ export function ProductForm({
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({option, selectedOptions, onOptionChange}) {
+function ProductOptions({ option, selectedOptions, onOptionChange }) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
@@ -230,7 +230,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
         <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({value, isAvailable, variant, to}) => {
+        {option.values.map(({ value, isAvailable, variant, to }) => {
           const isColorOption = option.name.toLowerCase() === 'color';
           const variantImage = isColorOption && variant?.image?.url;
 
@@ -243,7 +243,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
               to={to}
               onClick={(e) => {
                 e.preventDefault();
-                onOptionChange(option.name, value);
+                onOptionChange(option.name, value); // This should handle everything
               }}
               style={{
                 border:
@@ -272,7 +272,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                 />
               ) : (
                 value
