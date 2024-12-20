@@ -62,7 +62,7 @@ export function ProductForm({
     setSelectedOptions((prev) => {
       const newOptions = {...prev, [name]: value};
 
-      // Find a matching variant for the selected options
+      // Find the best matching variant for the updated options
       const matchingVariant = variants.find((variant) =>
         Object.entries(newOptions).every(([optName, optValue]) =>
           variant.selectedOptions.some(
@@ -73,19 +73,27 @@ export function ProductForm({
       );
 
       if (matchingVariant) {
-        // Update the state with the matching variant's options
+        // Sync newOptions with the matching variant's options
         matchingVariant.selectedOptions.forEach(({name, value}) => {
           newOptions[name] = value;
         });
+
+        // Update product images and price
+        updateVariantData(matchingVariant);
       }
 
-      // Update URL parameters
+      // Update URL with selected options
       const queryParams = new URLSearchParams(newOptions).toString();
       const newUrl = `${location.pathname}?${queryParams}`;
       window.history.replaceState(null, '', newUrl);
 
       return newOptions;
     });
+  };
+
+  // Helper function to update the selected variant
+  const updateVariantData = (variant) => {
+    setSelectedVariant(variant);
   };
 
   // Determine the updated selected variant
@@ -231,7 +239,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
               onClick={(e) => {
                 e.preventDefault(); // Prevent navigation
                 if (isAvailable) {
-                  onOptionChange(option.name, value); // Trigger state update for valid options
+                  onOptionChange(option.name, value);
                 }
               }}
               style={{
