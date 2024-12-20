@@ -59,31 +59,17 @@ export function ProductForm({
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-  setSelectedOptions((prev) => {
-    const newOptions = { ...prev, [name]: value };
+    setSelectedOptions((prev) => {
+      const newOptions = {...prev, [name]: value};
 
-    // Find a matching variant
-    const matchingVariant = variants.find((variant) =>
-      Object.entries(newOptions).every(([optName, optValue]) =>
-        variant.selectedOptions.some(
-          (selectedOpt) =>
-            selectedOpt.name === optName && selectedOpt.value === optValue
-        )
-      )
-    );
-
-    if (matchingVariant) {
-      // Update URL and state only if a valid variant is found
+      // Update the URL with selected options
       const queryParams = new URLSearchParams(newOptions).toString();
       const newUrl = `${location.pathname}?${queryParams}`;
       window.history.replaceState(null, '', newUrl);
-      return newOptions;
-    }
 
-    // If no matching variant, keep the previous state
-    return prev;
-  });
-};
+      return newOptions;
+    });
+  };
 
   // Determine the updated selected variant
   const updatedVariant = variants.find((variant) =>
@@ -206,7 +192,7 @@ export function ProductForm({
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({option, selectedOptions, onOptionChange}) {
+function ProductOptions({ option, selectedOptions, onOptionChange }) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
@@ -214,17 +200,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
         <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({value, isAvailable, variant, to}) => {
-          // Check if selecting this option would result in an unavailable variant
-          const wouldBeUnavailable = !variants.some((variant) =>
-            Object.entries({...selectedOptions, [option.name]: value}).every(
-              ([optName, optValue]) =>
-                variant.selectedOptions.some(
-                  (opt) => opt.name === optName && opt.value === optValue,
-                ),
-            ),
-          );
-
+        {option.values.map(({ value, isAvailable, variant, to }) => {
           const isColorOption = option.name.toLowerCase() === 'color';
           const variantImage = isColorOption && variant?.image?.url;
 
@@ -235,15 +211,13 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
                 selectedOptions[option.name] === value ? 'active' : ''
               }`}
               to={to}
-              onClick={() =>
-                !wouldBeUnavailable && onOptionChange(option.name, value)
-              }
+              onClick={() => onOptionChange(option.name, value)}
               style={{
                 border:
                   selectedOptions[option.name] === value
                     ? '1px solid #000'
                     : '1px solid transparent',
-                opacity: wouldBeUnavailable ? 0.3 : 1,
+                opacity: isAvailable ? 1 : 0.3,
                 borderRadius: '20px',
                 transition: 'all 0.3s ease-in-out',
                 backgroundColor:
@@ -258,14 +232,14 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
                   selectedOptions[option.name] === value
                     ? 'scale(0.98)'
                     : 'scale(1)',
-                pointerEvents: wouldBeUnavailable ? 'none' : 'auto',
+                pointerEvents: isAvailable ? 'auto' : 'none',
               }}
             >
               {variantImage ? (
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                 />
               ) : (
                 value
