@@ -22,12 +22,21 @@ export function ProductForm({
   const location = useLocation();
 
   // Track selected options state
-  const [selectedOptions, setSelectedOptions] = useState(
-    product.options.reduce((acc, option) => {
-      acc[option.name] = option.values[0]?.value || ''; // Default to the first value
+  // Track selected options state
+const [selectedOptions, setSelectedOptions] = useState(() => {
+  // Use initialSelectedVariant to initialize selected options
+  if (initialSelectedVariant) {
+    return initialSelectedVariant.selectedOptions.reduce((acc, {name, value}) => {
+      acc[name] = value;
       return acc;
-    }, {}),
-  );
+    }, {});
+  }
+  // Fallback to defaulting to the first values
+  return product.options.reduce((acc, option) => {
+    acc[option.name] = option.values[0]?.value || '';
+    return acc;
+  }, {});
+});
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
