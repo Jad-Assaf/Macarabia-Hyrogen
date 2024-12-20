@@ -180,18 +180,18 @@ async function loadCriticalData({context, params, request}) {
   }
 
   // Select the first variant as the default if applicable
-  // const firstVariant = product.variants.nodes[0];
-  // const firstVariantIsDefault = Boolean(
-  //   firstVariant.selectedOptions.find(
-  //     (option) => option.name === 'Title' && option.value === 'Default Title',
-  //   ),
-  // );
+  const firstVariant = product.variants.nodes[0];
+  const firstVariantIsDefault = Boolean(
+    firstVariant.selectedOptions.find(
+      (option) => option.name === 'Title' && option.value === 'Default Title',
+    ),
+  );
 
-  // if (firstVariantIsDefault) {
-  //   product.selectedVariant = firstVariant;
-  // } else if (!product.selectedVariant) {
-  //   throw redirectToFirstVariant({product, request});
-  // }
+  if (firstVariantIsDefault) {
+    product.selectedVariant = firstVariant;
+  } else if (!product.selectedVariant) {
+    throw redirectToFirstVariant({product, request});
+  }
 
   // Extract the first image
   const firstImage = product.images?.edges?.[0]?.node?.url || null;
