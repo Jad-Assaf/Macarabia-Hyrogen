@@ -57,19 +57,6 @@ export function ProductForm({
     }
   }, [product, initialSelectedVariant]);
 
-  // Update selected options on change
-  const handleOptionChange = (name, value) => {
-    setSelectedOptions((prev) => {
-      const newOptions = {...prev, [name]: value};
-
-      // Update the URL with selected options
-      const queryParams = new URLSearchParams(newOptions).toString();
-      const newUrl = `${location.pathname}?${queryParams}`;
-      window.history.replaceState(null, '', newUrl);
-
-      return newOptions;
-    });
-  };
 
   // Determine the updated selected variant
   const updatedVariant = variants.find((variant) =>
@@ -154,7 +141,7 @@ export function ProductForm({
               key={option.name}
               option={option}
               selectedOptions={selectedOptions}
-              onOptionChange={handleOptionChange}
+              onOptionChange={onOptionChange}
             />
             <br></br>
           </>
