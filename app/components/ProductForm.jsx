@@ -31,31 +31,17 @@ export function ProductForm({
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-    setSelectedOptions((prev) => {
-      const newOptions = {...prev, [name]: value};
+  setSelectedOptions((prev) => {
+    const newOptions = {...prev, [name]: value};
 
-      // Update the URL with selected options
-      const queryParams = new URLSearchParams(newOptions).toString();
-      const newUrl = `${location.pathname}?${queryParams}`;
-      window.history.replaceState(null, '', newUrl);
+    // Update the URL with selected options
+    const queryParams = new URLSearchParams(newOptions).toString();
+    const newUrl = `${location.pathname}?${queryParams}`;
+    window.history.replaceState(null, '', newUrl);
 
-      // Find the updated variant
-      const newVariant = variants.find((variant) =>
-        Object.entries(newOptions).every(([name, value]) =>
-          variant.selectedOptions.some(
-            (opt) => opt.name === name && opt.value === value,
-          ),
-        ),
-      );
-
-      // Call the callback to update the selected variant in the parent
-      if (newVariant) {
-        onVariantChange(newVariant);
-      }
-
-      return newOptions;
-    });
-  };
+    return newOptions;
+  });
+};
 
   // Determine the updated selected variant
   const updatedVariant = variants.find((variant) =>
