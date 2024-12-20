@@ -249,8 +249,9 @@ function redirectToFirstVariant({product, request}) {
 
 export default function Product() {
   const {product, variants, relatedProducts} = useLoaderData();
-  const [selectedVariant, setSelectedVariant] = useState(
+  const selectedVariant = useOptimisticVariant(
     product.selectedVariant,
+    variants,
   );
 
   const [quantity, setQuantity] = useState(1);
@@ -269,18 +270,15 @@ export default function Product() {
     }
   }, [quantity, selectedVariant]);
 
-  const handleVariantChange = (variantId) => {
-    const newVariant = variants.find((variant) => variant.id === variantId);
-    if (newVariant) {
-      setSelectedVariant(newVariant);
-    }
-  };
-
   const {title, descriptionHtml, images} = product;
 
   const hasDiscount =
     selectedVariant?.compareAtPrice &&
     selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
+
+  const handleVariantChange = (newVariant) => {
+    setSelectedVariant(newVariant); // Update the selectedVariant in the parent
+  };
 
   return (
     <div className="product">
@@ -341,7 +339,7 @@ export default function Product() {
                     selectedVariant={selectedVariant}
                     variants={data?.product?.variants.nodes || []}
                     quantity={quantity}
-                    onVariantChange={handleVariantChange}
+                    onVariantChange={handleVariantChange} // Pass callback to child
                   />
                   {/* <DirectCheckoutButton
                     selectedVariant={selectedVariant}

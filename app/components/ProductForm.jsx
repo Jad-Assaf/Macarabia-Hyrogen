@@ -17,75 +17,69 @@ export function ProductForm({
   selectedVariant: initialSelectedVariant,
   variants,
   quantity = 1,
+  onVariantChange,
 }) {
-  const {open} = useAside();
+  const { open } = useAside();
   const location = useLocation();
 
   // Track selected options state
-const [selectedOptions, setSelectedOptions] = useState(() => {
-  // Initialize selected options from initialSelectedVariant or product
-  if (initialSelectedVariant) {
-    return initialSelectedVariant.selectedOptions.reduce(
-      (acc, {name, value}) => {
-        acc[name] = value;
-        return acc;
-      },
-      {},
-    );
-  }
-  return product.options.reduce((acc, option) => {
-    acc[option.name] = option.values[0]?.value || '';
-    return acc;
-  }, {});
-});
+  const [selectedOptions, setSelectedOptions] = useState(() => {
+    if (initialSelectedVariant) {
+      return initialSelectedVariant.selectedOptions.reduce(
+        (acc, { name, value }) => {
+          acc[name] = value;
+          return acc;
+        },
+        {}
+      );
+    }
+    return product.options.reduce((acc, option) => {
+      acc[option.name] = option.values[0]?.value || '';
+      return acc;
+    }, {});
+  });
 
-useEffect(() => {
-  if (initialSelectedVariant) {
-    setSelectedOptions(
-      initialSelectedVariant.selectedOptions.reduce((acc, {name, value}) => {
-        acc[name] = value;
-        return acc;
-      }, {}),
+  useEffect(() => {
+    const updatedVariant = variants.find((variant) =>
+      Object.entries(selectedOptions).every(([name, value]) =>
+        variant.selectedOptions.some(
+          (opt) => opt.name === name && opt.value === value
+        )
+      )
     );
-  } else {
-    setSelectedOptions(
-      product.options.reduce((acc, option) => {
-        acc[option.name] = option.values[0]?.value || '';
-        return acc;
-      }, {}),
-    );
-  }
-}, [product, initialSelectedVariant]);
+
+    // Notify parent component when variant changes
+    if (updatedVariant && updatedVariant !== initialSelectedVariant) {
+      onVariantChange?.(updatedVariant);
+    }
+  }, [selectedOptions, variants, onVariantChange, initialSelectedVariant]);
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-  setSelectedOptions((prev) => {
-    const newOptions = {...prev, [name]: value};
+    setSelectedOptions((prev) => {
+      const newOptions = { ...prev, [name]: value };
 
-    // Update the URL with selected options
-    const queryParams = new URLSearchParams(newOptions).toString();
-    const newUrl = `${location.pathname}?${queryParams}`;
-    window.history.replaceState(null, '', newUrl);
+      // Update the URL with selected options
+      const queryParams = new URLSearchParams(newOptions).toString();
+      const newUrl = `${location.pathname}?${queryParams}`;
+      window.history.replaceState(null, '', newUrl);
 
-    return newOptions;
-  });
-};
-
-  // Determine the updated selected variant
-  const updatedVariant = variants.find((variant) =>
-    Object.entries(selectedOptions).every(([name, value]) =>
-      variant.selectedOptions.some(
-        (opt) => opt.name === name && opt.value === value,
-      ),
-    ),
-  );
+      return newOptions;
+    });
+  };
 
   // Ensure fallback quantity is safe
   const safeQuantity =
     typeof quantity === 'number' && quantity > 0 ? quantity : 1;
 
-  // Check if we're on the product page
-  const isProductPage = location.pathname.includes('/products/');
+  // Determine if the updated variant is available
+  const updatedVariant = variants.find((variant) =>
+    Object.entries(selectedOptions).every(([name, value]) =>
+      variant.selectedOptions.some(
+        (opt) => opt.name === name && opt.value === value
+      )
+    )
+  );
 
   // WhatsApp SVG as a component
   const WhatsAppIcon = () => (
