@@ -204,22 +204,7 @@ export function ProductForm({
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({option, selectedOptions, onOptionChange, variants}) {
-  // Determine availability for each option value
-  const determineAvailability = (name, value) => {
-    const newOptions = {...selectedOptions, [name]: value};
-    return variants.some(
-      (variant) =>
-        variant.availableForSale &&
-        Object.entries(newOptions).every(([optName, optValue]) =>
-          variant.selectedOptions.some(
-            (selectedOpt) =>
-              selectedOpt.name === optName && selectedOpt.value === optValue,
-          ),
-        ),
-    );
-  };
-
+function ProductOptions({option, selectedOptions, onOptionChange}) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
@@ -230,10 +215,6 @@ function ProductOptions({option, selectedOptions, onOptionChange, variants}) {
         {option.values.map(({value, isAvailable, variant, to}) => {
           const isColorOption = option.name.toLowerCase() === 'color';
           const variantImage = isColorOption && variant?.image?.url;
-          const isCurrentlyAvailable = determineAvailability(
-            option.name,
-            value,
-          );
 
           return (
             <Link
@@ -243,7 +224,7 @@ function ProductOptions({option, selectedOptions, onOptionChange, variants}) {
               }`}
               to={to}
               onClick={(e) => {
-                if (isCurrentlyAvailable) {
+                if (isAvailable) {
                   onOptionChange(option.name, value);
                 }
               }}
@@ -252,7 +233,7 @@ function ProductOptions({option, selectedOptions, onOptionChange, variants}) {
                   selectedOptions[option.name] === value
                     ? '1px solid #000'
                     : '1px solid transparent',
-                opacity: isCurrentlyAvailable ? 1 : 0.3,
+                opacity: isAvailable ? 1 : 0.3,
                 borderRadius: '20px',
                 transition: 'all 0.3s ease-in-out',
                 backgroundColor:
@@ -267,19 +248,14 @@ function ProductOptions({option, selectedOptions, onOptionChange, variants}) {
                   selectedOptions[option.name] === value
                     ? 'scale(0.98)'
                     : 'scale(1)',
-                pointerEvents: isCurrentlyAvailable ? 'auto' : 'none',
+                pointerEvents: isAvailable ? 'auto' : 'none',
               }}
             >
               {variantImage ? (
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{
-                    width: '50px',
-                    height: '50px',
-                    objectFit: 'cover',
-                    opacity: isCurrentlyAvailable ? 1 : 0.3,
-                  }}
+                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
                 />
               ) : (
                 value
