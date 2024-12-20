@@ -77,16 +77,14 @@ export function ProductForm({
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-    setSelectedOptions((prev) => {
-      const newOptions = {...prev, [name]: value};
+    const newOptions = {...selectedOptions, [name]: value};
 
-      // Update the URL with selected options
-      const queryParams = new URLSearchParams(newOptions).toString();
-      const newUrl = `${location.pathname}?${queryParams}`;
-      window.history.replaceState(null, '', newUrl);
+    // Update the URL with selected options
+    const queryParams = new URLSearchParams(newOptions).toString();
+    const newUrl = `${location.pathname}?${queryParams}`;
+    window.history.replaceState(null, '', newUrl);
 
-      return newOptions;
-    });
+    setSelectedOptions(newOptions);
 
     // Re-render the page by forcing a reload
     window.location.reload();
@@ -107,7 +105,7 @@ export function ProductForm({
 
   // Check if we're on the product page
   const isProductPage = location.pathname.includes('/products/');
-
+  
   // WhatsApp SVG as a component
   const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 175.216 175.552">
