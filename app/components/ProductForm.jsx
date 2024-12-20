@@ -59,34 +59,34 @@ export function ProductForm({
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-  setSelectedOptions((prev) => {
-    const newOptions = { ...prev, [name]: value };
+    setSelectedOptions((prev) => {
+      const newOptions = {...prev, [name]: value};
 
-    // Find the variant that matches the newly selected options
-    const matchingVariant = variants.find((variant) =>
-      Object.entries(newOptions).every(([optName, optValue]) =>
-        variant.selectedOptions.some(
-          (selectedOpt) =>
-            selectedOpt.name === optName && selectedOpt.value === optValue
-        )
-      )
-    );
+      // Find a matching variant for the selected options
+      const matchingVariant = variants.find((variant) =>
+        Object.entries(newOptions).every(([optName, optValue]) =>
+          variant.selectedOptions.some(
+            (selectedOpt) =>
+              selectedOpt.name === optName && selectedOpt.value === optValue,
+          ),
+        ),
+      );
 
-    if (matchingVariant) {
-      // Update the options to match the new variant's configuration
-      matchingVariant.selectedOptions.forEach(({ name, value }) => {
-        newOptions[name] = value;
-      });
-    }
+      if (matchingVariant) {
+        // Update the state with the matching variant's options
+        matchingVariant.selectedOptions.forEach(({name, value}) => {
+          newOptions[name] = value;
+        });
+      }
 
-    // Update the URL with the selected options
-    const queryParams = new URLSearchParams(newOptions).toString();
-    const newUrl = `${location.pathname}?${queryParams}`;
-    window.history.replaceState(null, '', newUrl);
+      // Update URL parameters
+      const queryParams = new URLSearchParams(newOptions).toString();
+      const newUrl = `${location.pathname}?${queryParams}`;
+      window.history.replaceState(null, '', newUrl);
 
-    return newOptions;
-  });
-};
+      return newOptions;
+    });
+  };
 
   // Determine the updated selected variant
   const updatedVariant = variants.find((variant) =>
@@ -229,7 +229,10 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
               }`}
               to={to}
               onClick={(e) => {
-                onOptionChange(option.name, value);
+                e.preventDefault(); // Prevent navigation
+                if (isAvailable) {
+                  onOptionChange(option.name, value); // Trigger state update for valid options
+                }
               }}
               style={{
                 border:
