@@ -192,7 +192,7 @@ export function ProductForm({
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({option, selectedOptions, onOptionChange}) {
+function ProductOptions({ option, selectedOptions, onOptionChange }) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
@@ -200,17 +200,17 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
         <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({value, isAvailable, variant}) => {
+        {option.values.map(({ value, isAvailable, variant, to }) => {
           const isColorOption = option.name.toLowerCase() === 'color';
           const variantImage = isColorOption && variant?.image?.url;
 
           return (
-            <button
+            <Link
               key={option.name + value}
               className={`product-options-item ${
                 selectedOptions[option.name] === value ? 'active' : ''
               }`}
-              disabled={!isAvailable}
+              to={to}
               onClick={() => onOptionChange(option.name, value)}
               style={{
                 border:
@@ -232,18 +232,19 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
                   selectedOptions[option.name] === value
                     ? 'scale(0.98)'
                     : 'scale(1)',
+                pointerEvents: isAvailable ? 'auto' : 'none',
               }}
             >
               {variantImage ? (
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                 />
               ) : (
                 value
               )}
-            </button>
+            </Link>
           );
         })}
       </div>
