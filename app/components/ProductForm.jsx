@@ -59,17 +59,20 @@ useEffect(() => {
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-  setSelectedOptions((prev) => {
-    const newOptions = {...prev, [name]: value};
+    setSelectedOptions((prev) => {
+      const newOptions = {...prev, [name]: value};
 
-    // Update the URL with selected options
-    const queryParams = new URLSearchParams(newOptions).toString();
-    const newUrl = `${location.pathname}?${queryParams}`;
-    window.history.replaceState(null, '', newUrl);
+      // Update the URL with selected options
+      const queryParams = new URLSearchParams(newOptions).toString();
+      const newUrl = `${location.pathname}?${queryParams}`;
+      window.history.replaceState(null, '', newUrl);
 
-    return newOptions;
-  });
-};
+      return newOptions;
+    });
+
+    // Re-render the page by forcing a reload
+    window.location.reload();
+  };
 
   // Determine the updated selected variant
   const updatedVariant = variants.find((variant) =>
