@@ -57,47 +57,18 @@ export function ProductForm({
     }
   }, [product, initialSelectedVariant]);
 
-  const [selectedVariant, setSelectedVariant] = useState(
-    initialSelectedVariant,
-  );
-
   // Update selected options on change
   const handleOptionChange = (name, value) => {
     setSelectedOptions((prev) => {
       const newOptions = {...prev, [name]: value};
 
-      // Find the matching variant
-      const matchingVariant = variants.find((variant) =>
-        Object.entries(newOptions).every(([optName, optValue]) =>
-          variant.selectedOptions.some(
-            (selectedOpt) =>
-              selectedOpt.name === optName && selectedOpt.value === optValue,
-          ),
-        ),
-      );
-
-      if (matchingVariant) {
-        // Update selectedVariant
-        setSelectedVariant(matchingVariant);
-
-        // Sync newOptions with the matching variant's options
-        matchingVariant.selectedOptions.forEach(({name, value}) => {
-          newOptions[name] = value;
-        });
-      }
-
-      // Update the URL
+      // Update the URL with selected options
       const queryParams = new URLSearchParams(newOptions).toString();
       const newUrl = `${location.pathname}?${queryParams}`;
       window.history.replaceState(null, '', newUrl);
 
       return newOptions;
     });
-  };
-
-  // Helper function to update the selected variant
-  const updateVariantData = (variant) => {
-    setSelectedVariant(variant);
   };
 
   // Determine the updated selected variant
@@ -192,15 +163,15 @@ export function ProductForm({
       <br></br>
       <div className="product-form">
         <AddToCartButton
-          disabled={!selectedVariant || !selectedVariant.availableForSale}
+          disabled={!updatedVariant || !updatedVariant.availableForSale}
           onClick={() => open('cart')}
           lines={
-            selectedVariant
-              ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
+            updatedVariant
+              ? [{merchandiseId: updatedVariant.id, quantity: safeQuantity}]
               : []
           }
         >
-          {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+          {updatedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
         </AddToCartButton>
         {isProductPage && (
           <a
@@ -221,7 +192,7 @@ export function ProductForm({
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({option, selectedOptions, onOptionChange}) {
+function ProductOptions({ option, selectedOptions, onOptionChange }) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
@@ -229,7 +200,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
         <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({value, isAvailable, variant, to}) => {
+        {option.values.map(({ value, isAvailable, variant, to }) => {
           const isColorOption = option.name.toLowerCase() === 'color';
           const variantImage = isColorOption && variant?.image?.url;
 
@@ -240,12 +211,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
                 selectedOptions[option.name] === value ? 'active' : ''
               }`}
               to={to}
-              onClick={(e) => {
-                e.preventDefault(); // Prevent navigation
-                if (isAvailable) {
-                  onOptionChange(option.name, value);
-                }
-              }}
+              onClick={() => onOptionChange(option.name, value)}
               style={{
                 border:
                   selectedOptions[option.name] === value
@@ -273,7 +239,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                 />
               ) : (
                 value
