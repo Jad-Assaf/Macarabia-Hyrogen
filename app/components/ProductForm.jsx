@@ -62,35 +62,37 @@ export function ProductForm({
     setSelectedOptions((prev) => {
       const newOptions = {...prev, [name]: value};
 
-      // Dynamically filter and reset options for dependencies
-      const dependentOptionName = product.options.find(
-        (option) =>
-          option.name !== name && option.values.some((v) => v === value),
-      )?.name;
-
-      if (dependentOptionName) {
-        const availableValues = variants
-          .filter((variant) =>
-            variant.selectedOptions.some(
-              (opt) => opt.name === name && opt.value === value,
+      // Automatically adjust dependent options if current selection invalidates them
+      product.options.forEach((option) => {
+        if (option.name !== name) {
+          const availableVariants = variants.filter((variant) =>
+            Object.entries(newOptions).every(([optName, optValue]) =>
+              variant.selectedOptions.some(
+                (selectedOpt) =>
+                  selectedOpt.name === optName &&
+                  selectedOpt.value === optValue,
+              ),
             ),
-          )
-          .map((variant) =>
-            variant.selectedOptions.find(
-              (opt) => opt.name === dependentOptionName,
+          );
+
+          const availableValues = Array.from(
+            new Set(
+              availableVariants.map(
+                (variant) =>
+                  variant.selectedOptions.find(
+                    (opt) => opt.name === option.name,
+                  )?.value,
+              ),
             ),
-          )
-          .filter(Boolean)
-          .map((opt) => opt.value);
+          );
 
-        newOptions[dependentOptionName] =
-          availableValues.includes(newOptions[dependentOptionName]) &&
-          newOptions[dependentOptionName]
-            ? newOptions[dependentOptionName]
-            : availableValues[0];
-      }
+          if (!availableValues.includes(newOptions[option.name])) {
+            newOptions[option.name] = availableValues[0];
+          }
+        }
+      });
 
-      // Update the URL with the selected options
+      // Update the URL with the new selection
       const queryParams = new URLSearchParams(newOptions).toString();
       const newUrl = `${location.pathname}?${queryParams}`;
       window.history.replaceState(null, '', newUrl);
@@ -239,7 +241,10 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
                 selectedOptions[option.name] === value ? 'active' : ''
               }`}
               to={to}
-              onClick={() => onOptionChange(option.name, value)}
+              onClick={(e) => {
+                e.preventDefault();
+                onOptionChange(option.name, value);
+              }}
               style={{
                 border:
                   selectedOptions[option.name] === value
