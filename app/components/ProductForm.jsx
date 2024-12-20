@@ -59,47 +59,34 @@ export function ProductForm({
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-    setSelectedOptions((prev) => {
-      const newOptions = {...prev, [name]: value};
+  setSelectedOptions((prev) => {
+    const newOptions = { ...prev, [name]: value };
 
-      // Automatically adjust dependent options if current selection invalidates them
-      product.options.forEach((option) => {
-        if (option.name !== name) {
-          const availableVariants = variants.filter((variant) =>
-            Object.entries(newOptions).every(([optName, optValue]) =>
-              variant.selectedOptions.some(
-                (selectedOpt) =>
-                  selectedOpt.name === optName &&
-                  selectedOpt.value === optValue,
-              ),
-            ),
-          );
+    // Find the variant that matches the newly selected options
+    const matchingVariant = variants.find((variant) =>
+      Object.entries(newOptions).every(([optName, optValue]) =>
+        variant.selectedOptions.some(
+          (selectedOpt) =>
+            selectedOpt.name === optName && selectedOpt.value === optValue
+        )
+      )
+    );
 
-          const availableValues = Array.from(
-            new Set(
-              availableVariants.map(
-                (variant) =>
-                  variant.selectedOptions.find(
-                    (opt) => opt.name === option.name,
-                  )?.value,
-              ),
-            ),
-          );
-
-          if (!availableValues.includes(newOptions[option.name])) {
-            newOptions[option.name] = availableValues[0];
-          }
-        }
+    if (matchingVariant) {
+      // Update the options to match the new variant's configuration
+      matchingVariant.selectedOptions.forEach(({ name, value }) => {
+        newOptions[name] = value;
       });
+    }
 
-      // Update the URL with the new selection
-      const queryParams = new URLSearchParams(newOptions).toString();
-      const newUrl = `${location.pathname}?${queryParams}`;
-      window.history.replaceState(null, '', newUrl);
+    // Update the URL with the selected options
+    const queryParams = new URLSearchParams(newOptions).toString();
+    const newUrl = `${location.pathname}?${queryParams}`;
+    window.history.replaceState(null, '', newUrl);
 
-      return newOptions;
-    });
-  };
+    return newOptions;
+  });
+};
 
   // Determine the updated selected variant
   const updatedVariant = variants.find((variant) =>
@@ -222,7 +209,7 @@ export function ProductForm({
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({ option, selectedOptions, onOptionChange }) {
+function ProductOptions({option, selectedOptions, onOptionChange}) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
@@ -230,7 +217,7 @@ function ProductOptions({ option, selectedOptions, onOptionChange }) {
         <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({ value, isAvailable, variant, to }) => {
+        {option.values.map(({value, isAvailable, variant, to}) => {
           const isColorOption = option.name.toLowerCase() === 'color';
           const variantImage = isColorOption && variant?.image?.url;
 
@@ -241,7 +228,10 @@ function ProductOptions({ option, selectedOptions, onOptionChange }) {
                 selectedOptions[option.name] === value ? 'active' : ''
               }`}
               to={to}
-              onClick={() => onOptionChange(option.name, value)}
+              onClick={(e) => {
+                e.preventDefault();
+                onOptionChange(option.name, value);
+              }}
               style={{
                 border:
                   selectedOptions[option.name] === value
@@ -269,7 +259,7 @@ function ProductOptions({ option, selectedOptions, onOptionChange }) {
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
                 />
               ) : (
                 value
