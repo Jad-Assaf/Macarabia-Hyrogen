@@ -62,7 +62,35 @@ export function ProductForm({
     setSelectedOptions((prev) => {
       const newOptions = {...prev, [name]: value};
 
-      // Update the URL with selected options
+      // Dynamically filter and reset options for dependencies
+      const dependentOptionName = product.options.find(
+        (option) =>
+          option.name !== name && option.values.some((v) => v === value),
+      )?.name;
+
+      if (dependentOptionName) {
+        const availableValues = variants
+          .filter((variant) =>
+            variant.selectedOptions.some(
+              (opt) => opt.name === name && opt.value === value,
+            ),
+          )
+          .map((variant) =>
+            variant.selectedOptions.find(
+              (opt) => opt.name === dependentOptionName,
+            ),
+          )
+          .filter(Boolean)
+          .map((opt) => opt.value);
+
+        newOptions[dependentOptionName] =
+          availableValues.includes(newOptions[dependentOptionName]) &&
+          newOptions[dependentOptionName]
+            ? newOptions[dependentOptionName]
+            : availableValues[0];
+      }
+
+      // Update the URL with the selected options
       const queryParams = new URLSearchParams(newOptions).toString();
       const newUrl = `${location.pathname}?${queryParams}`;
       window.history.replaceState(null, '', newUrl);
@@ -192,7 +220,7 @@ export function ProductForm({
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({ option, selectedOptions, onOptionChange }) {
+function ProductOptions({option, selectedOptions, onOptionChange}) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
@@ -200,7 +228,7 @@ function ProductOptions({ option, selectedOptions, onOptionChange }) {
         <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({ value, isAvailable, variant, to }) => {
+        {option.values.map(({value, isAvailable, variant, to}) => {
           const isColorOption = option.name.toLowerCase() === 'color';
           const variantImage = isColorOption && variant?.image?.url;
 
@@ -239,7 +267,7 @@ function ProductOptions({ option, selectedOptions, onOptionChange }) {
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
                 />
               ) : (
                 value
