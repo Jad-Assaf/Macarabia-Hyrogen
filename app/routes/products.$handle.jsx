@@ -1,6 +1,6 @@
-import React, { Suspense, useEffect, useState } from 'react';
-import { defer, redirect } from '@shopify/remix-oxygen';
-import { Await, useLoaderData } from '@remix-run/react';
+import React, {Suspense, useEffect, useState} from 'react';
+import {defer, redirect} from '@shopify/remix-oxygen';
+import {Await, useLoaderData} from '@remix-run/react';
 import {
   getSelectedProductOptions,
   Analytics,
@@ -8,16 +8,16 @@ import {
   Money,
   getSeoMeta,
 } from '@shopify/hydrogen';
-import { getVariantUrl } from '~/lib/variants';
-import { ProductPrice } from '~/components/ProductPrice';
-import { ProductImages } from '~/components/ProductImage';
-import { ProductForm } from '~/components/ProductForm';
-import "../styles/ProductPage.css"
-import { DirectCheckoutButton } from '../components/ProductForm';
-import { CSSTransition } from 'react-transition-group';
-import { RELATED_PRODUCTS_QUERY } from '~/lib/fragments';
+import {getVariantUrl} from '~/lib/variants';
+import {ProductPrice} from '~/components/ProductPrice';
+import {ProductImages} from '~/components/ProductImage';
+import {ProductForm} from '~/components/ProductForm';
+import '../styles/ProductPage.css';
+import {DirectCheckoutButton} from '../components/ProductForm';
+import {CSSTransition} from 'react-transition-group';
+import {RELATED_PRODUCTS_QUERY} from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
-import { ProductMetafields } from '~/components/Metafields';
+import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 
 export const meta = ({data}) => {
@@ -156,7 +156,7 @@ export async function loader(args) {
   const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
 
-  return defer({ ...deferredData, ...criticalData });
+  return defer({...deferredData, ...criticalData});
 }
 
 async function loadCriticalData({context, params, request}) {
@@ -217,20 +217,22 @@ async function loadCriticalData({context, params, request}) {
   };
 }
 
-function loadDeferredData({ context, params }) {
-  const { storefront } = context;
+function loadDeferredData({context, params}) {
+  const {storefront} = context;
 
-  const variants = storefront.query(VARIANTS_QUERY, {
-    variables: { handle: params.handle },
-  }).catch((error) => {
-    console.error(error);
-    return null;
-  });
+  const variants = storefront
+    .query(VARIANTS_QUERY, {
+      variables: {handle: params.handle},
+    })
+    .catch((error) => {
+      console.error(error);
+      return null;
+    });
 
-  return { variants };
+  return {variants};
 }
 
-function redirectToFirstVariant({ product, request }) {
+function redirectToFirstVariant({product, request}) {
   const url = new URL(request.url);
   const firstVariant = product.variants.nodes[0];
 
@@ -241,22 +243,22 @@ function redirectToFirstVariant({ product, request }) {
       selectedOptions: firstVariant.selectedOptions,
       searchParams: new URLSearchParams(url.search),
     }),
-    { status: 302 }
+    {status: 302},
   );
 }
 
 export default function Product() {
-  const { product, variants, relatedProducts } = useLoaderData();
-  const selectedVariant = useOptimisticVariant(
+  const {product, variants, relatedProducts} = useLoaderData();
+  const [selectedVariant, setSelectedVariant] = useState(
     product.selectedVariant,
-    variants
   );
 
   const [quantity, setQuantity] = useState(1);
   const [subtotal, setSubtotal] = useState(0);
 
-  const incrementQuantity = () => setQuantity(prev => prev + 1);
-  const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+  const incrementQuantity = () => setQuantity((prev) => prev + 1);
+  const decrementQuantity = () =>
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
   const [activeTab, setActiveTab] = useState('description');
 
@@ -267,21 +269,24 @@ export default function Product() {
     }
   }, [quantity, selectedVariant]);
 
+  const handleVariantChange = (variantId) => {
+    const newVariant = variants.find((variant) => variant.id === variantId);
+    if (newVariant) {
+      setSelectedVariant(newVariant);
+    }
+  };
 
-  const { title, descriptionHtml, images } = product;
+  const {title, descriptionHtml, images} = product;
 
-  const hasDiscount = selectedVariant?.compareAtPrice &&
+  const hasDiscount =
+    selectedVariant?.compareAtPrice &&
     selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
 
   return (
     <div className="product">
       <div className="ProductPageTop">
         <ProductImages
-          images={
-            selectedVariant?.image
-              ? [{node: selectedVariant.image}]
-              : images.edges
-          }
+          images={images.edges}
           selectedVariantImage={selectedVariant?.image}
         />
         <div className="product-main">
@@ -336,6 +341,7 @@ export default function Product() {
                     selectedVariant={selectedVariant}
                     variants={data?.product?.variants.nodes || []}
                     quantity={quantity}
+                    onVariantChange={handleVariantChange}
                   />
                   {/* <DirectCheckoutButton
                     selectedVariant={selectedVariant}
@@ -565,7 +571,6 @@ export default function Product() {
     </div>
   );
 }
-
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
   fragment ProductVariant on ProductVariant {
