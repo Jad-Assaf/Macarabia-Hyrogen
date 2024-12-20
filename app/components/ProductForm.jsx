@@ -192,50 +192,63 @@ useEffect(() => {
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({option, selectedOptions, onOptionChange}) {
+function ProductOptions({ option, selectedOptions, onOptionChange }) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
-        {option.name}:{' '}
-        <span className="OptionValue">{selectedOptions[option.name]}</span>
+        {option.name}: <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({value, isAvailable}) => (
-          <button
-            key={option.name + value}
-            className={`product-options-item ${
-              selectedOptions[option.name] === value ? 'active' : ''
-            }`}
-            disabled={!isAvailable}
-            onClick={() => onOptionChange(option.name, value)}
-            style={{
-              border:
-                selectedOptions[option.name] === value
-                  ? '1px solid #000'
-                  : '1px solid transparent',
-              opacity: isAvailable ? 1 : 0.3,
-              borderRadius: '20px',
-              transition: 'all 0.3s ease-in-out',
-              backgroundColor:
-                selectedOptions[option.name] === value ? '#e6f2ff' : '#f0f0f0',
-              boxShadow:
-                selectedOptions[option.name] === value
-                  ? '0 2px 4px rgba(0,0,0,0.1)'
-                  : 'none',
-              transform:
-                selectedOptions[option.name] === value
-                  ? 'scale(0.98)'
-                  : 'scale(1)',
-            }}
-          >
-            {value}
-          </button>
-        ))}
+        {option.values.map(({ value, isAvailable, variant }) => {
+          const isColorOption = option.name.toLowerCase() === 'color';
+          const variantImage = isColorOption && variant?.image?.url;
+
+          return (
+            <button
+              key={option.name + value}
+              className={`product-options-item ${
+                selectedOptions[option.name] === value ? 'active' : ''
+              }`}
+              disabled={!isAvailable}
+              onClick={() => onOptionChange(option.name, value)}
+              style={{
+                border:
+                  selectedOptions[option.name] === value
+                    ? '1px solid #000'
+                    : '1px solid transparent',
+                opacity: isAvailable ? 1 : 0.3,
+                borderRadius: '20px',
+                transition: 'all 0.3s ease-in-out',
+                backgroundColor:
+                  selectedOptions[option.name] === value
+                    ? '#e6f2ff'
+                    : '#f0f0f0',
+                boxShadow:
+                  selectedOptions[option.name] === value
+                    ? '0 2px 4px rgba(0,0,0,0.1)'
+                    : 'none',
+                transform:
+                  selectedOptions[option.name] === value
+                    ? 'scale(0.98)'
+                    : 'scale(1)',
+              }}
+            >
+              {variantImage ? (
+                <img
+                  src={variantImage}
+                  alt={value}
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                />
+              ) : (
+                value
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
-
 export function DirectCheckoutButton({selectedVariant, quantity}) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false); // Track whether redirect is needed
