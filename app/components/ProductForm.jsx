@@ -21,16 +21,9 @@ export function ProductForm({
   const {open} = useAside();
   const location = useLocation();
 
+  // Track selected options state
   const [selectedOptions, setSelectedOptions] = useState(() => {
-    // Initialize selected options from URL query parameters
-    const queryParams = new URLSearchParams(location.search);
-    const optionsFromUrl = Object.fromEntries(queryParams.entries());
-
-    // Fallback to initialSelectedVariant or product options
-    if (Object.keys(optionsFromUrl).length > 0) {
-      return optionsFromUrl;
-    }
-
+    // Initialize selected options from initialSelectedVariant or product
     if (initialSelectedVariant) {
       return initialSelectedVariant.selectedOptions.reduce(
         (acc, {name, value}) => {
@@ -40,22 +33,11 @@ export function ProductForm({
         {},
       );
     }
-
     return product.options.reduce((acc, option) => {
       acc[option.name] = option.values[0]?.value || '';
       return acc;
     }, {});
   });
-
-  useEffect(() => {
-    // Sync state with query parameters if the URL changes
-    const queryParams = new URLSearchParams(location.search);
-    const optionsFromUrl = Object.fromEntries(queryParams.entries());
-
-    if (Object.keys(optionsFromUrl).length > 0) {
-      setSelectedOptions(optionsFromUrl);
-    }
-  }, [location.search]);
 
   useEffect(() => {
     if (initialSelectedVariant) {
@@ -77,17 +59,16 @@ export function ProductForm({
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-    const newOptions = {...selectedOptions, [name]: value};
+    setSelectedOptions((prev) => {
+      const newOptions = {...prev, [name]: value};
 
-    // Update the URL with selected options
-    const queryParams = new URLSearchParams(newOptions).toString();
-    const newUrl = `${location.pathname}?${queryParams}`;
-    window.history.replaceState(null, '', newUrl);
+      // Update the URL with selected options
+      const queryParams = new URLSearchParams(newOptions).toString();
+      const newUrl = `${location.pathname}?${queryParams}`;
+      window.history.replaceState(null, '', newUrl);
 
-    setSelectedOptions(newOptions);
-
-    // Re-render the page by forcing a reload
-    window.location.reload();
+      return newOptions;
+    });
   };
 
   // Determine the updated selected variant
@@ -105,7 +86,7 @@ export function ProductForm({
 
   // Check if we're on the product page
   const isProductPage = location.pathname.includes('/products/');
-  
+
   // WhatsApp SVG as a component
   const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 175.216 175.552">
