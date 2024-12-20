@@ -224,7 +224,6 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
               }`}
               to={to}
               onClick={(e) => {
-                e.preventDefault(); // Prevent navigation
                 if (isAvailable) {
                   onOptionChange(option.name, value);
                 }
