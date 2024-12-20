@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { defer, redirect } from '@shopify/remix-oxygen';
-import { Await, useLoaderData } from '@remix-run/react';
+import { Await, useLoaderData, useLocation } from '@remix-run/react';
 import {
   getSelectedProductOptions,
   Analytics,
@@ -247,21 +247,18 @@ function redirectToFirstVariant({ product, request }) {
 
 export default function Product() {
   const {product, variants, relatedProducts} = useLoaderData();
-
-  // Initialize selectedVariant using useOptimisticVariant
-  const initialSelectedVariant = useOptimisticVariant(
+  const location = useLocation();
+  const selectedVariant = useOptimisticVariant(
     product.selectedVariant,
     variants,
   );
 
-  const [selectedVariant, setSelectedVariant] = useState(
-    initialSelectedVariant,
-  );
-
-  // Watch for changes in `initialSelectedVariant` and update local state
+  const [urlKey, setUrlKey] = useState(location.key); // Track URL changes
+  
   useEffect(() => {
-    setSelectedVariant(initialSelectedVariant);
-  }, [initialSelectedVariant]);
+    // Update selectedVariant and other dependent states when URL changes
+    setUrlKey(location.key);
+  }, [location]);
 
   const [quantity, setQuantity] = useState(1);
   const [subtotal, setSubtotal] = useState(0);
@@ -284,7 +281,7 @@ export default function Product() {
   const hasDiscount =
     selectedVariant?.compareAtPrice &&
     selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
-    
+
   return (
     <div className="product">
       <div className="ProductPageTop">
