@@ -62,12 +62,29 @@ export function ProductForm({
     setSelectedOptions((prev) => {
       const newOptions = {...prev, [name]: value};
 
-      // Update the URL with selected options
-      const queryParams = new URLSearchParams(newOptions).toString();
-      const newUrl = `${location.pathname}?${queryParams}`;
-      window.history.replaceState(null, '', newUrl);
+      // Find the matching variant
+      const matchingVariant = variants.find((variant) =>
+        Object.entries(newOptions).every(([optName, optValue]) =>
+          variant.selectedOptions.some(
+            (selectedOpt) =>
+              selectedOpt.name === optName && selectedOpt.value === optValue,
+          ),
+        ),
+      );
 
-      return newOptions;
+      // Only update options if a matching variant is found
+      if (matchingVariant) {
+        // Update the URL with selected options
+        const queryParams = new URLSearchParams(newOptions).toString();
+        const newUrl = `${location.pathname}?${queryParams}`;
+        window.history.replaceState(null, '', newUrl);
+
+        // Return the updated options
+        return newOptions;
+      }
+
+      // If no matching variant, return the previous state to prevent fallback
+      return prev;
     });
   };
 
@@ -239,7 +256,7 @@ function ProductOptions({ option, selectedOptions, onOptionChange }) {
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
                 />
               ) : (
                 value
