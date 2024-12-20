@@ -404,8 +404,9 @@ aside {
   background: var(--color-light);
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
   height: 100vh;
-  max-width: 80vw;
-  min-width: var(--aside-width);
+  width: 80vw;
+  max-width: 400px;
+  min-width: 300px;
   position: fixed;
   right: calc(-1 * var(--aside-width));
   top: 0;
