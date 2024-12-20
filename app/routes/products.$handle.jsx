@@ -255,8 +255,10 @@ export default function Product() {
   const [quantity, setQuantity] = useState(1);
   const [subtotal, setSubtotal] = useState(0);
 
-  const incrementQuantity = () => setQuantity((prev) => prev + 1);
-  const decrementQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  const incrementQuantity = () => setQuantity(prev => prev + 1);
+  const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+
+  const [activeTab, setActiveTab] = useState('description');
 
   useEffect(() => {
     if (selectedVariant && selectedVariant.price) {
@@ -265,23 +267,6 @@ export default function Product() {
     }
   }, [quantity, selectedVariant]);
 
-  const handleOptionChange = (name, value) => {
-    const updatedOptions = {
-      ...selectedVariant.selectedOptions,
-      [name]: value,
-    };
-    const newVariant = variants.find((variant) =>
-      Object.entries(updatedOptions).every(
-        ([key, val]) =>
-          variant.selectedOptions.find(
-            (option) => option.name === key && option.value === val
-          )
-      )
-    );
-    if (newVariant) {
-      setSelectedVariant(newVariant);
-    }
-  };
 
   const { title, descriptionHtml, images } = product;
 
