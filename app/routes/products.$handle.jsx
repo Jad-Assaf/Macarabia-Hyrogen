@@ -247,6 +247,8 @@ function redirectToFirstVariant({ product, request }) {
 
 export default function Product() {
   const {product, variants, relatedProducts} = useLoaderData();
+
+  // Initialize selectedVariant using useOptimisticVariant
   const initialSelectedVariant = useOptimisticVariant(
     product.selectedVariant,
     variants,
@@ -255,6 +257,12 @@ export default function Product() {
   const [selectedVariant, setSelectedVariant] = useState(
     initialSelectedVariant,
   );
+
+  // Watch for changes in `initialSelectedVariant` and update local state
+  useEffect(() => {
+    setSelectedVariant(initialSelectedVariant);
+  }, [initialSelectedVariant]);
+
   const [quantity, setQuantity] = useState(1);
   const [subtotal, setSubtotal] = useState(0);
 
@@ -264,24 +272,19 @@ export default function Product() {
 
   const [activeTab, setActiveTab] = useState('description');
 
-  // Update subtotal when quantity or selectedVariant changes
   useEffect(() => {
-    if (selectedVariant?.price) {
+    if (selectedVariant && selectedVariant.price) {
       const price = parseFloat(selectedVariant.price.amount);
       setSubtotal(price * quantity);
     }
   }, [quantity, selectedVariant]);
 
-  // Handle changes in the variant
-  useEffect(() => {
-    setSelectedVariant(initialSelectedVariant);
-  }, [initialSelectedVariant]);
-
   const {title, descriptionHtml, images} = product;
+
   const hasDiscount =
     selectedVariant?.compareAtPrice &&
     selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
-
+    
   return (
     <div className="product">
       <div className="ProductPageTop">
@@ -342,6 +345,9 @@ export default function Product() {
                     variants={data?.product?.variants.nodes || []}
                     quantity={quantity}
                   />
+                  {/* <DirectCheckoutButton
+                    selectedVariant={selectedVariant}
+                    quantity={quantity} /> */}
                 </>
               )}
             </Await>
@@ -375,7 +381,6 @@ export default function Product() {
           />
         </div>
       </div>
-
       <div className="ProductPageBottom">
         <div className="tabs">
           <button
