@@ -22,21 +22,40 @@ export function ProductForm({
   const location = useLocation();
 
   // Track selected options state
-  // Track selected options state
 const [selectedOptions, setSelectedOptions] = useState(() => {
-  // Use initialSelectedVariant to initialize selected options
+  // Initialize selected options from initialSelectedVariant or product
   if (initialSelectedVariant) {
-    return initialSelectedVariant.selectedOptions.reduce((acc, {name, value}) => {
-      acc[name] = value;
-      return acc;
-    }, {});
+    return initialSelectedVariant.selectedOptions.reduce(
+      (acc, {name, value}) => {
+        acc[name] = value;
+        return acc;
+      },
+      {},
+    );
   }
-  // Fallback to defaulting to the first values
   return product.options.reduce((acc, option) => {
     acc[option.name] = option.values[0]?.value || '';
     return acc;
   }, {});
 });
+
+useEffect(() => {
+  if (initialSelectedVariant) {
+    setSelectedOptions(
+      initialSelectedVariant.selectedOptions.reduce((acc, {name, value}) => {
+        acc[name] = value;
+        return acc;
+      }, {}),
+    );
+  } else {
+    setSelectedOptions(
+      product.options.reduce((acc, option) => {
+        acc[option.name] = option.values[0]?.value || '';
+        return acc;
+      }, {}),
+    );
+  }
+}, [product, initialSelectedVariant]);
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
