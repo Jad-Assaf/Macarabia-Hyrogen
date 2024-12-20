@@ -241,10 +241,7 @@ function ProductOptions({ option, selectedOptions, onOptionChange }) {
                 selectedOptions[option.name] === value ? 'active' : ''
               }`}
               to={to}
-              onClick={(e) => {
-                e.preventDefault();
-                onOptionChange(option.name, value); // This should handle everything
-              }}
+              onClick={() => onOptionChange(option.name, value)}
               style={{
                 border:
                   selectedOptions[option.name] === value
