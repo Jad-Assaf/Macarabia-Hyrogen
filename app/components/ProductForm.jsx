@@ -229,7 +229,6 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
               }`}
               to={to}
               onClick={(e) => {
-                e.preventDefault();
                 onOptionChange(option.name, value);
               }}
               style={{
