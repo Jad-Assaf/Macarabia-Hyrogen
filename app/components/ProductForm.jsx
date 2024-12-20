@@ -21,41 +21,59 @@ export function ProductForm({
   const {open} = useAside();
   const location = useLocation();
 
-  // Track selected options state
-const [selectedOptions, setSelectedOptions] = useState(() => {
-  // Initialize selected options from initialSelectedVariant or product
-  if (initialSelectedVariant) {
-    return initialSelectedVariant.selectedOptions.reduce(
-      (acc, {name, value}) => {
-        acc[name] = value;
-        return acc;
-      },
-      {},
-    );
-  }
-  return product.options.reduce((acc, option) => {
-    acc[option.name] = option.values[0]?.value || '';
-    return acc;
-  }, {});
-});
+  const [selectedOptions, setSelectedOptions] = useState(() => {
+    // Initialize selected options from URL query parameters
+    const queryParams = new URLSearchParams(location.search);
+    const optionsFromUrl = Object.fromEntries(queryParams.entries());
 
-useEffect(() => {
-  if (initialSelectedVariant) {
-    setSelectedOptions(
-      initialSelectedVariant.selectedOptions.reduce((acc, {name, value}) => {
-        acc[name] = value;
-        return acc;
-      }, {}),
-    );
-  } else {
-    setSelectedOptions(
-      product.options.reduce((acc, option) => {
-        acc[option.name] = option.values[0]?.value || '';
-        return acc;
-      }, {}),
-    );
-  }
-}, [product, initialSelectedVariant]);
+    // Fallback to initialSelectedVariant or product options
+    if (Object.keys(optionsFromUrl).length > 0) {
+      return optionsFromUrl;
+    }
+
+    if (initialSelectedVariant) {
+      return initialSelectedVariant.selectedOptions.reduce(
+        (acc, {name, value}) => {
+          acc[name] = value;
+          return acc;
+        },
+        {},
+      );
+    }
+
+    return product.options.reduce((acc, option) => {
+      acc[option.name] = option.values[0]?.value || '';
+      return acc;
+    }, {});
+  });
+
+  useEffect(() => {
+    // Sync state with query parameters if the URL changes
+    const queryParams = new URLSearchParams(location.search);
+    const optionsFromUrl = Object.fromEntries(queryParams.entries());
+
+    if (Object.keys(optionsFromUrl).length > 0) {
+      setSelectedOptions(optionsFromUrl);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    if (initialSelectedVariant) {
+      setSelectedOptions(
+        initialSelectedVariant.selectedOptions.reduce((acc, {name, value}) => {
+          acc[name] = value;
+          return acc;
+        }, {}),
+      );
+    } else {
+      setSelectedOptions(
+        product.options.reduce((acc, option) => {
+          acc[option.name] = option.values[0]?.value || '';
+          return acc;
+        }, {}),
+      );
+    }
+  }, [product, initialSelectedVariant]);
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
