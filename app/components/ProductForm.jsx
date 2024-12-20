@@ -39,6 +39,20 @@ export function ProductForm({
       const newUrl = `${location.pathname}?${queryParams}`;
       window.history.replaceState(null, '', newUrl);
 
+      // Find the updated variant
+      const newVariant = variants.find((variant) =>
+        Object.entries(newOptions).every(([name, value]) =>
+          variant.selectedOptions.some(
+            (opt) => opt.name === name && opt.value === value,
+          ),
+        ),
+      );
+
+      // Call the callback to update the selected variant in the parent
+      if (newVariant) {
+        onVariantChange(newVariant);
+      }
+
       return newOptions;
     });
   };
