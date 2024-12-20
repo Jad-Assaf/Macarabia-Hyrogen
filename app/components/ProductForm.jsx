@@ -22,61 +22,55 @@ export function ProductForm({
   const location = useLocation();
 
   // Track selected options state
-  const [selectedOptions, setSelectedOptions] = useState(() => {
-    if (initialSelectedVariant) {
-      return initialSelectedVariant.selectedOptions.reduce(
-        (acc, {name, value}) => {
-          acc[name] = value;
-          return acc;
-        },
-        {},
-      );
-    }
-    return product.options.reduce((acc, option) => {
-      acc[option.name] = option.values[0]?.value || '';
-      return acc;
-    }, {});
-  });
+const [selectedOptions, setSelectedOptions] = useState(() => {
+  // Initialize selected options from initialSelectedVariant or product
+  if (initialSelectedVariant) {
+    return initialSelectedVariant.selectedOptions.reduce(
+      (acc, {name, value}) => {
+        acc[name] = value;
+        return acc;
+      },
+      {},
+    );
+  }
+  return product.options.reduce((acc, option) => {
+    acc[option.name] = option.values[0]?.value || '';
+    return acc;
+  }, {});
+});
 
-  useEffect(() => {
-    // Sync state with new product or variant data
-    if (initialSelectedVariant) {
-      setSelectedOptions(
-        initialSelectedVariant.selectedOptions.reduce((acc, {name, value}) => {
-          acc[name] = value;
-          return acc;
-        }, {}),
-      );
-    } else {
-      setSelectedOptions(
-        product.options.reduce((acc, option) => {
-          acc[option.name] = option.values[0]?.value || '';
-          return acc;
-        }, {}),
-      );
-    }
-  }, [product, initialSelectedVariant]);
+useEffect(() => {
+  if (initialSelectedVariant) {
+    setSelectedOptions(
+      initialSelectedVariant.selectedOptions.reduce((acc, {name, value}) => {
+        acc[name] = value;
+        return acc;
+      }, {}),
+    );
+  } else {
+    setSelectedOptions(
+      product.options.reduce((acc, option) => {
+        acc[option.name] = option.values[0]?.value || '';
+        return acc;
+      }, {}),
+    );
+  }
+}, [product, initialSelectedVariant]);
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
-    setSelectedOptions((prev) => {
-      const newOptions = {...prev, [name]: value};
-      const newVariant = variants.find((variant) =>
-        Object.entries(newOptions).every(([optName, optValue]) =>
-          variant.selectedOptions.some(
-            (option) => option.name === optName && option.value === optValue,
-          ),
-        ),
-      );
+  setSelectedOptions((prev) => {
+    const newOptions = {...prev, [name]: value};
 
-      if (newVariant) {
-        onVariantChange(newVariant); // Trigger the callback with the new variant
-      }
+    // Update the URL with selected options
+    const queryParams = new URLSearchParams(newOptions).toString();
+    const newUrl = `${location.pathname}?${queryParams}`;
+    window.history.replaceState(null, '', newUrl);
 
-      return newOptions;
-    });
-  };
-  
+    return newOptions;
+  });
+};
+
   // Determine the updated selected variant
   const updatedVariant = variants.find((variant) =>
     Object.entries(selectedOptions).every(([name, value]) =>
