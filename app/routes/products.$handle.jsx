@@ -374,7 +374,12 @@ export function ProductForm({
         <div className="product-options-grid">
           {values.map(({value, variant}) => {
             // Check if picking this new val is possible
-            const canPick = isValueAvailable(variants, selectedOptions, name, value);
+            const canPick = isValueAvailable(
+              variants,
+              selectedOptions,
+              name,
+              value,
+            );
             const isActive = currentValue === value;
 
             // For color swatches, optionally show an image
@@ -384,7 +389,6 @@ export function ProductForm({
             return (
               <button
                 key={name + value}
-
                 onClick={() => handleOptionChange(name, value)}
                 className={`product-options-item ${isActive ? 'active' : ''}`}
                 style={{
@@ -412,6 +416,7 @@ export function ProductForm({
             );
           })}
         </div>
+        <br />
       </div>
     );
   };
@@ -477,7 +482,6 @@ export function ProductForm({
       >
         {({option}) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
-      <br />
       <br />
       <div className="product-form">
         {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
