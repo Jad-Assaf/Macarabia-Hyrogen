@@ -333,8 +333,9 @@ export function ProductForm({
       >
         {({options}) => {
           if (!options || !Array.isArray(options)) return null;
-          options.map((option) => {
-            // Find the currently selected value for this option (if any)
+
+          // You must RETURN the array from .map()
+          return options.map((option) => {
             const activeValue =
               option.values.find((v) => v.isActive)?.value || '';
 
@@ -353,7 +354,6 @@ export function ProductForm({
                       setOptionValue,
                       variant,
                     }) => {
-                      // If this is a color option, show an image (if variant has one).
                       const isColorOption =
                         option.name.toLowerCase() === 'color';
                       const variantImage = isColorOption && variant?.image?.url;
