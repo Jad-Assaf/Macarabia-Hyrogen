@@ -259,9 +259,9 @@ function isValueAvailable(allVariants, selectedOptions, optionName, val) {
     allVariants.find((variant) => {
       if (!variant.availableForSale) return false;
       return variant.selectedOptions.every(
-        (so) => updated[so.name] === so.value
+        (so) => updated[so.name] === so.value,
       );
-    })
+    }),
   );
 }
 
@@ -276,7 +276,7 @@ function pickOrSnapVariant(allVariants, newOptions, optionName, chosenVal) {
   let found = allVariants.find(
     (v) =>
       v.availableForSale &&
-      v.selectedOptions.every((so) => newOptions[so.name] === so.value)
+      v.selectedOptions.every((so) => newOptions[so.name] === so.value),
   );
 
   // 2) If no perfect match, fallback
@@ -300,6 +300,29 @@ export function ProductForm({
 }) {
   const location = useLocation();
   const {open} = useAside();
+
+  const {status, linesAdd} = useOptimisticCart();
+
+  // For the “Add to cart”:
+  const safeQuantity = Math.max(Number(quantity), 1);
+
+  // This function is triggered by the button:
+  function handleAddToCart() {
+    if (!selectedVariant) return;
+
+    // Add line(s) to the cart *optimistically*:
+    linesAdd({
+      lines: [
+        {
+          merchandiseId: selectedVariant.id,
+          quantity: safeQuantity,
+        },
+      ],
+    });
+
+    // Optionally open your cart aside:
+    open('cart');
+  }
 
   // ------------------------------
   // Initialize local selectedOptions
@@ -325,7 +348,7 @@ export function ProductForm({
       selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
         acc[name] = value;
         return acc;
-      }, {})
+      }, {}),
     );
   }, [selectedVariant, product]);
 
@@ -337,7 +360,12 @@ export function ProductForm({
       const newOptions = {...prev, [optionName]: chosenVal};
 
       // Attempt to find or “snap” to a variant
-      const found = pickOrSnapVariant(variants, newOptions, optionName, chosenVal);
+      const found = pickOrSnapVariant(
+        variants,
+        newOptions,
+        optionName,
+        chosenVal,
+      );
 
       if (found) {
         // Overwrite newOptions with found's entire set
@@ -357,9 +385,6 @@ export function ProductForm({
       return newOptions;
     });
   }
-
-  // Ensure quantity is safe
-  const safeQuantity = Math.max(Number(quantity) || 1, 1);
 
   // Subcomponent to render each option row
   const ProductOptions = ({option}) => {
@@ -486,17 +511,24 @@ export function ProductForm({
       <div className="product-form">
         {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
         <AddToCartButton
-          disabled={!selectedVariant || !selectedVariant.availableForSale}
-          onClick={() => open('cart')}
+          disabled={
+            // Either no selectedVariant or variant is sold out,
+            // or the cart is currently “loading” from a previous operation:
+            !selectedVariant ||
+            !selectedVariant.availableForSale ||
+            status === 'loading'
+          }
+          onClick={handleAddToCart} // <--- handleAddToCart calls linesAdd
           lines={
             selectedVariant
               ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
               : []
           }
         >
-          {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+          {/* Optionally show “Adding…” if status === 'loading' */}
+          {status === 'loading' ? 'Adding...' : 'Add to cart'}
         </AddToCartButton>
-
+        
         {/* Optional WhatsApp share link */}
         {isProductPage && (
           <a
