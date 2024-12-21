@@ -23,6 +23,7 @@ export function ProductForm({
 
   // Track selected options state
   const [selectedOptions, setSelectedOptions] = useState(() => {
+    // Initialize selected options from initialSelectedVariant or product
     if (initialSelectedVariant) {
       return initialSelectedVariant.selectedOptions.reduce(
         (acc, {name, value}) => {
@@ -32,17 +33,12 @@ export function ProductForm({
         {},
       );
     }
-    // Default to the first variant's options
-    const firstVariant = variants[0];
-    return firstVariant
-      ? firstVariant.selectedOptions.reduce((acc, {name, value}) => {
-          acc[name] = value;
-          return acc;
-        }, {})
-      : {};
+    return product.options.reduce((acc, option) => {
+      acc[option.name] = option.values[0]?.value || '';
+      return acc;
+    }, {});
   });
 
-  // Ensure selected options are synced if initialSelectedVariant changes
   useEffect(() => {
     if (initialSelectedVariant) {
       setSelectedOptions(
@@ -51,35 +47,27 @@ export function ProductForm({
           return acc;
         }, {}),
       );
+    } else {
+      setSelectedOptions(
+        product.options.reduce((acc, option) => {
+          acc[option.name] = option.values[0]?.value || '';
+          return acc;
+        }, {}),
+      );
     }
-  }, [initialSelectedVariant]);
+  }, [product, initialSelectedVariant]);
 
   // Update selected options on change
   const handleOptionChange = (name, value) => {
     setSelectedOptions((prev) => {
       const newOptions = {...prev, [name]: value};
 
-      // Find the matching variant
-      const matchingVariant = variants.find((variant) =>
-        Object.entries(newOptions).every(([optName, optValue]) =>
-          variant.selectedOptions.some(
-            (selectedOpt) =>
-              selectedOpt.name === optName && selectedOpt.value === optValue,
-          ),
-        ),
-      );
+      // Update the URL with selected options
+      const queryParams = new URLSearchParams(newOptions).toString();
+      const newUrl = `${location.pathname}?${queryParams}`;
+      window.history.replaceState(null, '', newUrl);
 
-      if (matchingVariant) {
-        // Update the URL with selected options
-        const queryParams = new URLSearchParams(newOptions).toString();
-        const newUrl = `${location.pathname}?${queryParams}`;
-        window.history.replaceState(null, '', newUrl);
-
-        return newOptions;
-      }
-
-      // If no matching variant is found, do not update the state
-      return prev;
+      return newOptions;
     });
   };
 
@@ -204,7 +192,7 @@ export function ProductForm({
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({option, selectedOptions, onOptionChange}) {
+function ProductOptions({ option, selectedOptions, onOptionChange }) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
@@ -212,7 +200,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
         <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({value, isAvailable, variant, to}) => {
+        {option.values.map(({ value, isAvailable, variant, to }) => {
           const isColorOption = option.name.toLowerCase() === 'color';
           const variantImage = isColorOption && variant?.image?.url;
 
@@ -256,7 +244,7 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
+                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                 />
               ) : (
                 value
