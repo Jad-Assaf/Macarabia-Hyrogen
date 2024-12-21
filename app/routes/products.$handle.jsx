@@ -476,9 +476,13 @@ export function ProductForm({
   return (
     <>
       {/* Renders the variant options (size, color, etc.) */}
-      {product.options.map((option) => (
-        <ProductOptions key={option.name} option={option} />
-      ))}
+      <VariantSelector
+        handle={product.handle}
+        options={product.options.filter((o) => o.values.length > 1)}
+        variants={variants}
+      >
+        {({option}) => <ProductOptions key={option.name} option={option} />}
+      </VariantSelector>
 
       <div className="product-form">
         {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
