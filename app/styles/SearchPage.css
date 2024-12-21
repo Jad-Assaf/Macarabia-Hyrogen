@@ -108,6 +108,11 @@ select#sort-select {
     .search-results-grid {
         justify-content: space-around;
     }
+
+    .search-results-grid .product-card {
+        width: 30vw !important; 
+        min-width: 175px !important;
+    }
 }
 
 .mobile-filters-overlay {
@@ -177,7 +182,7 @@ select#sort-select {
 }
 
 .search-results-grid .product-card {
-    width: 45%;
+    width: 42%;
     max-width: 200px;
 }
 
