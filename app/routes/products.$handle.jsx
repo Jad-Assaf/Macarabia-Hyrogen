@@ -9,7 +9,6 @@ import {
   getSeoMeta,
   CartForm,
   VariantSelector,
-  useOptimisticCart,
 } from '@shopify/hydrogen';
 import {motion} from 'framer-motion';
 import {getVariantUrl} from '~/lib/variants';
@@ -302,14 +301,6 @@ export function ProductForm({
   const location = useLocation();
   const {open} = useAside();
 
-  const {addLinesOptimistically} = useOptimisticCart();
-
-  const handleAddToCart = () => {
-    if (selectedVariant) {
-      addLinesOptimistically([{merchandiseId: selectedVariant.id, quantity}]);
-    }
-  };
-
   // ------------------------------
   // Initialize local selectedOptions
   // ------------------------------
@@ -495,7 +486,12 @@ export function ProductForm({
         {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
-          onClick={handleAddToCart}
+          onClick={() => open('cart')}
+          lines={
+            selectedVariant
+              ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
+              : []
+          }
         >
           {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
         </AddToCartButton>
