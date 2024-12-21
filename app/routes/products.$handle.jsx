@@ -249,52 +249,6 @@ function redirectToFirstVariant({product, request}) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Embed everything from ProductForm.jsx directly here
-// ─────────────────────────────────────────────────────────────────────────────
-
-function isValueAvailable(allVariants, selectedOptions, optionName, val) {
-  // Hypothetical new selection
-  const updated = {...selectedOptions, [optionName]: val};
-
-  // Find any variant that matches updated entirely and is in stock
-  return Boolean(
-    allVariants.find((variant) => {
-      if (!variant.availableForSale) return false;
-      return variant.selectedOptions.every(
-        (so) => updated[so.name] === so.value,
-      );
-    }),
-  );
-}
-
-/**
- * Attempt to find a fully matching, in-stock variant for the user’s new selection.
- * If none found, fallback to *any* variant that at least matches
- * the newly picked (optionName=chosenVal).
- * If that fallback is found, we “snap” all selected options
- * to that variant’s actual combination.
- */
-function pickOrSnapVariant(allVariants, newOptions, optionName, chosenVal) {
-  // 1) Perfect match attempt
-  let foundVariant = allVariants.find(
-    (v) =>
-      v.availableForSale &&
-      v.selectedOptions.every((so) => newOptions[so.name] === so.value),
-  );
-
-  // 2) If none, fallback: any in-stock variant that has (optionName=chosenVal)
-  if (!foundVariant) {
-    foundVariant = allVariants.find((v) => {
-      if (!v.availableForSale) return false;
-      const picked = v.selectedOptions.find((so) => so.name === optionName);
-      return picked?.value === chosenVal;
-    });
-  }
-
-  return foundVariant || null;
-}
-
 // -------------- ProductForm --------------
 
 function isValueAvailable(allVariants, selectedOptions, optionName, val) {
