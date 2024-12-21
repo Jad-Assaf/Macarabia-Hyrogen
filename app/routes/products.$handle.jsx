@@ -256,8 +256,7 @@ function redirectToFirstVariant({product, request}) {
 export function ProductForm({
   product,
   selectedVariant,
-  onVariantChange, // Called when the user picks a new variant
-  variants = [],
+  onVariantChange,
   quantity = 1,
 }) {
   const {open} = useAside();
@@ -267,11 +266,11 @@ export function ProductForm({
   const safeQuantity =
     typeof quantity === 'number' && quantity > 0 ? quantity : 1;
 
-  // Optional: Detect if we're on a product page and build a WhatsApp share URL
+  // Optional: Build WhatsApp share URL
   const isProductPage = location.pathname.includes('/products/');
   const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I would like to buy ${product.title} https://macarabia.me${location.pathname}`;
 
-  // WhatsApp SVG icon (unchanged)
+  // A WhatsApp icon component (unchanged)
   const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 175.216 175.552">
       <defs>
@@ -321,21 +320,22 @@ export function ProductForm({
   return (
     <>
       {/* 
-        VariantSelector with a custom render prop. We create the same
-        "product-options" blocks for each option (Color, Size, etc.).
-        Hydrogen will automatically manage "isActive" and "isAvailable."
+        Using the new approach: <VariantSelector product={product} onChangeVariant={...}>
+        Then we destructure {optionValues} rather than {options}.
       */}
       <VariantSelector
-        handle={product.handle}
-        variants={variants}
-        options={product.options}
+        product={product}
+        // This callback is invoked when the user selects a new variant:
         onChangeVariant={onVariantChange}
       >
-        {({options}) => {
-          if (!options || !Array.isArray(options)) return null;
+        {({optionValues}) => {
+          // If no optionValues, skip rendering anything
+          if (!optionValues || !Array.isArray(optionValues)) return null;
 
-          // You must RETURN the array from .map()
-          return options.map((option) => {
+          // Map over each "option" (e.g. Color, Size)
+          return optionValues.map((option) => {
+            // option.name => e.g. "Color"
+            // option.values => array of possible values (e.g. Red, Blue)
             const activeValue =
               option.values.find((v) => v.isActive)?.value || '';
 
@@ -346,6 +346,7 @@ export function ProductForm({
                   <span className="OptionValue">{activeValue}</span>
                 </h5>
                 <div className="product-options-grid">
+                  {/* Loop over possible values, e.g. Red/Blue, S/M/L, etc. */}
                   {option.values.map(
                     ({
                       value,
@@ -354,6 +355,7 @@ export function ProductForm({
                       setOptionValue,
                       variant,
                     }) => {
+                      // If it's a color option, show an image if the variant has one
                       const isColorOption =
                         option.name.toLowerCase() === 'color';
                       const variantImage = isColorOption && variant?.image?.url;
@@ -365,7 +367,8 @@ export function ProductForm({
                             isActive ? 'active' : ''
                           }`}
                           disabled={!isAvailable}
-                          onClick={() => setOptionValue(option.name, value)}
+                          onClick={() => setOptionValue(value)}
+                          // ^ In new versions, setOptionValue might only take the value
                           style={{
                             border: isActive
                               ? '1px solid #000'
@@ -404,10 +407,7 @@ export function ProductForm({
         }}
       </VariantSelector>
 
-      {/* 
-        Below is the same 'product-form' block with your 
-        existing AddToCartButton, plus the optional WhatsApp link.
-      */}
+      {/* Same "product-form" area with AddToCartButton and optional WhatsApp link */}
       <div className="product-form">
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
@@ -421,7 +421,6 @@ export function ProductForm({
           {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
         </AddToCartButton>
 
-        {/* Optional WhatsApp share link */}
         {isProductPage && (
           <a
             href={whatsappShareUrl}
