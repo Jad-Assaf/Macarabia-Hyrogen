@@ -380,6 +380,9 @@ export function ProductForm({
     );
   };
 
+  const isProductPage = location.pathname.includes('/products/');
+  const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I want to buy ${product.title} https://macarabia.me${location.pathname}`;
+
   // WhatsApp SVG icon (if you still want the share button)
   const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 175.216 175.552">
