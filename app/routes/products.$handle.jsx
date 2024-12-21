@@ -179,15 +179,24 @@ async function loadCriticalData({context, params, request}) {
     throw new Response('Product not found', {status: 404});
   }
 
-  // Select the first variant if no selected variant is available
+  // Select the first variant as the default if applicable
   const firstVariant = product.variants.nodes[0];
-  if (!product.selectedVariant && firstVariant) {
+  const firstVariantIsDefault = Boolean(
+    firstVariant.selectedOptions.find(
+      (option) => option.name === 'Title' && option.value === 'Default Title',
+    ),
+  );
+
+  if (firstVariantIsDefault) {
     product.selectedVariant = firstVariant;
+  } else if (!product.selectedVariant) {
+    throw redirectToFirstVariant({product, request});
   }
 
-  // Extract additional product data
+  // Extract the first image
   const firstImage = product.images?.edges?.[0]?.node?.url || null;
 
+  // Fetch related products
   const productType = product.productType || 'General';
   const {products} = await storefront.query(RELATED_PRODUCTS_QUERY, {
     variables: {productType},
@@ -195,13 +204,14 @@ async function loadCriticalData({context, params, request}) {
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
 
+  // Return necessary product data including SEO, first image, and variant price
   return {
     product: {
       ...product,
-      firstImage,
-      seoTitle: product.seo?.title || product.title,
-      seoDescription: product.seo?.description || product.description,
-      variantPrice: firstVariant?.price || product.priceRange?.minVariantPrice,
+      firstImage, // Add the first image URL
+      seoTitle: product.seo?.title || product.title, // Use SEO title or fallback
+      seoDescription: product.seo?.description || product.description, // Use SEO description or fallback
+      variantPrice: firstVariant?.price || product.priceRange?.minVariantPrice, // Variant price
     },
     relatedProducts,
   };
