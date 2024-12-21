@@ -65,7 +65,7 @@ export async function loader(args) {
         'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/christmas-banner.jpg?v=1733318318',
       mobileImageUrl:
         'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/christmas-mobile-banner.jpg?v=1733318318',
-      link: '/collections/christmas-sale',
+      link: '/collections/new-arrivals',
     },
     {
       desktopImageUrl:
