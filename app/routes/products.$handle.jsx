@@ -9,6 +9,7 @@ import {
   getSeoMeta,
   CartForm,
   VariantSelector,
+  useOptimisticCart,
 } from '@shopify/hydrogen';
 import {motion} from 'framer-motion';
 import {getVariantUrl} from '~/lib/variants';
@@ -482,11 +483,23 @@ export function ProductForm({
       >
         {({option}) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
+
       <div className="product-form">
         {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
-          onClick={() => open('cart')}
+          onClick={() => {
+            if (selectedVariant) {
+              // Use the optimistic cart hook to add the item
+              useOptimisticCart.addLine({
+                merchandiseId: selectedVariant.id,
+                quantity: safeQuantity,
+              });
+
+              // Optionally, open the cart UI
+              open('cart');
+            }
+          }}
           lines={
             selectedVariant
               ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
