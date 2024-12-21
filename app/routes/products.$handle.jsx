@@ -264,7 +264,8 @@ export function ProductForm({
 
   // Make sure we have the full array of variants in product.variants.nodes
   const fullVariants = product?.variants?.nodes || [];
-  const safeQuantity = typeof quantity === 'number' && quantity > 0 ? quantity : 1;
+  const safeQuantity =
+    typeof quantity === 'number' && quantity > 0 ? quantity : 1;
 
   // (Optional) Build a share URL
   const isProductPage = location.pathname.includes('/products/');
@@ -344,7 +345,7 @@ export function ProductForm({
                           isActive ? 'active' : ''
                         }`}
                         disabled={!isAvailable}
-                        onClick={() => setOptionValue(value)}
+                        onClick={() => setOptionValue(name, value)}
                         style={{
                           border: isActive
                             ? '1px solid #000'
@@ -493,7 +494,6 @@ export default function Product() {
   }, [quantity, selectedVariant]);
 
   const {title, descriptionHtml, images} = product;
-  
 
   const hasDiscount =
     selectedVariant?.compareAtPrice &&
