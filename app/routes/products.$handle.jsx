@@ -9,6 +9,7 @@ import {
   getSeoMeta,
   CartForm,
   VariantSelector,
+  useOptimisticCart,
 } from '@shopify/hydrogen';
 import {motion} from 'framer-motion';
 import {getVariantUrl} from '~/lib/variants';
@@ -22,8 +23,6 @@ import {RELATED_PRODUCTS_QUERY} from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
-import {useOptimisticCart} from '@shopify/hydrogen-react';
-
 
 export const meta = ({data}) => {
   const product = data?.product;
