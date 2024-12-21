@@ -384,7 +384,7 @@ export function ProductForm({
             return (
               <button
                 key={name + value}
-                disabled={!canPick}
+
                 onClick={() => handleOptionChange(name, value)}
                 className={`product-options-item ${isActive ? 'active' : ''}`}
                 style={{
