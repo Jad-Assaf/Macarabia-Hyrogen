@@ -337,9 +337,27 @@ export function ProductForm({
           <span className="OptionValue">{selectedOptions[option.name]}</span>
         </h5>
         <div className="product-options-grid">
-          {option.values.map(({value, isAvailable, variant}) => {
-            const isColorOption = option.name.toLowerCase() === 'color';
-            const variantImage = isColorOption && variant?.image?.url;
+          {option.values.map(({value}) => {
+            // Merge the user’s current selectedOptions with this *potential* value
+            const hypotheticalSelections = {
+              ...selectedOptions,
+              [option.name]: value,
+            };
+
+            // Find a variant that matches *all* those selections
+            const matchingVariant = variants.find((variant) =>
+              Object.entries(hypotheticalSelections).every(
+                ([optName, optValue]) =>
+                  variant.selectedOptions.some(
+                    (selectedOpt) =>
+                      selectedOpt.name === optName &&
+                      selectedOpt.value === optValue,
+                  ),
+              ),
+            );
+
+            // isAvailable is true if we found a matching variant that’s in stock
+            const isAvailable = matchingVariant?.availableForSale || false;
 
             return (
               <button
