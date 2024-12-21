@@ -257,25 +257,20 @@ export function ProductForm({
   product,
   selectedVariant,
   onVariantChange,
-  quantity,
-  isFallback = false,
+  quantity = 1,
 }) {
-  if (isFallback) {
-    // Render a simple "loading" placeholder
-    return <div>Loading product form...</div>;
-  }
   const {open} = useAside();
   const location = useLocation();
 
-  // Ensure quantity is valid
-  const safeQuantity =
-    typeof quantity === 'number' && quantity > 0 ? quantity : 1;
+  // Make sure we have the full array of variants in product.variants.nodes
+  const fullVariants = product?.variants?.nodes || [];
+  const safeQuantity = typeof quantity === 'number' && quantity > 0 ? quantity : 1;
 
-  // Optional: Build WhatsApp share URL
+  // (Optional) Build a share URL
   const isProductPage = location.pathname.includes('/products/');
-  const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I would like to buy ${product.title} https://macarabia.me${location.pathname}`;
+  const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I want to buy ${product.title} https://macarabia.me${location.pathname}`;
 
-  // A WhatsApp icon component (unchanged)
+  // A WhatsApp icon (example)
   const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 175.216 175.552">
       <defs>
@@ -324,91 +319,66 @@ export function ProductForm({
 
   return (
     <>
-      {/* 
-        Using the new approach: <VariantSelector product={product} onChangeVariant={...}>
-        Then we destructure {optionValues} rather than {options}.
-      */}
-      <VariantSelector product={product} onChangeVariant={onVariantChange}>
-        {({optionValues}) => {
-          // If no optionValues, skip rendering anything
-          if (!optionValues) return null;
+      <VariantSelector
+        handle={product.handle}
+        options={product.options}
+        variants={fullVariants}
+        onChangeVariant={onVariantChange}
+      >
+        {({option}) => {
+          const {name, values} = option;
 
-          // Map over each "option" (e.g. Color, Size)
-          return optionValues.map((option) => {
-            // option.name => e.g. "Color"
-            // option.values => array of possible values (e.g. Red, Blue)
-            const activeValue =
-              option.values.find((v) => v.isActive)?.value || '';
+          return (
+            <div className="product-options" key={name}>
+              <h5 className="OptionName">{name}</h5>
+              <div className="product-options-grid">
+                {values.map(
+                  ({value, isActive, isAvailable, setOptionValue, variant}) => {
+                    const isColorOption = name.toLowerCase() === 'color';
+                    const variantImage = isColorOption && variant?.image?.url;
 
-            return (
-              <div className="product-options" key={option.name}>
-                <h5 className="OptionName">
-                  {option.name}:{' '}
-                  <span className="OptionValue">{activeValue}</span>
-                </h5>
-                <div className="product-options-grid">
-                  {/* Loop over possible values, e.g. Red/Blue, S/M/L, etc. */}
-                  {option.values.map(
-                    ({
-                      value,
-                      isActive,
-                      isAvailable,
-                      setOptionValue,
-                      variant,
-                    }) => {
-                      // If it's a color option, show an image if the variant has one
-                      const isColorOption =
-                        option.name.toLowerCase() === 'color';
-                      const variantImage = isColorOption && variant?.image?.url;
-
-                      return (
-                        <button
-                          key={option.name + value}
-                          className={`product-options-item ${
-                            isActive ? 'active' : ''
-                          }`}
-                          disabled={!isAvailable}
-                          onClick={() => setOptionValue(value)}
-                          // ^ In new versions, setOptionValue might only take the value
-                          style={{
-                            border: isActive
-                              ? '1px solid #000'
-                              : '1px solid transparent',
-                            opacity: isAvailable ? 1 : 0.3,
-                            borderRadius: '20px',
-                            transition: 'all 0.3s ease-in-out',
-                            backgroundColor: isActive ? '#e6f2ff' : '#f0f0f0',
-                            boxShadow: isActive
-                              ? '0 2px 4px rgba(0,0,0,0.1)'
-                              : 'none',
-                            transform: isActive ? 'scale(0.98)' : 'scale(1)',
-                          }}
-                        >
-                          {variantImage ? (
-                            <img
-                              src={variantImage}
-                              alt={value}
-                              style={{
-                                width: '50px',
-                                height: '50px',
-                                objectFit: 'cover',
-                              }}
-                            />
-                          ) : (
-                            value
-                          )}
-                        </button>
-                      );
-                    },
-                  )}
-                </div>
+                    return (
+                      <button
+                        key={name + value}
+                        className={`product-options-item ${
+                          isActive ? 'active' : ''
+                        }`}
+                        disabled={!isAvailable}
+                        onClick={() => setOptionValue(value)}
+                        style={{
+                          border: isActive
+                            ? '1px solid #000'
+                            : '1px solid transparent',
+                          opacity: isAvailable ? 1 : 0.3,
+                          borderRadius: '20px',
+                          transition: 'all 0.3s ease-in-out',
+                          backgroundColor: isActive ? '#e6f2ff' : '#f0f0f0',
+                          boxShadow: isActive
+                            ? '0 2px 4px rgba(0,0,0,0.1)'
+                            : 'none',
+                          transform: isActive ? 'scale(0.98)' : 'scale(1)',
+                        }}
+                      >
+                        {variantImage ? (
+                          <img
+                            src={variantImage}
+                            alt={value}
+                            width="50"
+                            height="50"
+                          />
+                        ) : (
+                          value
+                        )}
+                      </button>
+                    );
+                  },
+                )}
               </div>
-            );
-          });
+            </div>
+          );
         }}
       </VariantSelector>
 
-      {/* Same "product-form" area with AddToCartButton and optional WhatsApp link */}
       <div className="product-form">
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
