@@ -331,7 +331,8 @@ export function ProductForm({
         options={product.options}
         onChangeVariant={onVariantChange}
       >
-        {({options}) =>
+        {({options}) => {
+          if (!options || !Array.isArray(options)) return null;
           options.map((option) => {
             // Find the currently selected value for this option (if any)
             const activeValue =
@@ -399,8 +400,8 @@ export function ProductForm({
                 </div>
               </div>
             );
-          })
-        }
+          });
+        }}
       </VariantSelector>
 
       {/* 
