@@ -284,9 +284,13 @@ export function ProductForm({
   // If parent’s selectedVariant changes, sync it here
   useEffect(() => {
     if (!selectedVariant?.selectedOptions) return;
-    setSelectedOptions
+    setSelectedOptions(
+      selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
+        acc[name] = value;
+        return acc;
+      }, {}),
+    );
   }, [product, selectedVariant]);
-
 
   // Every time a user picks a new option
   const handleOptionChange = (name, value) => {
