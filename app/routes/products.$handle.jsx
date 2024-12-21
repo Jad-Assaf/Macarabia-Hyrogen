@@ -190,10 +190,9 @@ async function loadCriticalData({context, params, request}) {
     ),
   );
 
-  if (firstVariantIsDefault) {
+  // If there's no valid selectedVariant, just assign the firstVariant.
+  if (!product.selectedVariant) {
     product.selectedVariant = firstVariant;
-  } else if (!product.selectedVariant) {
-    throw redirectToFirstVariant({product, request});
   }
 
   // Extract the first image
