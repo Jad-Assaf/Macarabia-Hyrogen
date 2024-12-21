@@ -254,81 +254,142 @@ function redirectToFirstVariant({product, request}) {
 // Embed everything from ProductForm.jsx directly here
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ProductForm({
+export function ProductForm({
   product,
-  selectedVariant: initialSelectedVariant,
-  variants,
+  selectedVariant,
+  onVariantChange, // <-- callback prop to update the parent
+  variants = [],
   quantity = 1,
 }) {
   const {open} = useAside();
   const location = useLocation();
 
-  // Track selected options state
+  // Track selected options in local state
   const [selectedOptions, setSelectedOptions] = useState(() => {
-    if (initialSelectedVariant) {
-      return initialSelectedVariant.selectedOptions.reduce(
-        (acc, {name, value}) => {
-          acc[name] = value;
-          return acc;
-        },
-        {},
-      );
+    // Initialize from the passed-in selectedVariant
+    if (selectedVariant && selectedVariant.selectedOptions) {
+      return selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
+        acc[name] = value;
+        return acc;
+      }, {});
     }
+
+    // Fallback: pick the first available option
     return product.options.reduce((acc, option) => {
       acc[option.name] = option.values[0]?.value || '';
       return acc;
     }, {});
   });
 
+  // If parent’s selectedVariant changes, sync it here
   useEffect(() => {
-    if (initialSelectedVariant) {
-      setSelectedOptions(
-        initialSelectedVariant.selectedOptions.reduce((acc, {name, value}) => {
-          acc[name] = value;
-          return acc;
-        }, {}),
-      );
-    } else {
-      setSelectedOptions(
-        product.options.reduce((acc, option) => {
-          acc[option.name] = option.values[0]?.value || '';
-          return acc;
-        }, {}),
-      );
-    }
-  }, [product, initialSelectedVariant]);
+    if (!selectedVariant?.selectedOptions) return;
+    setSelectedOptions(
+      selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
+        acc[name] = value;
+        return acc;
+      }, {}),
+    );
+  }, [selectedVariant]);
 
-  // Update selected options on change
+  // Every time a user picks a new option
   const handleOptionChange = (name, value) => {
+    // Update local selections
     setSelectedOptions((prev) => {
       const newOptions = {...prev, [name]: value};
 
-      // Update the URL with selected options
+      // Update the URL with the new options
       const queryParams = new URLSearchParams(newOptions).toString();
       const newUrl = `${location.pathname}?${queryParams}`;
       window.history.replaceState(null, '', newUrl);
+
+      // Figure out the newly selected variant
+      const foundVariant = variants.find((variant) =>
+        Object.entries(newOptions).every(([key, val]) =>
+          variant.selectedOptions.some(
+            (opt) => opt.name === key && opt.value === val,
+          ),
+        ),
+      );
+
+      // If found, inform the parent
+      if (foundVariant) {
+        onVariantChange(foundVariant);
+      }
 
       return newOptions;
     });
   };
 
-  // Determine the updated selected variant
-  const updatedVariant = variants.find((variant) =>
-    Object.entries(selectedOptions).every(([name, value]) =>
-      variant.selectedOptions.some(
-        (opt) => opt.name === name && opt.value === value,
-      ),
-    ),
-  );
-
-  // Ensure fallback quantity is safe
+  // Simple utility to ensure fallback quantity is valid
   const safeQuantity =
     typeof quantity === 'number' && quantity > 0 ? quantity : 1;
 
-  // Check if we're on the product page
+  // Build a share URL for WhatsApp (optional, if you still want that)
   const isProductPage = location.pathname.includes('/products/');
+  const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I would like to buy ${product.title} https://macarabia.me${location.pathname}`;
 
-  // WhatsApp SVG
+  // Example sub-component for showing available product options
+  const ProductOptions = ({option}) => {
+    return (
+      <div className="product-options" key={option.name}>
+        <h5 className="OptionName">
+          {option.name}:{' '}
+          <span className="OptionValue">{selectedOptions[option.name]}</span>
+        </h5>
+        <div className="product-options-grid">
+          {option.values.map(({value, isAvailable, variant}) => {
+            const isColorOption = option.name.toLowerCase() === 'color';
+            const variantImage = isColorOption && variant?.image?.url;
+
+            return (
+              <button
+                key={option.name + value}
+                className={`product-options-item ${
+                  selectedOptions[option.name] === value ? 'active' : ''
+                }`}
+                disabled={!isAvailable}
+                onClick={() => handleOptionChange(option.name, value)}
+                style={{
+                  border:
+                    selectedOptions[option.name] === value
+                      ? '1px solid #000'
+                      : '1px solid transparent',
+                  opacity: isAvailable ? 1 : 0.3,
+                  borderRadius: '20px',
+                  transition: 'all 0.3s ease-in-out',
+                  backgroundColor:
+                    selectedOptions[option.name] === value
+                      ? '#e6f2ff'
+                      : '#f0f0f0',
+                  boxShadow:
+                    selectedOptions[option.name] === value
+                      ? '0 2px 4px rgba(0,0,0,0.1)'
+                      : 'none',
+                  transform:
+                    selectedOptions[option.name] === value
+                      ? 'scale(0.98)'
+                      : 'scale(1)',
+                }}
+              >
+                {variantImage ? (
+                  <img
+                    src={variantImage}
+                    alt={value}
+                    style={{width: '50px', height: '50px', objectFit: 'cover'}}
+                  />
+                ) : (
+                  value
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // WhatsApp SVG icon (if you still want the share button)
   const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 175.216 175.552">
       <defs>
@@ -375,40 +436,32 @@ function ProductForm({
     </svg>
   );
 
-  const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I would like to buy ${product.title} https://macarabia.me${location.pathname}`;
-
   return (
     <>
+      {/* Renders the variant options (size, color, etc.) */}
       <VariantSelector
         handle={product.handle}
-        options={product.options.filter((option) => option.values.length > 1)}
+        options={product.options.filter((o) => o.values.length > 1)}
         variants={variants}
       >
-        {({option}) => (
-          <>
-            <ProductOptions
-              key={option.name}
-              option={option}
-              selectedOptions={selectedOptions}
-              onOptionChange={handleOptionChange}
-            />
-            <br />
-          </>
-        )}
+        {({option}) => <ProductOptions option={option} />}
       </VariantSelector>
-      <br />
+
       <div className="product-form">
+        {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
         <AddToCartButton
-          disabled={!updatedVariant || !updatedVariant.availableForSale}
+          disabled={!selectedVariant || !selectedVariant.availableForSale}
           onClick={() => open('cart')}
           lines={
-            updatedVariant
-              ? [{merchandiseId: updatedVariant.id, quantity: safeQuantity}]
+            selectedVariant
+              ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
               : []
           }
         >
-          {updatedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+          {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
         </AddToCartButton>
+
+        {/* Optional WhatsApp share link */}
         {isProductPage && (
           <a
             href={whatsappShareUrl}
@@ -422,65 +475,6 @@ function ProductForm({
         )}
       </div>
     </>
-  );
-}
-
-function ProductOptions({option, selectedOptions, onOptionChange}) {
-  return (
-    <div className="product-options" key={option.name}>
-      <h5 className="OptionName">
-        {option.name}:{' '}
-        <span className="OptionValue">{selectedOptions[option.name]}</span>
-      </h5>
-      <div className="product-options-grid">
-        {option.values.map(({value, isAvailable, variant}) => {
-          const isColorOption = option.name.toLowerCase() === 'color';
-          const variantImage = isColorOption && variant?.image?.url;
-
-          return (
-            <button
-              key={option.name + value}
-              className={`product-options-item ${
-                selectedOptions[option.name] === value ? 'active' : ''
-              }`}
-              disabled={!isAvailable}
-              onClick={() => onOptionChange(option.name, value)}
-              style={{
-                border:
-                  selectedOptions[option.name] === value
-                    ? '1px solid #000'
-                    : '1px solid transparent',
-                opacity: isAvailable ? 1 : 0.3,
-                borderRadius: '20px',
-                transition: 'all 0.3s ease-in-out',
-                backgroundColor:
-                  selectedOptions[option.name] === value
-                    ? '#e6f2ff'
-                    : '#f0f0f0',
-                boxShadow:
-                  selectedOptions[option.name] === value
-                    ? '0 2px 4px rgba(0,0,0,0.1)'
-                    : 'none',
-                transform:
-                  selectedOptions[option.name] === value
-                    ? 'scale(0.98)'
-                    : 'scale(1)',
-              }}
-            >
-              {variantImage ? (
-                <img
-                  src={variantImage}
-                  alt={value}
-                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
-                />
-              ) : (
-                value
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
   );
 }
 
@@ -543,9 +537,8 @@ function DirectCheckoutButton({selectedVariant, quantity}) {
 
 export default function Product() {
   const {product, variants, relatedProducts} = useLoaderData();
-  const selectedVariant = useOptimisticVariant(
+  const [selectedVariant, setSelectedVariant] = useState(
     product.selectedVariant,
-    variants,
   );
 
   const [quantity, setQuantity] = useState(1);
@@ -574,7 +567,7 @@ export default function Product() {
     <div className="product">
       <div className="ProductPageTop">
         <ProductImages
-          images={images.edges}
+          images={product.images.edges}
           selectedVariantImage={selectedVariant?.image}
         />
         <div className="product-main">
@@ -583,11 +576,11 @@ export default function Product() {
             <small
               className={`product-price ${hasDiscount ? 'discounted' : ''}`}
             >
-              <Money data={selectedVariant.price} />
+              <Money data={selectedVariant?.price} />
             </small>
             {hasDiscount && selectedVariant.compareAtPrice && (
               <small className="discountedPrice">
-                <Money data={selectedVariant.compareAtPrice} />
+                <Money data={selectedVariant?.compareAtPrice} />
               </small>
             )}
           </div>
@@ -614,7 +607,8 @@ export default function Product() {
               <ProductForm
                 product={product}
                 selectedVariant={selectedVariant}
-                variants={[]}
+                onVariantChange={setSelectedVariant}
+                variants={variants?.product?.variants?.nodes || []}
                 quantity={Number(quantity)}
               />
             }
