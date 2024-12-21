@@ -257,8 +257,13 @@ export function ProductForm({
   product,
   selectedVariant,
   onVariantChange,
-  quantity = 1,
+  quantity,
+  isFallback = false,
 }) {
+  if (isFallback) {
+    // Render a simple "loading" placeholder
+    return <div>Loading product form...</div>;
+  }
   const {open} = useAside();
   const location = useLocation();
 
@@ -323,14 +328,10 @@ export function ProductForm({
         Using the new approach: <VariantSelector product={product} onChangeVariant={...}>
         Then we destructure {optionValues} rather than {options}.
       */}
-      <VariantSelector
-        product={product}
-        // This callback is invoked when the user selects a new variant:
-        onChangeVariant={onVariantChange}
-      >
+      <VariantSelector product={product} onChangeVariant={onVariantChange}>
         {({optionValues}) => {
           // If no optionValues, skip rendering anything
-          if (!optionValues || !Array.isArray(optionValues)) return null;
+          if (!optionValues) return null;
 
           // Map over each "option" (e.g. Color, Size)
           return optionValues.map((option) => {
@@ -522,6 +523,7 @@ export default function Product() {
   }, [quantity, selectedVariant]);
 
   const {title, descriptionHtml, images} = product;
+  
 
   const hasDiscount =
     selectedVariant?.compareAtPrice &&
@@ -572,8 +574,8 @@ export default function Product() {
                 product={product}
                 selectedVariant={selectedVariant}
                 onVariantChange={setSelectedVariant}
-                variants={[]}
                 quantity={Number(quantity)}
+                isFallback // a custom prop to show a placeholder UI
               />
             }
           >
@@ -582,15 +584,12 @@ export default function Product() {
               errorElement="There was a problem loading product variants"
             >
               {(data) => (
-                <>
-                  <ProductForm
-                    product={product}
-                    selectedVariant={selectedVariant}
-                    onVariantChange={setSelectedVariant}
-                    variants={data?.product?.variants?.nodes || []}
-                    quantity={quantity}
-                  />
-                </>
+                <ProductForm
+                  product={product}
+                  selectedVariant={selectedVariant}
+                  onVariantChange={setSelectedVariant}
+                  quantity={quantity}
+                />
               )}
             </Await>
           </Suspense>
