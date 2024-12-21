@@ -575,7 +575,7 @@ export default function Product() {
                 selectedVariant={selectedVariant}
                 onVariantChange={setSelectedVariant}
                 quantity={Number(quantity)}
-                isFallback // a custom prop to show a placeholder UI
+                isFallback
               />
             }
           >
@@ -583,14 +583,25 @@ export default function Product() {
               resolve={variants}
               errorElement="There was a problem loading product variants"
             >
-              {(data) => (
-                <ProductForm
-                  product={product}
-                  selectedVariant={selectedVariant}
-                  onVariantChange={setSelectedVariant}
-                  quantity={quantity}
-                />
-              )}
+              {(data) => {
+                // Merge the bigger variant list from `data`
+                const productWithAllVariants = {
+                  ...product,
+                  variants: {
+                    // If `data?.product?.variants?.nodes` is null/undefined, fallback to empty array
+                    nodes: data?.product?.variants?.nodes || [],
+                  },
+                };
+
+                return (
+                  <ProductForm
+                    product={productWithAllVariants}
+                    selectedVariant={selectedVariant}
+                    onVariantChange={setSelectedVariant}
+                    quantity={quantity}
+                  />
+                );
+              }}
             </Await>
           </Suspense>
 
