@@ -284,13 +284,9 @@ export function ProductForm({
   // If parent’s selectedVariant changes, sync it here
   useEffect(() => {
     if (!selectedVariant?.selectedOptions) return;
-    setSelectedOptions(
-      selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
-        acc[name] = value;
-        return acc;
-      }, {}),
-    );
-  }, [selectedVariant]);
+    setSelectedOptions
+  }, [product, selectedVariant]);
+
 
   // Every time a user picks a new option
   const handleOptionChange = (name, value) => {
@@ -540,6 +536,11 @@ export default function Product() {
   const [selectedVariant, setSelectedVariant] = useState(
     product.selectedVariant,
   );
+
+  useEffect(() => {
+    setSelectedVariant(product.selectedVariant);
+    setQuantity(1); // If you want to reset quantity to 1 for new product
+  }, [product]);
 
   const [quantity, setQuantity] = useState(1);
   const [subtotal, setSubtotal] = useState(0);
