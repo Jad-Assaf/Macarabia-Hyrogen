@@ -171,7 +171,7 @@ export function ProductForm({
               : []
           }
         >
-          {updatedVariant?.availableForSale ? 'Add to cart' : 'Not Available'}
+          {updatedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
         </AddToCartButton>
         {isProductPage && (
           <a
@@ -192,7 +192,7 @@ export function ProductForm({
 /**
  * @param {{option: VariantOption, selectedOptions: Object, onOptionChange: Function}}
  */
-function ProductOptions({ option, selectedOptions, onOptionChange }) {
+function ProductOptions({option, selectedOptions, onOptionChange}) {
   return (
     <div className="product-options" key={option.name}>
       <h5 className="OptionName">
@@ -200,23 +200,18 @@ function ProductOptions({ option, selectedOptions, onOptionChange }) {
         <span className="OptionValue">{selectedOptions[option.name]}</span>
       </h5>
       <div className="product-options-grid">
-        {option.values.map(({ value, isAvailable, variant, to }) => {
+        {option.values.map(({value, isAvailable, variant}) => {
           const isColorOption = option.name.toLowerCase() === 'color';
           const variantImage = isColorOption && variant?.image?.url;
 
           return (
-            <Link
+            <button
               key={option.name + value}
               className={`product-options-item ${
                 selectedOptions[option.name] === value ? 'active' : ''
               }`}
-              to={to}
-              onClick={(e) => {
-                e.preventDefault(); // Prevent navigation
-                if (isAvailable) {
-                  onOptionChange(option.name, value);
-                }
-              }}
+              disabled={!isAvailable}
+              onClick={() => onOptionChange(option.name, value)}
               style={{
                 border:
                   selectedOptions[option.name] === value
@@ -237,19 +232,18 @@ function ProductOptions({ option, selectedOptions, onOptionChange }) {
                   selectedOptions[option.name] === value
                     ? 'scale(0.98)'
                     : 'scale(1)',
-                pointerEvents: isAvailable ? 'auto' : 'none',
               }}
             >
               {variantImage ? (
                 <img
                   src={variantImage}
                   alt={value}
-                  style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                  style={{width: '50px', height: '50px', objectFit: 'cover'}}
                 />
               ) : (
                 value
               )}
-            </Link>
+            </button>
           );
         })}
       </div>
