@@ -482,7 +482,6 @@ export function ProductForm({
       >
         {({option}) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
-      <br />
       <div className="product-form">
         {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
         <AddToCartButton
