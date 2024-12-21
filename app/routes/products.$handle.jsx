@@ -1,6 +1,6 @@
-import React, {Suspense, useEffect, useState} from 'react';
-import {defer, redirect} from '@shopify/remix-oxygen';
-import {Await, useLoaderData, useLocation} from '@remix-run/react';
+import React, { Suspense, useEffect, useState } from 'react';
+import { defer, redirect } from '@shopify/remix-oxygen';
+import { Await, useLoaderData } from '@remix-run/react';
 import {
   getSelectedProductOptions,
   Analytics,
@@ -8,20 +8,17 @@ import {
   Money,
   getSeoMeta,
 } from '@shopify/hydrogen';
-import {getVariantUrl} from '~/lib/variants';
-import {ProductPrice} from '~/components/ProductPrice';
-import {ProductImages} from '~/components/ProductImage';
-import {AddToCartButton} from '~/components/AddToCartButton';
-import {VariantSelector} from '@shopify/hydrogen';
-import {ProductForm} from '~/components/ProductForm';
-import '../styles/ProductPage.css';
-import {DirectCheckoutButton} from '../components/ProductForm';
-import {CSSTransition} from 'react-transition-group';
-import {RELATED_PRODUCTS_QUERY} from '~/lib/fragments';
+import { getVariantUrl } from '~/lib/variants';
+import { ProductPrice } from '~/components/ProductPrice';
+import { ProductImages } from '~/components/ProductImage';
+import { ProductForm } from '~/components/ProductForm';
+import "../styles/ProductPage.css"
+import { DirectCheckoutButton } from '../components/ProductForm';
+import { CSSTransition } from 'react-transition-group';
+import { RELATED_PRODUCTS_QUERY } from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
-import {ProductMetafields} from '~/components/Metafields';
+import { ProductMetafields } from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
-import {useAside} from '~/components/Aside';
 
 export const meta = ({data}) => {
   const product = data?.product;
@@ -159,7 +156,7 @@ export async function loader(args) {
   const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
 
-  return defer({...deferredData, ...criticalData});
+  return defer({ ...deferredData, ...criticalData });
 }
 
 async function loadCriticalData({context, params, request}) {
@@ -220,22 +217,20 @@ async function loadCriticalData({context, params, request}) {
   };
 }
 
-function loadDeferredData({context, params}) {
-  const {storefront} = context;
+function loadDeferredData({ context, params }) {
+  const { storefront } = context;
 
-  const variants = storefront
-    .query(VARIANTS_QUERY, {
-      variables: {handle: params.handle},
-    })
-    .catch((error) => {
-      console.error(error);
-      return null;
-    });
+  const variants = storefront.query(VARIANTS_QUERY, {
+    variables: { handle: params.handle },
+  }).catch((error) => {
+    console.error(error);
+    return null;
+  });
 
-  return {variants};
+  return { variants };
 }
 
-function redirectToFirstVariant({product, request}) {
+function redirectToFirstVariant({ product, request }) {
   const url = new URL(request.url);
   const firstVariant = product.variants.nodes[0];
 
@@ -246,233 +241,90 @@ function redirectToFirstVariant({product, request}) {
       selectedOptions: firstVariant.selectedOptions,
       searchParams: new URLSearchParams(url.search),
     }),
-    {status: 302},
+    { status: 302 }
   );
 }
 
 export default function Product() {
-  const {product, variants, relatedProducts} = useLoaderData();
-  const location = useLocation();
-  const {open} = useAside();
+  const { product, variants, relatedProducts } = useLoaderData();
+  const selectedVariant = useOptimisticVariant(
+    product.selectedVariant,
+    variants
+  );
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedOptions, setSelectedOptions] = useState(() => {
-    if (product.selectedVariant) {
-      return product.selectedVariant.selectedOptions.reduce(
-        (acc, {name, value}) => {
-          acc[name] = value;
-          return acc;
-        },
-        {},
-      );
-    }
-    return product.options.reduce((acc, option) => {
-      acc[option.name] = option.values[0]?.value || '';
-      return acc;
-    }, {});
-  });
+  const [subtotal, setSubtotal] = useState(0);
+
+  const incrementQuantity = () => setQuantity(prev => prev + 1);
+  const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+
+  const [activeTab, setActiveTab] = useState('description');
 
   useEffect(() => {
-    if (product.selectedVariant) {
-      setSelectedOptions(
-        product.selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
-          acc[name] = value;
-          return acc;
-        }, {}),
-      );
-    } else {
-      setSelectedOptions(
-        product.options.reduce((acc, option) => {
-          acc[option.name] = option.values[0]?.value || '';
-          return acc;
-        }, {}),
-      );
+    if (selectedVariant && selectedVariant.price) {
+      const price = parseFloat(selectedVariant.price.amount);
+      setSubtotal(price * quantity);
     }
-  }, [product]);
+  }, [quantity, selectedVariant]);
 
-  const handleOptionChange = (name, value) => {
-    setSelectedOptions((prev) => {
-      const newOptions = {...prev, [name]: value};
-      const queryParams = new URLSearchParams(newOptions).toString();
-      const newUrl = `${location.pathname}?${queryParams}`;
-      window.history.replaceState(null, '', newUrl);
-      return newOptions;
-    });
-  };
 
-  const updatedVariant = variants.find((variant) =>
-    Object.entries(selectedOptions).every(([name, value]) =>
-      variant.selectedOptions.some(
-        (opt) => opt.name === name && opt.value === value,
-      ),
-    ),
-  );
+  const { title, descriptionHtml, images } = product;
 
-  const isUnavailable = !updatedVariant?.availableForSale;
-
-  const WhatsAppIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 175.216 175.552">
-      <defs>
-        <linearGradient
-          id="b"
-          x1="85.915"
-          x2="86.535"
-          y1="32.567"
-          y2="137.092"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop offset="0" stop-color="#57d163" />
-          <stop offset="1" stop-color="#23b33a" />
-        </linearGradient>
-        <filter
-          id="a"
-          width="1.115"
-          height="1.114"
-          x="-.057"
-          y="-.057"
-          color-interpolation-filters="sRGB"
-        >
-          <feGaussianBlur stdDeviation="3.531" />
-        </filter>
-      </defs>
-      <path
-        fill="#b3b3b3"
-        d="m54.532 138.45 2.235 1.324c9.387 5.571 20.15 8.518 31.126 8.523h.023c33.707 0 61.139-27.426 61.153-61.135.006-16.335-6.349-31.696-17.895-43.251A60.75 60.75 0 0 0 87.94 25.983c-33.733 0-61.166 27.423-61.178 61.13a60.98 60.98 0 0 0 9.349 32.535l1.455 2.312-6.179 22.558zm-40.811 23.544L24.16 123.88c-6.438-11.154-9.825-23.808-9.821-36.772.017-40.556 33.021-73.55 73.578-73.55 19.681.01 38.154 7.669 52.047 21.572s21.537 32.383 21.53 52.037c-.018 40.553-33.027 73.553-73.578 73.553h-.032c-12.313-.005-24.412-3.094-35.159-8.954zm0 0"
-        filter="url(#a)"
-      />
-      <path
-        fill="#fff"
-        d="m12.966 161.238 10.439-38.114a73.42 73.42 0 0 1-9.821-36.772c.017-40.556 33.021-73.55 73.578-73.55 19.681.01 38.154 7.669 52.047 21.572s21.537 32.383 21.53 52.037c-.018 40.553-33.027 73.553-73.578 73.553h-.032c-12.313-.005-24.412-3.094-35.159-8.954z"
-      />
-      <path
-        fill="url(#linearGradient1780)"
-        d="M87.184 25.227c-33.733 0-61.166 27.423-61.178 61.13a60.98 60.98 0 0 0 9.349 32.535l1.455 2.312-6.179 22.559 23.146-6.069 2.235 1.324c9.387 5.571 20.15 8.518 31.126 8.524h.023c33.707 0 61.14-27.426 61.153-61.135a60.75 60.75 0 0 0-17.895-43.251 60.75 60.75 0 0 0-43.235-17.928z"
-      />
-      <path
-        fill="url(#b)"
-        d="M87.184 25.227c-33.733 0-61.166 27.423-61.178 61.13a60.98 60.98 0 0 0 9.349 32.535l1.455 2.313-6.179 22.558 23.146-6.069 2.235 1.324c9.387 5.571 20.15 8.517 31.126 8.523h.023c33.707 0 61.14-27.426 61.153-61.135a60.75 60.75 0 0 0-17.895-43.251 60.75 60.75 0 0 0-43.235-17.928z"
-      />
-      <path
-        fill="#fff"
-        fill-rule="evenodd"
-        d="M68.772 55.603c-1.378-3.061-2.828-3.123-4.137-3.176l-3.524-.043c-1.226 0-3.218.46-4.902 2.3s-6.435 6.287-6.435 15.332 6.588 17.785 7.506 19.013 12.718 20.381 31.405 27.75c15.529 6.124 18.689 4.906 22.061 4.6s10.877-4.447 12.408-8.74 1.532-7.971 1.073-8.74-1.685-1.226-3.525-2.146-10.877-5.367-12.562-5.981-2.91-.919-4.137.921-4.746 5.979-5.819 7.206-2.144 1.381-3.984.462-7.76-2.861-14.784-9.124c-5.465-4.873-9.154-10.891-10.228-12.73s-.114-2.835.808-3.751c.825-.824 1.838-2.147 2.759-3.22s1.224-1.84 1.836-3.065.307-2.301-.153-3.22-4.032-10.011-5.666-13.647"
-      />
-    </svg>
-  );
-
-  const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I would like to buy ${product.title} https://macarabia.me${location.pathname}`;
-
-  function ProductOptions({option, selectedOptions, onOptionChange}) {
-    return (
-      <div className="product-options" key={option.name}>
-        <h5 className="OptionName">
-          {option.name}:{' '}
-          <span className="OptionValue">{selectedOptions[option.name]}</span>
-        </h5>
-        <div className="product-options-grid">
-          {option.values.map(({value, isAvailable, variant}) => {
-            const isColorOption = option.name.toLowerCase() === 'color';
-            const variantImage = isColorOption && variant?.image?.url;
-
-            return (
-              <button
-                key={option.name + value}
-                className={`product-options-item ${
-                  selectedOptions[option.name] === value ? 'active' : ''
-                }`}
-                disabled={!isAvailable}
-                onClick={() => onOptionChange(option.name, value)}
-                style={{
-                  border:
-                    selectedOptions[option.name] === value
-                      ? '1px solid #000'
-                      : '1px solid transparent',
-                  opacity: isAvailable ? 1 : 0.3,
-                  borderRadius: '20px',
-                  transition: 'all 0.3s ease-in-out',
-                  backgroundColor:
-                    selectedOptions[option.name] === value
-                      ? '#e6f2ff'
-                      : '#f0f0f0',
-                  boxShadow:
-                    selectedOptions[option.name] === value
-                      ? '0 2px 4px rgba(0,0,0,0.1)'
-                      : 'none',
-                  transform:
-                    selectedOptions[option.name] === value
-                      ? 'scale(0.98)'
-                      : 'scale(1)',
-                }}
-              >
-                {variantImage ? (
-                  <img
-                    src={variantImage}
-                    alt={value}
-                    style={{
-                      width: '50px',
-                      height: '50px',
-                      objectFit: 'cover',
-                    }}
-                  />
-                ) : (
-                  value
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
+  const hasDiscount = selectedVariant?.compareAtPrice &&
+    selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
 
   return (
     <div className="product">
       <div className="ProductPageTop">
-        <ProductImages
-          images={product.images.edges}
-          selectedVariantImage={product.selectedVariant?.image}
-        />
+        <ProductImages images={images.edges}
+          selectedVariantImage={selectedVariant?.image} />
         <div className="product-main">
-          <h1>{product.title}</h1>
+          <h1>{title}</h1>
           <div className="price-container">
-            <Money data={product.selectedVariant.price} />
+            <small className={`product-price ${hasDiscount ? 'discounted' : ''}`}>
+              <Money data={selectedVariant.price} />
+            </small>
+            {hasDiscount && selectedVariant.compareAtPrice && (
+              <small className="discountedPrice">
+                <Money data={selectedVariant.compareAtPrice} />
+              </small>
+            )}
           </div>
           <div className="quantity-selector">
             <p>Quantity</p>
-            <button onClick={() => setQuantity(quantity - 1)}>-</button>
-            <span>{quantity}</span>
-            <button onClick={() => setQuantity(quantity + 1)}>+</button>
+            <button onClick={decrementQuantity} className="quantity-btn">-</button>
+            <span className="quantity-display">{quantity}</span>
+            <button onClick={incrementQuantity} className="quantity-btn">+</button>
           </div>
-          <VariantSelector
-            handle={product.handle}
-            options={product.options.filter(
-              (option) => option.values.length > 1,
-            )}
-            variants={variants}
-          >
-            {({option}) => (
-              <ProductOptions
-                key={option.name}
-                option={option}
-                selectedOptions={selectedOptions}
-                onOptionChange={handleOptionChange}
+          <div className="subtotal">
+            <strong>Subtotal: </strong>
+            {subtotal.toLocaleString('en-US', { style: 'currency', currency: selectedVariant?.price?.currencyCode || 'USD' })}
+          </div>
+          <Suspense
+            fallback={
+              <ProductForm
+                product={product}
+                selectedVariant={selectedVariant}
+                variants={[]}
+                quantity={Number(quantity)}
               />
-            )}
-          </VariantSelector>
-          <AddToCartButton
-            disabled={isUnavailable}
-            onClick={() => open('cart')}
-            lines={
-              updatedVariant
-                ? [{merchandiseId: updatedVariant.id, quantity}]
-                : []
             }
-          />
-          <a href={whatsappShareUrl} target="_blank" rel="noopener noreferrer">
-            <WhatsAppIcon />
-          </a>
-
-          <hr className="productPage-hr"></hr>
+          >
+            <Await resolve={variants} errorElement="There was a problem loading product variants">
+              {(data) => (
+                <><ProductForm
+                  product={product}
+                  selectedVariant={selectedVariant}
+                  variants={data?.product?.variants.nodes || []}
+                  quantity={quantity} />
+                  {/* <DirectCheckoutButton
+                    selectedVariant={selectedVariant}
+                    quantity={quantity} /> */}
+                </>
+              )}
+            </Await>
+          </Suspense>
+          <hr className='productPage-hr'></hr>
           <div className="product-details">
             <ul>
               <li>
@@ -483,16 +335,14 @@ export default function Product() {
               </li>
               <li>
                 <strong>Availability:</strong>{' '}
-                {selectedVariant?.availableForSale
-                  ? 'In Stock'
-                  : 'Out of Stock'}
+                {selectedVariant?.availableForSale ? 'In Stock' : 'Out of Stock'}
               </li>
               <li>
                 <strong>Product Type:</strong> {product.productType || 'N/A'}
               </li>
             </ul>
           </div>
-          <hr className="productPage-hr"></hr>
+          <hr className='productPage-hr'></hr>
           <ProductMetafields
             metafieldCondition={product.metafieldCondition}
             metafieldWarranty={product.metafieldWarranty}
@@ -504,9 +354,7 @@ export default function Product() {
       <div className="ProductPageBottom">
         <div className="tabs">
           <button
-            className={`tab-button ${
-              activeTab === 'description' ? 'active' : ''
-            }`}
+            className={`tab-button ${activeTab === 'description' ? 'active' : ''}`}
             onClick={() => setActiveTab('description')}
           >
             Description
@@ -532,7 +380,7 @@ export default function Product() {
           unmountOnExit
         >
           <div className="product-section">
-            <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
+            <div dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
           </div>
         </CSSTransition>
 
@@ -544,63 +392,19 @@ export default function Product() {
         >
           <div className="product-section">
             <h3>Shipping Policy</h3>
-            <p>
-              We offer shipping across all Lebanon, facilitated by our dedicated
-              delivery team servicing the Beirut district and through our
-              partnership with Wakilni for orders beyond Beirut.
-            </p>
-            <p>
-              Upon placing an order, we provide estimated shipping and delivery
-              dates tailored to your item's availability and selected product
-              options. For precise shipping details, kindly reach out to us
-              through the contact information listed in our Contact Us section.
-            </p>
-            <p>
-              Please be aware that shipping rates may vary depending on the
-              destination.
-            </p>
+            <p>We offer shipping across all Lebanon, facilitated by our dedicated delivery team servicing the Beirut district and through our partnership with Wakilni for orders beyond Beirut.</p>
+            <p>Upon placing an order, we provide estimated shipping and delivery dates tailored to your item's availability and selected product options. For precise shipping details, kindly reach out to us through the contact information listed in our Contact Us section.</p>
+            <p>Please be aware that shipping rates may vary depending on the destination.</p>
             <h3>Exchange Policy</h3>
-            <p>
-              We operate a 3-day exchange policy, granting you 3 days from
-              receipt of your item to initiate an exchange.
-            </p>
-            <p>
-              To qualify for an exchange, your item must remain in its original
-              condition, unworn or unused, with tags intact, and in its original
-              sealed packaging. Additionally, you will need to provide a receipt
-              or proof of purchase.
-            </p>
-            <p>
-              To initiate an exchange, please contact us at admin@macarabia.me.
-              Upon approval of your exchange request, we will furnish you with
-              an exchange shipping label along with comprehensive instructions
-              for package return. Please note that exchanges initiated without
-              prior authorization will not be accepted.
-            </p>
-            <p>
-              Should you encounter any damages or issues upon receiving your
-              order, please inspect the item immediately and notify us promptly.
-              We will swiftly address any defects, damages, or incorrect
-              shipments to ensure your satisfaction.
-            </p>
+            <p>We operate a 3-day exchange policy, granting you 3 days from receipt of your item to initiate an exchange.</p>
+            <p>To qualify for an exchange, your item must remain in its original condition, unworn or unused, with tags intact, and in its original sealed packaging. Additionally, you will need to provide a receipt or proof of purchase.</p>
+            <p>To initiate an exchange, please contact us at admin@macarabia.me. Upon approval of your exchange request, we will furnish you with an exchange shipping label along with comprehensive instructions for package return. Please note that exchanges initiated without prior authorization will not be accepted.</p>
+            <p>Should you encounter any damages or issues upon receiving your order, please inspect the item immediately and notify us promptly. We will swiftly address any defects, damages, or incorrect shipments to ensure your satisfaction.</p>
             <h5>Exceptions / Non-exchangeable Items</h5>
-            <p>
-              Certain items are exempt from our exchange policy, including
-              perishable goods (such as headsets, earphones, and network card
-              wifi routers), custom-made products (such as special orders or
-              personalized items), and pre-ordered goods. For queries regarding
-              specific items, please reach out to us.
-            </p>
-            <p>
-              Unfortunately, we are unable to accommodate exchanges for sale
-              items or gift cards.
-            </p>
+            <p>Certain items are exempt from our exchange policy, including perishable goods (such as headsets, earphones, and network card wifi routers), custom-made products (such as special orders or personalized items), and pre-ordered goods. For queries regarding specific items, please reach out to us.</p>
+            <p>Unfortunately, we are unable to accommodate exchanges for sale items or gift cards.</p>
             <h5>Exchanges</h5>
-            <p>
-              The most efficient method to secure the item you desire is to
-              exchange the original item, and upon acceptance of your exchange,
-              proceed with a separate purchase for the desired replacement.
-            </p>
+            <p>The most efficient method to secure the item you desire is to exchange the original item, and upon acceptance of your exchange, proceed with a separate purchase for the desired replacement.</p>
           </div>
         </CSSTransition>
 
@@ -613,55 +417,26 @@ export default function Product() {
           <div className="product-section">
             <h3>Operational Warranty Terms and Conditions</h3>
             <h3>Warranty Coverage</h3>
-            <p>
-              This warranty applies to All Products, purchased from Macarabia.
-              The warranty covers defects in materials and workmanship under
-              normal use for the period specified at the time of purchase.
-              Warranty periods vary based on the product category.
-            </p>
+            <p>This warranty applies to All Products, purchased from Macarabia. The warranty covers defects in materials and workmanship under normal use for the period specified at the time of purchase. Warranty periods vary based on the product category.</p>
             <h3>What is Covered</h3>
-            <p>
-              During the warranty period, Macarabia will repair or replace, at
-              no charge, any parts that are found to be defective due to faulty
-              materials or poor workmanship. This warranty is valid only for the
-              original purchaser and is non-transferable.
-            </p>
+            <p>During the warranty period, Macarabia will repair or replace, at no charge, any parts that are found to be defective due to faulty materials or poor workmanship. This warranty is valid only for the original purchaser and is non-transferable.</p>
             <h3>What is Not Covered</h3>
-            <p>This warranty does not cover:</p>
+            <p >This warranty does not cover:</p>
             <ul>
-              <li>
-                Any Physical Damage, damage due to misuse, abuse, accidents,
-                modifications, or unauthorized repairs.
-              </li>
-              <li>
-                Wear and tear from regular usage, including cosmetic damage like
-                scratches or dents.
-              </li>
-              <li>
-                Damage caused by power surges, lightning strikes, or electrical
-                malfunctions.
-              </li>
+              <li>Any Physical Damage, damage due to misuse, abuse, accidents, modifications, or unauthorized repairs.</li>
+              <li>Wear and tear from regular usage, including cosmetic damage like scratches or dents.</li>
+              <li>Damage caused by power surges, lightning strikes, or electrical malfunctions.</li>
               <li>Products with altered or removed serial numbers.</li>
               <li>Software-related issues</li>
             </ul>
             <h3>Warranty Claim Process</h3>
             <p>To make a claim under this warranty:</p>
             <ol>
-              <li>
-                Contact admin@macarabia.me with proof of purchase and a detailed
-                description of the issue.
-              </li>
-              <li>
-                Macarabia will assess the product and, if deemed defective,
-                repair or replace the item at no cost.
-              </li>
+              <li>Contact admin@macarabia.me with proof of purchase and a detailed description of the issue.</li>
+              <li>Macarabia will assess the product and, if deemed defective, repair or replace the item at no cost.</li>
             </ol>
             <h3>Limitations and Exclusions</h3>
-            <p>
-              This warranty is limited to repair or replacement. Macarabia will
-              not be liable for any indirect, consequential, or incidental
-              damages, including loss of data or loss of profits.
-            </p>
+            <p>This warranty is limited to repair or replacement. Macarabia will not be liable for any indirect, consequential, or incidental damages, including loss of data or loss of profits.</p>
           </div>
         </CSSTransition>
         <Analytics.ProductView
@@ -679,20 +454,21 @@ export default function Product() {
             ],
           }}
         />
-      </div>
+      </div >
       <div className="related-products-row">
         <div className="related-products">
           <h2>Related Products</h2>
           <RelatedProductsRow products={relatedProducts || []} />
         </div>
       </div>
-      <div className="recently-viewed-container">
+      <div className='recently-viewed-container'>
         <h2>Recently Viewed Products</h2>
         <RecentlyViewedProducts currentProductId={product.id} />
       </div>
-    </div>
+    </div >
   );
 }
+
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
   fragment ProductVariant on ProductVariant {
