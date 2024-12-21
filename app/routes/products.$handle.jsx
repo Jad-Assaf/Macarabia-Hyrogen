@@ -253,28 +253,57 @@ function redirectToFirstVariant({product, request}) {
 // Embed everything from ProductForm.jsx directly here
 // ─────────────────────────────────────────────────────────────────────────────
 
-function isValueAvailable(variants, selectedOptions, optionName, val) {
-  // Create a hypothetical selection
+function isValueAvailable(allVariants, selectedOptions, optionName, val) {
+  // Hypothetical new selection
   const updated = {...selectedOptions, [optionName]: val};
-  // Find any in-stock variant that matches updated
-  const found = variants.find((v) => {
-    if (!v.availableForSale) return false;
-    return v.selectedOptions.every((so) => updated[so.name] === so.value);
-  });
-  return Boolean(found);
+
+  // Find any in-stock variant whose selectedOptions match `updated`.
+  return Boolean(
+    allVariants.find((variant) => {
+      if (!variant.availableForSale) return false;
+      return variant.selectedOptions.every(
+        (so) => updated[so.name] === so.value,
+      );
+    }),
+  );
+}
+
+/**
+ * Attempt to find a fully matching, in-stock variant for the user's new selection.
+ * If none found, fallback to *any* variant that at least matches the newly picked (optionName=val).
+ * If that fallback is found, override the rest of the selection with that variant's actual combination.
+ */
+function pickOrSnapVariant(allVariants, newOptions, optionName, chosenVal) {
+  // 1) Perfect match attempt
+  let foundVariant = allVariants.find(
+    (v) =>
+      v.availableForSale &&
+      v.selectedOptions.every((so) => newOptions[so.name] === so.value),
+  );
+
+  // 2) If none, fallback: find a variant that at least matches the newly chosen (optionName=chosenVal)
+  if (!foundVariant) {
+    foundVariant = allVariants.find((v) => {
+      if (!v.availableForSale) return false;
+      const picked = v.selectedOptions.find((so) => so.name === optionName);
+      return picked?.value === chosenVal;
+    });
+  }
+
+  return foundVariant || null;
 }
 
 export function ProductForm({
   product,
   selectedVariant,
-  onVariantChange,
+  onVariantChange, // callback to update the "parent" selectedVariant
   variants = [],
   quantity = 1,
 }) {
   const location = useLocation();
   const {open} = useAside();
 
-  // Keep track of user’s currently chosen option values
+  // Keep track of currently chosen options in local state
   const [selectedOptions, setSelectedOptions] = useState(() => {
     if (selectedVariant?.selectedOptions) {
       return selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
@@ -282,13 +311,14 @@ export function ProductForm({
         return acc;
       }, {});
     }
-    // or fallback to first values
+    // If there's no initial variant, fallback to the 1st value of each option
     return product.options.reduce((acc, option) => {
       acc[option.name] = option.values[0]?.value || '';
       return acc;
     }, {});
   });
 
+  // Sync to parent changes (e.g. if user navigates to a new product)
   useEffect(() => {
     if (!selectedVariant?.selectedOptions) return;
     setSelectedOptions(
@@ -299,39 +329,31 @@ export function ProductForm({
     );
   }, [selectedVariant, product]);
 
-  /** Called when user picks a new option value. */
-  function handleOptionChange(name, value) {
+  // Called when the user picks a new (optionName, value)
+  function handleOptionChange(optionName, chosenVal) {
     setSelectedOptions((prev) => {
-      const newOptions = {...prev, [name]: value};
+      const newOptions = {...prev, [optionName]: chosenVal};
 
-      // Attempt to find a fully matching in-stock variant
-      let foundVariant = variants.find(
-        (v) =>
-          v.availableForSale &&
-          v.selectedOptions.every((so) => newOptions[so.name] === so.value),
+      // Attempt to find a fully matching variant
+      const foundVariant = pickOrSnapVariant(
+        variants,
+        newOptions,
+        optionName,
+        chosenVal,
       );
 
-      // If none found, fallback: find an available variant that at least matches this (name,value).
-      if (!foundVariant) {
-        foundVariant = variants.find((v) => {
-          if (!v.availableForSale) return false;
-          const picked = v.selectedOptions.find((so) => so.name === name);
-          return picked?.value === value;
-        });
-      }
-
-      // If we found something valid, sync all selectedOptions to that variant
       if (foundVariant) {
+        // Overwrite newOptions with foundVariant’s actual combination
         foundVariant.selectedOptions.forEach(({name, value}) => {
           newOptions[name] = value;
         });
         onVariantChange(foundVariant);
       } else {
-        // No valid variant at all -> revert user’s pick or do nothing
-        newOptions[name] = prev[name];
+        // If no valid variant is found at all, revert the user's pick
+        newOptions[optionName] = prev[optionName];
       }
 
-      // Update the URL with final newOptions
+      // Update URL with the final newOptions
       const search = new URLSearchParams(newOptions).toString();
       window.history.replaceState(null, '', `${location.pathname}?${search}`);
 
@@ -339,39 +361,59 @@ export function ProductForm({
     });
   }
 
-  const safeQuantity = Number(quantity) > 0 ? Number(quantity) : 1;
+  // Utility to ensure quantity is safe
+  const safeQuantity = Math.max(Number(quantity) || 1, 1);
 
-  // The UI for each option
+  // Sub-component: show UI for each option (Color, Size, etc.)
   const ProductOptions = ({option}) => {
     const {name, values} = option;
+    const currentValue = selectedOptions[name];
+
     return (
       <div className="product-options" key={name}>
-        <h5>
-          {name}: <span>{selectedOptions[name]}</span>
+        <h5 className="OptionName">
+          {name}: <span className="OptionValue">{currentValue}</span>
         </h5>
         <div className="product-options-grid">
-          {values.map(({value}) => {
-            // Check availability
-            const isAvailable = isValueAvailable(
+          {values.map(({value, isAvailable, variant}) => {
+            // We'll recompute "isAvailable" with our helper
+            const canPick = isValueAvailable(
               variants,
               selectedOptions,
               name,
               value,
             );
-            const isActive = selectedOptions[name] === value;
+            const isActive = currentValue === value;
+
+            // If it's a color option, optionally show variant images
+            const isColorOption = name.toLowerCase() === 'color';
+            const variantImage = isColorOption && variant?.image?.url;
 
             return (
               <button
                 key={name + value}
-                disabled={!isAvailable}
+                disabled={!canPick}
                 onClick={() => handleOptionChange(name, value)}
+                className={`product-options-item ${isActive ? 'active' : ''}`}
                 style={{
-                  opacity: isAvailable ? 1 : 0.3,
+                  opacity: canPick ? 1 : 0.3,
                   border: isActive ? '1px solid #000' : '1px solid transparent',
-                  // etc. styling
+                  borderRadius: '20px',
+                  transition: 'all 0.3s ease-in-out',
+                  backgroundColor: isActive ? '#e6f2ff' : '#f0f0f0',
+                  boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                  transform: isActive ? 'scale(0.98)' : 'scale(1)',
                 }}
               >
-                {value}
+                {variantImage ? (
+                  <img
+                    src={variantImage}
+                    alt={value}
+                    style={{width: '50px', height: '50px', objectFit: 'cover'}}
+                  />
+                ) : (
+                  value
+                )}
               </button>
             );
           })}
@@ -380,8 +422,9 @@ export function ProductForm({
     );
   };
 
+  // Possibly build a WhatsApp share link, if you want
   const isProductPage = location.pathname.includes('/products/');
-  const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I want to buy ${product.title} https://macarabia.me${location.pathname}`;
+  const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=Hi, I would like to buy ${product.title} https://macarabia.me${location.pathname}`;
 
   // WhatsApp SVG icon (if you still want the share button)
   const WhatsAppIcon = () => (
@@ -433,13 +476,9 @@ export function ProductForm({
   return (
     <>
       {/* Renders the variant options (size, color, etc.) */}
-      <VariantSelector
-        handle={product.handle}
-        options={product.options.filter((o) => o.values.length > 1)}
-        variants={variants}
-      >
-        {({option}) => <ProductOptions key={option.name} option={option} />}
-      </VariantSelector>
+      {product.options.map((option) => (
+        <ProductOptions key={option.name} option={option} />
+      ))}
 
       <div className="product-form">
         {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
