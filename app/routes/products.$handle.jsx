@@ -608,7 +608,7 @@ export default function Product() {
                 product={product}
                 selectedVariant={selectedVariant}
                 onVariantChange={setSelectedVariant}
-                variants={variants?.product?.variants?.nodes || []}
+                variants={[]}
                 quantity={Number(quantity)}
               />
             }
@@ -622,14 +622,10 @@ export default function Product() {
                   <ProductForm
                     product={product}
                     selectedVariant={selectedVariant}
-                    variants={data?.product?.variants.nodes || []}
+                    onVariantChange={setSelectedVariant}
+                    variants={data?.product?.variants?.nodes || []}
                     quantity={quantity}
                   />
-                  {/* Uncomment if you want to use DirectCheckoutButton inline: 
-                  <DirectCheckoutButton
-                    selectedVariant={selectedVariant}
-                    quantity={quantity}
-                  /> */}
                 </>
               )}
             </Await>
