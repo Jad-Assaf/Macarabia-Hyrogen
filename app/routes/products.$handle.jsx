@@ -9,6 +9,7 @@ import {
   getSeoMeta,
   CartForm,
   VariantSelector,
+  useOptimisticCart,
 } from '@shopify/hydrogen';
 import {motion} from 'framer-motion';
 import {getVariantUrl} from '~/lib/variants';
@@ -528,7 +529,7 @@ export function ProductForm({
           {/* Optionally show “Adding…” if status === 'loading' */}
           {status === 'loading' ? 'Adding...' : 'Add to cart'}
         </AddToCartButton>
-        
+
         {/* Optional WhatsApp share link */}
         {isProductPage && (
           <a
