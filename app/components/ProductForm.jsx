@@ -23,8 +23,7 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 
-// Removed import { ProductForm } from '~/components/ProductForm';
-// Removed import { DirectCheckoutButton } from '../components/ProductForm';
+
 
 export const meta = ({data}) => {
   const product = data?.product;
