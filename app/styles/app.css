@@ -50,14 +50,16 @@ html {
 
 .animated-menu-item {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0), translate3d(0, 0, 0);
   transition: opacity 0.5s ease, transform 0.5s ease;
+  will-change: transform, opacity;
 }
 
 .category-container {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-30px), translate3d(0, 0, 0);
   transition: opacity 0.5s ease, transform 0.5s ease;
+  will-change: transform, opacity;
 }
 
 .category-container.in-view {
@@ -74,10 +76,12 @@ html {
   opacity: 1;
 }
 
+
 html {
   scrollbar-color: #0492ff54 #00000014;
   scrollbar-width: thin;
   scrollbar-gutter: stable both-edges;
+  scroll-behavior: smooth !important;
 }
 
 img {
