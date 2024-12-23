@@ -461,7 +461,7 @@ export default function Collection() {
                     className="category-container"
                   >
                     {sliderCollection.image && (
-                      <img
+                      <Image
                         sizes="(min-width: 45em) 20vw, 40vw"
                         srcSet={`${sliderCollection.image.url}?width=300&quality=7 300w,
                                      ${sliderCollection.image.url}?width=600&quality=7 600w,
@@ -473,7 +473,7 @@ export default function Collection() {
                         className="category-image"
                         width={150}
                         height={150}
-                        loading="lazy"
+                        loading="eager"
                       />
                     )}
                     <div className="category-title">
