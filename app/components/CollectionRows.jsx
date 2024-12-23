@@ -80,6 +80,7 @@ const CollectionItem = ({collection, index}) => {
             className="menu-item-image"
             width={150}
             height={150}
+            loading='lazy'
           />
         )}
         <div className="category-title">{collection.title}</div>
