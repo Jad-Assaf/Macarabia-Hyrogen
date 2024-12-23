@@ -111,6 +111,7 @@ export function ProductItem({product, index}) {
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const slideshowInterval = 3000; // Time for each slide
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const images = product.images?.nodes || [];
 
