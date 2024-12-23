@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Image } from '@shopify/hydrogen';
+import {useEffect, useState} from 'react';
+import {MediaFile} from '@shopify/hydrogen-react';
 import Lightbox from 'yet-another-react-lightbox';
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
-import { motion } from 'framer-motion';
+import {motion} from 'framer-motion';
 import 'yet-another-react-lightbox/styles.css';
 import '../styles/ProductImage.css';
-import { useSwipeable } from 'react-swipeable';
+import {useSwipeable} from 'react-swipeable';
 
 const LeftArrowIcon = () => (
   <svg
@@ -37,75 +37,80 @@ const RightArrowIcon = () => (
 
 /**
  * @param {{
- *   images: Array<{node: ProductFragment['images']['edges'][0]['node']}>;
+ *   media: Array<{node: ProductFragment['media']['edges'][0]['node']}>;
  * }}
  */
-export function ProductImages({ images, selectedVariantImage }) {
+export function ProductImages({media, selectedVariantMedia}) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [imageKey, setImageKey] = useState(0);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [mediaKey, setMediaKey] = useState(0);
+  const [isMediaLoaded, setIsMediaLoaded] = useState(false);
   const [isVariantSelected, setIsVariantSelected] = useState(false);
 
   useEffect(() => {
-    if (selectedVariantImage) {
-      const variantImageIndex = images.findIndex(({ node }) => node.id === selectedVariantImage.id);
-      if (variantImageIndex >= 0 && !isVariantSelected) {
-        setSelectedImageIndex(variantImageIndex);
+    if (selectedVariantMedia) {
+      const variantMediaIndex = media.findIndex(
+        ({node}) => node.id === selectedVariantMedia.id,
+      );
+      if (variantMediaIndex >= 0 && !isVariantSelected) {
+        setSelectedMediaIndex(variantMediaIndex);
         setIsVariantSelected(true);
       }
     }
-  }, [selectedVariantImage, images, isVariantSelected]);
+  }, [selectedVariantMedia, media, isVariantSelected]);
 
   useEffect(() => {
     setIsVariantSelected(false);
-  }, [selectedVariantImage]);
+  }, [selectedVariantMedia]);
 
-  const selectedImage = images[selectedImageIndex]?.node;
+  const selectedMedia = media[selectedMediaIndex]?.node;
 
   useEffect(() => {
-    setImageKey((prevKey) => prevKey + 1);
-    setIsImageLoaded(false);
-  }, [selectedImageIndex]);
+    setMediaKey((prevKey) => prevKey + 1);
+    setIsMediaLoaded(false);
+  }, [selectedMediaIndex]);
 
-  const handlePrevImage = () => {
-    setSelectedImageIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+  const handlePrevMedia = () => {
+    setSelectedMediaIndex((prevIndex) =>
+      prevIndex === 0 ? media.length - 1 : prevIndex - 1,
     );
     setIsVariantSelected(false);
   };
 
-  const handleNextImage = () => {
-    setSelectedImageIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+  const handleNextMedia = () => {
+    setSelectedMediaIndex((prevIndex) =>
+      prevIndex === media.length - 1 ? 0 : prevIndex + 1,
     );
     setIsVariantSelected(false);
   };
 
   // Swipe Handlers
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: handleNextImage,
-    onSwipedRight: handlePrevImage,
+    onSwipedLeft: handleNextMedia,
+    onSwipedRight: handlePrevMedia,
     trackMouse: true, // Allows swiping with a mouse for desktops
   });
 
   return (
-    <div className="product-images-container">
+    <div className="product-media-container">
       <div className="thumbContainer">
         <div className="thumbnails">
-          {images.map(({ node: image }, index) => (
+          {media.map(({node: mediaItem}, index) => (
             <div
-              key={image.id}
-              className={`thumbnail ${index === selectedImageIndex ? 'active' : ''}`}
-              onClick={() => setSelectedImageIndex(index)}
+              key={mediaItem.id}
+              className={`thumbnail ${
+                index === selectedMediaIndex ? 'active' : ''
+              }`}
+              onClick={() => setSelectedMediaIndex(index)}
             >
-              <Image
-                data={image}
-                alt={image.altText || 'Thumbnail Image'}
-                aspectRatio="1/1"
-                width={100}
-                height={100}
-                loading="lazy"
+              <MediaFile
+                data={mediaItem}
+                options={{
+                  height: 100,
+                  width: 100,
+                  crop: 'center',
+                }}
+                tabIndex="0"
               />
             </div>
           ))}
@@ -113,36 +118,36 @@ export function ProductImages({ images, selectedVariantImage }) {
       </div>
 
       <div
-        className="main-image"
+        className="main-media"
         onClick={() => setIsLightboxOpen(true)}
-        style={{ cursor: 'grab' }}
-        {...swipeHandlers} // Attach swipe handlers to the main image
+        style={{cursor: 'grab'}}
+        {...swipeHandlers} // Attach swipe handlers to the main media
       >
-        {selectedImage && (
+        {selectedMedia && (
           <motion.div
-            initial={{ filter: 'blur(10px)' }}
-            animate={{ filter: isImageLoaded ? 'blur(0px)' : 'blur(10px)' }}
-            transition={{ duration: 0.3 }}
+            initial={{filter: 'blur(10px)'}}
+            animate={{filter: isMediaLoaded ? 'blur(0px)' : 'blur(10px)'}}
+            transition={{duration: 0.3}}
           >
-            <Image
-              key={imageKey}
-              data={selectedImage}
-              alt={selectedImage.altText || 'Product Image'}
-              aspectRatio="1/1"
-              sizes="(min-width: 45em) 50vw, 100vw"
-              width="570px"
-              height="570px"
-              loading="eager"
-              onLoad={() => setIsImageLoaded(true)}
+            <MediaFile
+              key={mediaKey}
+              data={selectedMedia}
+              options={{
+                height: 570,
+                width: 570,
+                crop: 'center',
+              }}
+              tabIndex="0"
+              onLoad={() => setIsMediaLoaded(true)}
             />
           </motion.div>
         )}
-        <div className="ImageArrows">
+        <div className="MediaArrows">
           <button
             className="prev-button"
             onClick={(e) => {
               e.stopPropagation();
-              handlePrevImage();
+              handlePrevMedia();
             }}
           >
             <LeftArrowIcon />
@@ -151,7 +156,7 @@ export function ProductImages({ images, selectedVariantImage }) {
             className="next-button"
             onClick={(e) => {
               e.stopPropagation();
-              handleNextImage();
+              handleNextMedia();
             }}
           >
             <RightArrowIcon />
@@ -163,9 +168,9 @@ export function ProductImages({ images, selectedVariantImage }) {
         <Lightbox
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
-          index={selectedImageIndex}
-          slides={images.map(({ node }) => ({ src: node.url }))}
-          onIndexChange={setSelectedImageIndex}
+          index={selectedMediaIndex}
+          slides={media.map(({node}) => ({src: node.previewImage.url}))}
+          onIndexChange={setSelectedMediaIndex}
           plugins={[Fullscreen]}
         />
       )}
