@@ -7,6 +7,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import { getSeoMeta } from '@shopify/hydrogen';
+import { useInView } from 'node_modules/react-intersection-observer/dist';
 
 const cache = new Map();
 
@@ -380,17 +381,31 @@ export default function Homepage() {
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
+  const [topProductRef, topProductInView] = useInView({triggerOnce: true});
+  const [collectionDisplayRef, collectionDisplayInView] = useInView({
+    triggerOnce: true,
+  });
+  const [brandSectionRef, brandSectionInView] = useInView({triggerOnce: true});
+
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      <Suspense fallback={<div>Loading top products...</div>}>
-        {newArrivalsCollection && (
+      <div ref={topProductRef}>
+        {topProductInView && newArrivalsCollection && (
           <TopProductSections collection={newArrivalsCollection} />
         )}
-        <CollectionDisplay menuCollections={menuCollections} />
-        <BrandSection brands={brandsData} />
-      </Suspense>
+      </div>
+
+      <div ref={collectionDisplayRef}>
+        {collectionDisplayInView && (
+          <CollectionDisplay menuCollections={menuCollections} />
+        )}
+      </div>
+
+      <div ref={brandSectionRef}>
+        {brandSectionInView && <BrandSection brands={brandsData} />}
+      </div>
     </div>
   );
 }
