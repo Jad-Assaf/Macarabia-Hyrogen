@@ -1,10 +1,10 @@
-import React, {useRef, useEffect, useState} from 'react';
-import {Link} from '@remix-run/react';
-import {ProductRow} from './CollectionDisplay';
-import {Image} from '@shopify/hydrogen-react';
-import {useInView} from 'react-intersection-observer';
+import React, { useRef, useEffect, useState } from 'react';
+import { Link } from '@remix-run/react';
+import { ProductRow } from './CollectionDisplay';
+import { Image } from '@shopify/hydrogen-react';
+import { useInView } from 'react-intersection-observer';
 
-const CollectionRows = ({menuCollections}) => {
+const CollectionRows = ({ menuCollections }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Check if the screen width is less than 768px
@@ -30,65 +30,61 @@ const CollectionRows = ({menuCollections}) => {
 
   return (
     <>
-      {displayedCollections.map((menuCollection, index) => (
-        <React.Fragment key={menuCollection.id}>
-          {/* Render the menu slider */}
-          <div className="menu-slider-container">
-            {menuCollection.map((collection, collectionIndex) => {
-              const [collectionRef, collectionInView] = useInView({
+      {displayedCollections.map((menuCollection, index) => {
+        const [containerRef, containerInView] = useInView({
+          triggerOnce: true,
+        });
+
+        return (
+          <React.Fragment key={menuCollection.id}>
+            {/* Render the menu slider */}
+            <div
+              ref={containerRef}
+              className={`menu-slider-container fade-in ${
+                containerInView ? 'visible' : ''
+              }`}
+            >
+              {menuCollection.map((collection, collectionIndex) => (
+                <CollectionItem
+                  key={collection.id}
+                  collection={collection}
+                  index={collectionIndex}
+                />
+              ))}
+            </div>
+
+            {menuCollection.slice(0, 2).map((collection) => {
+              const [productRowRef, productRowInView] = useInView({
                 triggerOnce: true,
               });
 
               return (
-                <div
-                  ref={collectionRef}
-                  key={collection.id}
-                  className={`collection-item fade-in ${
-                    collectionInView ? 'visible' : ''
-                  }`}
-                >
-                  {collectionInView && (
-                    <CollectionItem
-                      collection={collection}
-                      index={collectionIndex}
-                    />
-                  )}
+                <div key={collection.id} className="collection-section">
+                  <div className="collection-header">
+                    <h3>{collection.title}</h3>
+                    <Link
+                      to={`/collections/${collection.handle}`}
+                      className="view-all-link"
+                    >
+                      View All
+                    </Link>
+                  </div>
+                  <div
+                    ref={productRowRef}
+                    className={`product-row fade-in ${
+                      productRowInView ? 'visible' : ''
+                    }`}
+                  >
+                    {productRowInView && (
+                      <ProductRow products={collection.products.nodes} />
+                    )}
+                  </div>
                 </div>
               );
             })}
-          </div>
-
-          {menuCollection.slice(0, 2).map((collection) => {
-            const [productRowRef, productRowInView] = useInView({
-              triggerOnce: true,
-            });
-
-            return (
-              <div key={collection.id} className="collection-section">
-                <div className="collection-header">
-                  <h3>{collection.title}</h3>
-                  <Link
-                    to={`/collections/${collection.handle}`}
-                    className="view-all-link"
-                  >
-                    View All
-                  </Link>
-                </div>
-                <div
-                  ref={productRowRef}
-                  className={`product-row fade-in ${
-                    productRowInView ? 'visible' : ''
-                  }`}
-                >
-                  {productRowInView && (
-                    <ProductRow products={collection.products.nodes} />
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </React.Fragment>
-      ))}
+          </React.Fragment>
+        );
+      })}
     </>
   );
 };
