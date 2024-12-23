@@ -216,7 +216,8 @@ button {
   border-radius: 20px;
   padding: 20px 5px;
   background-color: #fff;
-  min-height: 423.188px;
+  min-height: 463px;
+  max-height: 463px;
 }
 
 .collection-section h3 {
