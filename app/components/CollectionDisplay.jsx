@@ -53,7 +53,7 @@ export function ProductRow({products}) {
   };
 
   return (
-    <div className="product-row-container animated-menu-item">
+    <div className="product-row-container">
       <button className="home-prev-button" onClick={() => scrollRow(-600)}>
         <LeftArrowIcon />
       </button>
