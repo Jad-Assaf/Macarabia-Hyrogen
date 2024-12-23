@@ -173,6 +173,8 @@ export function ProductItem({product, index}) {
       <Link to={`/products/${product.handle}`}>
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
+            {!isLoaded && <div className="image-placeholder"></div>}
+
             <LazyLoadImage
               src={images[currentImageIndex]?.url}
               alt={images[currentImageIndex]?.altText || 'Product Image'}
