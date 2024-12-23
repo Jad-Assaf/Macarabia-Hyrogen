@@ -24,7 +24,7 @@ const CollectionRows = ({menuCollections}) => {
 
   // Get the collections to display
   const displayedCollections = isMobile
-    ? menuCollections.slice(0, 3)
+    ? menuCollections.slice(0, 10)
     : menuCollections;
 
   return (
