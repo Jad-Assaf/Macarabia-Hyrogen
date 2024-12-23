@@ -80,16 +80,6 @@ body {
   opacity: 1;
 } */
 
-.product-item-collection {
-  opacity: 0;
-  transform: translateX(-30px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.product-item-collection.visible {
-  opacity: 1;
-  transform: translateX(0);
-}
 
 html {
   scrollbar-color: #0492ff54 #00000014;
