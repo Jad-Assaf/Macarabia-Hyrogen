@@ -95,7 +95,7 @@ body {
   transform: translateY(0);
 }
 
-.animated-menu-item, .collection-products-row {
+.animated-menu-item, .collection-products-row, .product-card {
   opacity: 0;
   transform: translateX(10px);
   animation: fadeIn 0.5s linear forwards;
@@ -216,7 +216,7 @@ button {
   border-radius: 20px;
   padding: 20px 5px;
   background-color: #fff;
-  min-height: 450px;
+  min-height: 423px;
 }
 
 .collection-section h3 {
