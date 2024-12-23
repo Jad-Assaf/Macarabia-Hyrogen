@@ -242,8 +242,8 @@ button {
 .product-card {
   background-color: #f9f9f9;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s linear, box-shadow 0.3s linear;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s linear;
   padding: 10px;
   min-width: 200px;
   max-width: 200px;
@@ -278,8 +278,7 @@ button {
 }
 
 .product-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Product Title Styling */
