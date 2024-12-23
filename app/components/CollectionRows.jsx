@@ -1,6 +1,5 @@
 import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
-import {motion, useInView} from 'framer-motion';
 import {ProductRow} from './CollectionDisplay';
 import {Image} from '@shopify/hydrogen-react';
 
@@ -65,16 +64,9 @@ const CollectionRows = ({menuCollections}) => {
 
 const CollectionItem = ({collection, index}) => {
   const ref = useRef(null);
-  const isInView = useInView(ref, {once: true});
 
   return (
-    <motion.div
-      ref={ref}
-      initial={{opacity: 0, y: 20}}
-      animate={isInView ? {opacity: 1, y: 0} : {}}
-      transition={{delay: index * 0.1, duration: 0.5}}
-      className="animated-menu-item"
-    >
+    <div ref={ref} className="animated-menu-item">
       <Link
         to={`/collections/${collection.handle}`}
         className="menu-item-container"
@@ -92,7 +84,7 @@ const CollectionItem = ({collection, index}) => {
         )}
         <div className="category-title">{collection.title}</div>
       </Link>
-    </motion.div>
+    </div>
   );
 };
 
