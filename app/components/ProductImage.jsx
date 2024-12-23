@@ -35,83 +35,81 @@ const RightArrowIcon = () => (
   </svg>
 );
 
-/**
- * @param {{
- *   images: Array<{node: ProductFragment['images']['edges'][0]['node']}>;
- * }}
- */
-export function ProductImages({images, selectedVariantImage}) {
+export function ProductImages({media, selectedVariantImage}) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [imageKey, setImageKey] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isVariantSelected, setIsVariantSelected] = useState(false);
 
   useEffect(() => {
     if (selectedVariantImage) {
-      const variantImageIndex = images.findIndex(
-        ({node}) => node.id === selectedVariantImage.id,
+      const variantMediaIndex = media.findIndex(
+        ({node}) =>
+          node.__typename === 'MediaImage' &&
+          node.image.id === selectedVariantImage.id,
       );
-      if (variantImageIndex >= 0 && !isVariantSelected) {
-        setSelectedImageIndex(variantImageIndex);
+      if (variantMediaIndex >= 0 && !isVariantSelected) {
+        setSelectedMediaIndex(variantMediaIndex);
         setIsVariantSelected(true);
       }
     }
-  }, [selectedVariantImage, images, isVariantSelected]);
+  }, [selectedVariantImage, media, isVariantSelected]);
 
   useEffect(() => {
     setIsVariantSelected(false);
   }, [selectedVariantImage]);
 
-  const selectedImage = images[selectedImageIndex]?.node;
+  const selectedMedia = media[selectedMediaIndex]?.node;
 
   useEffect(() => {
     setImageKey((prevKey) => prevKey + 1);
     setIsImageLoaded(false);
-  }, [selectedImageIndex]);
+  }, [selectedMediaIndex]);
 
-  const handlePrevImage = () => {
-    setSelectedImageIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1,
+  const handlePrevMedia = () => {
+    setSelectedMediaIndex((prevIndex) =>
+      prevIndex === 0 ? media.length - 1 : prevIndex - 1,
     );
     setIsVariantSelected(false);
   };
 
-  const handleNextImage = () => {
-    setSelectedImageIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1,
+  const handleNextMedia = () => {
+    setSelectedMediaIndex((prevIndex) =>
+      prevIndex === media.length - 1 ? 0 : prevIndex + 1,
     );
     setIsVariantSelected(false);
   };
 
-  const isVideo = (url) =>
-    /\.(mp4|webm)$/i.test(url) || url.includes('youtube.com');
+  const isVideo = (mediaItem) =>
+    mediaItem.__typename === 'Video' ||
+    mediaItem.__typename === 'ExternalVideo';
 
   // Swipe Handlers
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: handleNextImage,
-    onSwipedRight: handlePrevImage,
-    trackMouse: true, // Allows swiping with a mouse for desktops
+    onSwipedLeft: handleNextMedia,
+    onSwipedRight: handlePrevMedia,
+    trackMouse: true,
   });
 
   return (
     <div className="product-images-container">
       <div className="thumbContainer">
         <div className="thumbnails">
-          {images.map(({node: image}, index) => (
+          {media.map(({node: mediaItem}, index) => (
             <div
-              key={image.id}
+              key={mediaItem.id}
               className={`thumbnail ${
-                index === selectedImageIndex ? 'active' : ''
+                index === selectedMediaIndex ? 'active' : ''
               }`}
-              onClick={() => setSelectedImageIndex(index)}
+              onClick={() => setSelectedMediaIndex(index)}
             >
-              {isVideo(image.url) ? (
-                <div className="video-thumbnail">Video</div> // Customize if needed
+              {isVideo(mediaItem) ? (
+                <div className="video-thumbnail">Video</div>
               ) : (
                 <Image
-                  data={image}
-                  alt={image.altText || 'Thumbnail Image'}
+                  data={mediaItem.image}
+                  alt={mediaItem.image.altText || 'Thumbnail Image'}
                   aspectRatio="1/1"
                   width={100}
                   height={100}
@@ -127,24 +125,25 @@ export function ProductImages({images, selectedVariantImage}) {
         className="main-image"
         onClick={() => setIsLightboxOpen(true)}
         style={{cursor: 'grab'}}
-        {...swipeHandlers} // Attach swipe handlers to the main image
+        {...swipeHandlers}
       >
-        {selectedImage && isVideo(selectedImage.url) ? (
-          selectedImage.url.includes('youtube.com') ? (
+        {selectedMedia && isVideo(selectedMedia) ? (
+          selectedMedia.__typename === 'ExternalVideo' ? (
             <iframe
               width="100%"
               height="100%"
-              src={`https://www.youtube.com/embed/${new URL(
-                selectedImage.url,
-              ).searchParams.get('v')}`}
-              title="YouTube Video"
+              src={selectedMedia.embeddedUrl}
+              title="External Video"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
           ) : (
             <video controls>
-              <source src={selectedImage.url} type="video/mp4" />
+              <source
+                src={selectedMedia.sources[0].url}
+                type={selectedMedia.sources[0].mimeType}
+              />
               Your browser does not support the video tag.
             </video>
           )
@@ -156,8 +155,8 @@ export function ProductImages({images, selectedVariantImage}) {
           >
             <Image
               key={imageKey}
-              data={selectedImage}
-              alt={selectedImage.altText || 'Product Image'}
+              data={selectedMedia.image}
+              alt={selectedMedia.image.altText || 'Product Image'}
               aspectRatio="1/1"
               sizes="(min-width: 45em) 50vw, 100vw"
               width="570px"
@@ -172,7 +171,7 @@ export function ProductImages({images, selectedVariantImage}) {
             className="prev-button"
             onClick={(e) => {
               e.stopPropagation();
-              handlePrevImage();
+              handlePrevMedia();
             }}
           >
             <LeftArrowIcon />
@@ -181,7 +180,7 @@ export function ProductImages({images, selectedVariantImage}) {
             className="next-button"
             onClick={(e) => {
               e.stopPropagation();
-              handleNextImage();
+              handleNextMedia();
             }}
           >
             <RightArrowIcon />
@@ -193,13 +192,13 @@ export function ProductImages({images, selectedVariantImage}) {
         <Lightbox
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
-          index={selectedImageIndex}
-          slides={images.map(({node}) =>
-            isVideo(node.url)
-              ? {src: node.url, type: 'video'}
-              : {src: node.url},
+          index={selectedMediaIndex}
+          slides={media.map(({node}) =>
+            isVideo(node)
+              ? {src: node.embeddedUrl || node.sources[0].url, type: 'video'}
+              : {src: node.image.url},
           )}
-          onIndexChange={setSelectedImageIndex}
+          onIndexChange={setSelectedMediaIndex}
           plugins={[Fullscreen]}
         />
       )}
