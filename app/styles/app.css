@@ -101,6 +101,11 @@ body {
   animation: fadeIn 0.5s linear forwards;
 }
 
+.menu-slider-container{
+  min-height: 233px;
+  max-height: 233px;
+}
+
 @keyframes fadeIn {
   to {
     opacity: 1;
