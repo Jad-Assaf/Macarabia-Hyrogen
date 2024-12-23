@@ -86,7 +86,7 @@ export async function loader(args) {
         'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/remarkable-pro-banner_25c8cc9c-14de-4556-9e8f-5388ebc1eb1d.jpg?v=1729676718',
       mobileImageUrl:
         'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/remarkable-pro-mobile-banner-1.jpg?v=1729678484',
-      link: '/collections/remarkable-paper-pro',
+      link: '/collections/remarkable-tablets',
     },
     {
       desktopImageUrl:
