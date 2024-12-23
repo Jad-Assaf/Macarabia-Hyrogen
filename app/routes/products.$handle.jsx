@@ -929,21 +929,6 @@ const PRODUCT_VARIANT_FRAGMENT = `#graphql
           }
         }
       }
-      media(first: 5) {
-      edges {
-        node {
-          ... on Video {
-            id
-            sources {
-              format
-              height
-              mimeType
-              url
-              width
-            }
-          }
-        }
-      }
     }
     selectedOptions {
       name
@@ -976,22 +961,6 @@ const PRODUCT_FRAGMENT = `#graphql
           altText
           width
           height
-        }
-      }
-    }
-    media(first: 5) {
-      edges {
-        node {
-          ... on Video {
-            id
-            sources {
-              format
-              height
-              mimeType
-              url
-              width
-            }
-          }
         }
       }
     }
