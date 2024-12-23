@@ -6,8 +6,8 @@ import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
 import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
-import { getSeoMeta } from '@shopify/hydrogen';
-import { useInView } from 'node_modules/react-intersection-observer/dist';
+import {getSeoMeta} from '@shopify/hydrogen';
+import {useInView} from 'node_modules/react-intersection-observer/dist';
 
 const cache = new Map();
 
@@ -175,8 +175,6 @@ async function loadCriticalData({context}) {
   const menuHandles = menu.items.map((item) =>
     item.title.toLowerCase().replace(/\s+/g, '-'),
   );
-
-
 
   const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([
@@ -381,7 +379,6 @@ export default function Homepage() {
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
-  const [topProductRef, topProductInView] = useInView({triggerOnce: true});
   const [collectionDisplayRef, collectionDisplayInView] = useInView({
     triggerOnce: true,
   });
@@ -391,12 +388,7 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      <div ref={topProductRef}>
-        {topProductInView && newArrivalsCollection && (
-          <TopProductSections collection={newArrivalsCollection} />
-        )}
-      </div>
-
+      <TopProductSections collection={newArrivalsCollection} />
       <div ref={collectionDisplayRef}>
         {collectionDisplayInView && (
           <CollectionDisplay menuCollections={menuCollections} />
