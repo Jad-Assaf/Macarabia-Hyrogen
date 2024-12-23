@@ -2,6 +2,7 @@ import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
 import {ProductRow} from './CollectionDisplay';
 import {Image} from '@shopify/hydrogen-react';
+import {useInView} from 'react-intersection-observer';
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -24,7 +25,7 @@ const CollectionRows = ({menuCollections}) => {
 
   // Get the collections to display
   const displayedCollections = isMobile
-    ? menuCollections.slice(0, 10)
+    ? menuCollections.slice(0, 14)
     : menuCollections;
 
   return (
@@ -33,29 +34,48 @@ const CollectionRows = ({menuCollections}) => {
         <React.Fragment key={menuCollection.id}>
           {/* Render the menu slider */}
           <div className="menu-slider-container">
-            {menuCollection.map((collection, collectionIndex) => (
-              <CollectionItem
-                key={collection.id}
-                collection={collection}
-                index={collectionIndex}
-              />
-            ))}
+            {menuCollection.map((collection, collectionIndex) => {
+              const [collectionRef, collectionInView] = useInView({
+                triggerOnce: true,
+              });
+
+              return (
+                <div ref={collectionRef} key={collection.id}>
+                  {collectionInView && (
+                    <CollectionItem
+                      collection={collection}
+                      index={collectionIndex}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {menuCollection.slice(0, 2).map((collection) => (
-            <div key={collection.id} className="collection-section">
-              <div className="collection-header">
-                <h3>{collection.title}</h3>
-                <Link
-                  to={`/collections/${collection.handle}`}
-                  className="view-all-link"
-                >
-                  View All
-                </Link>
+          {menuCollection.slice(0, 2).map((collection) => {
+            const [productRowRef, productRowInView] = useInView({
+              triggerOnce: true,
+            });
+
+            return (
+              <div key={collection.id} className="collection-section">
+                <div className="collection-header">
+                  <h3>{collection.title}</h3>
+                  <Link
+                    to={`/collections/${collection.handle}`}
+                    className="view-all-link"
+                  >
+                    View All
+                  </Link>
+                </div>
+                <div ref={productRowRef}>
+                  {productRowInView && (
+                    <ProductRow products={collection.products.nodes} />
+                  )}
+                </div>
               </div>
-              <ProductRow products={collection.products.nodes} />
-            </div>
-          ))}
+            );
+          })}
         </React.Fragment>
       ))}
     </>
@@ -80,7 +100,7 @@ const CollectionItem = ({collection, index}) => {
             className="menu-item-image"
             width={150}
             height={150}
-            loading='lazy'
+            loading="lazy"
           />
         )}
         <div className="category-title">{collection.title}</div>
