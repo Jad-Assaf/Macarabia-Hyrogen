@@ -1,10 +1,10 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Link } from '@remix-run/react';
-import { ProductRow } from './CollectionDisplay';
-import { Image } from '@shopify/hydrogen-react';
-import { useInView } from 'react-intersection-observer';
+import React, {useRef, useEffect, useState} from 'react';
+import {Link} from '@remix-run/react';
+import {ProductRow} from './CollectionDisplay';
+import {Image} from '@shopify/hydrogen-react';
+import {useInView} from 'react-intersection-observer';
 
-const CollectionRows = ({ menuCollections }) => {
+const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Check if the screen width is less than 768px
@@ -45,11 +45,18 @@ const CollectionRows = ({ menuCollections }) => {
               }`}
             >
               {menuCollection.map((collection, collectionIndex) => (
-                <CollectionItem
+                <div
                   key={collection.id}
-                  collection={collection}
-                  index={collectionIndex}
-                />
+                  className="animated-menu-item"
+                  style={{
+                    animationDelay: `${collectionIndex * 0.2}s`,
+                  }}
+                >
+                  <CollectionItem
+                    collection={collection}
+                    index={collectionIndex}
+                  />
+                </div>
               ))}
             </div>
 
