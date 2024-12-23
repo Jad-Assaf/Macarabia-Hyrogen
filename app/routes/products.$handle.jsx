@@ -210,6 +210,7 @@ async function loadCriticalData({context, params, request}) {
   return {
     product: {
       ...product,
+      media: product.media?.edges.map(({node}) => node) || [],
       firstImage, // Add the first image URL
       seoTitle: product.seo?.title || product.title, // Use SEO title or fallback
       seoDescription: product.seo?.description || product.description, // Use SEO description or fallback
@@ -952,6 +953,39 @@ const PRODUCT_FRAGMENT = `#graphql
     descriptionHtml
     description
     productType
+    media(first: 30) {
+      edges {
+        node {
+          __typename
+          ... on MediaImage {
+            id
+            image {
+              url
+              altText
+              width
+              height
+            }
+          }
+          ... on Video {
+            id
+            sources {
+              url
+              mimeType
+            }
+          }
+          ... on ExternalVideo {
+            id
+            embeddedUrl
+          }
+          ... on Model3d {
+            id
+            sources {
+              url
+            }
+          }
+        }
+      }
+    }
     images(first: 30) {
       edges {
         node {

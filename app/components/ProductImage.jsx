@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Image } from '@shopify/hydrogen';
+import {useEffect, useState} from 'react';
+import {Image} from '@shopify/hydrogen';
 import Lightbox from 'yet-another-react-lightbox';
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
-import { motion } from 'framer-motion';
+import {motion} from 'framer-motion';
 import 'yet-another-react-lightbox/styles.css';
 import '../styles/ProductImage.css';
-import { useSwipeable } from 'react-swipeable';
+import {useSwipeable} from 'react-swipeable';
 
 const LeftArrowIcon = () => (
   <svg
@@ -37,10 +37,11 @@ const RightArrowIcon = () => (
 
 /**
  * @param {{
- *   images: Array<{node: ProductFragment['images']['edges'][0]['node']}>;
+ *   images: Array<{node: ProductFragment['media']['edges'][0]['node']}>;
+ *   selectedVariantImage?: { id: string };
  * }}
  */
-export function ProductImages({ images, selectedVariantImage }) {
+export function ProductImages({images, selectedVariantImage}) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageKey, setImageKey] = useState(0);
@@ -49,7 +50,11 @@ export function ProductImages({ images, selectedVariantImage }) {
 
   useEffect(() => {
     if (selectedVariantImage) {
-      const variantImageIndex = images.findIndex(({ node }) => node.id === selectedVariantImage.id);
+      const variantImageIndex = images.findIndex(
+        (media) =>
+          media.__typename === 'MediaImage' &&
+          media.id === selectedVariantImage.id,
+      );
       if (variantImageIndex >= 0 && !isVariantSelected) {
         setSelectedImageIndex(variantImageIndex);
         setIsVariantSelected(true);
@@ -61,7 +66,7 @@ export function ProductImages({ images, selectedVariantImage }) {
     setIsVariantSelected(false);
   }, [selectedVariantImage]);
 
-  const selectedImage = images[selectedImageIndex]?.node;
+  const selectedMedia = images[selectedImageIndex];
 
   useEffect(() => {
     setImageKey((prevKey) => prevKey + 1);
@@ -70,43 +75,74 @@ export function ProductImages({ images, selectedVariantImage }) {
 
   const handlePrevImage = () => {
     setSelectedImageIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1,
     );
     setIsVariantSelected(false);
   };
 
   const handleNextImage = () => {
     setSelectedImageIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1,
     );
     setIsVariantSelected(false);
   };
 
-  // Swipe Handlers
+  const renderMedia = (media) => {
+    if (media.__typename === 'Video') {
+      return (
+        <video controls>
+          {media.sources.map((source) => (
+            <source key={source.url} src={source.url} type={source.mimeType} />
+          ))}
+          Your browser does not support the video tag.
+        </video>
+      );
+    } else if (media.__typename === 'ExternalVideo') {
+      const videoId = new URL(media.embeddedUrl).searchParams.get('v');
+      return (
+        <iframe
+          width="100%"
+          height="100%"
+          src={`https://www.youtube.com/embed/${videoId}`}
+          title="YouTube Video"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+      );
+    } else if (media.__typename === 'MediaImage') {
+      return (
+        <Image
+          data={media.image}
+          alt={media.image.altText || 'Product Media'}
+          aspectRatio="1/1"
+          width={100}
+          height={100}
+          loading="lazy"
+        />
+      );
+    }
+  };
+
   const swipeHandlers = useSwipeable({
     onSwipedLeft: handleNextImage,
     onSwipedRight: handlePrevImage,
-    trackMouse: true, // Allows swiping with a mouse for desktops
+    trackMouse: true,
   });
 
   return (
     <div className="product-images-container">
       <div className="thumbContainer">
         <div className="thumbnails">
-          {images.map(({ node: image }, index) => (
+          {images.map((media, index) => (
             <div
-              key={image.id}
-              className={`thumbnail ${index === selectedImageIndex ? 'active' : ''}`}
+              key={media.id}
+              className={`thumbnail ${
+                index === selectedImageIndex ? 'active' : ''
+              }`}
               onClick={() => setSelectedImageIndex(index)}
             >
-              <Image
-                data={image}
-                alt={image.altText || 'Thumbnail Image'}
-                aspectRatio="1/1"
-                width={100}
-                height={100}
-                loading="lazy"
-              />
+              {renderMedia(media)}
             </div>
           ))}
         </div>
@@ -115,26 +151,16 @@ export function ProductImages({ images, selectedVariantImage }) {
       <div
         className="main-image"
         onClick={() => setIsLightboxOpen(true)}
-        style={{ cursor: 'grab' }}
-        {...swipeHandlers} // Attach swipe handlers to the main image
+        style={{cursor: 'grab'}}
+        {...swipeHandlers}
       >
-        {selectedImage && (
+        {selectedMedia && (
           <motion.div
-            initial={{ filter: 'blur(10px)' }}
-            animate={{ filter: isImageLoaded ? 'blur(0px)' : 'blur(10px)' }}
-            transition={{ duration: 0.3 }}
+            initial={{filter: 'blur(10px)'}}
+            animate={{filter: isImageLoaded ? 'blur(0px)' : 'blur(10px)'}}
+            transition={{duration: 0.3}}
           >
-            <Image
-              key={imageKey}
-              data={selectedImage}
-              alt={selectedImage.altText || 'Product Image'}
-              aspectRatio="1/1"
-              sizes="(min-width: 45em) 50vw, 100vw"
-              width="570px"
-              height="570px"
-              loading="eager"
-              onLoad={() => setIsImageLoaded(true)}
-            />
+            {renderMedia(selectedMedia)}
           </motion.div>
         )}
         <div className="ImageArrows">
@@ -164,7 +190,17 @@ export function ProductImages({ images, selectedVariantImage }) {
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
           index={selectedImageIndex}
-          slides={images.map(({ node }) => ({ src: node.url }))}
+          slides={images.map((media) =>
+            media.__typename === 'Video' || media.__typename === 'ExternalVideo'
+              ? {
+                  src:
+                    media.__typename === 'Video'
+                      ? media.sources[0].url
+                      : media.embeddedUrl,
+                  type: 'video',
+                }
+              : {src: media.image.url},
+          )}
           onIndexChange={setSelectedImageIndex}
           plugins={[Fullscreen]}
         />
