@@ -1,6 +1,7 @@
 import React, {Suspense, useEffect, useRef, useState} from 'react';
 import {Link} from '@remix-run/react';
 import {Money, Image} from '@shopify/hydrogen';
+import {LazyLoadImage} from 'react-lazy-load-image-component';
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
 import CollectionRows from './CollectionRows'; // Standard import for CollectionRows
