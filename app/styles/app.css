@@ -48,7 +48,7 @@ html {
   }
 }
 
-.animated-menu-item {
+/* .animated-menu-item {
   opacity: 1;
   transform: translateY(0), translate3d(0, 0, 0);
   transition: opacity 0.5s ease, transform 0.5s ease;
@@ -74,7 +74,7 @@ html {
 
 .category-container.in-view .category-svg-wrapper {
   opacity: 1;
-}
+} */
 
 
 html {
