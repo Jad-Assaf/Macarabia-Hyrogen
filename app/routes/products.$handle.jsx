@@ -964,6 +964,22 @@ const PRODUCT_FRAGMENT = `#graphql
         }
       }
     }
+    media(first: 5) {
+      edges {
+        node {
+          ... on Video {
+            id
+            sources {
+              format
+              height
+              mimeType
+              url
+              width
+            }
+          }
+        }
+      }
+    }
     options {
       name
       values
