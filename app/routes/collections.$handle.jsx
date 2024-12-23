@@ -19,7 +19,6 @@ import { FiltersDrawer } from '../modules/drawer-filter';
 import { getAppliedFilterLink } from '../lib/filter';
 import { AddToCartButton } from '../components/AddToCartButton';
 import { useAside } from '~/components/Aside';
-import { motion, useAnimation, useInView } from 'framer-motion';
 import '../styles/CollectionSlider.css'
 
 /**
@@ -589,52 +588,39 @@ export default function Collection() {
  *   loading?: 'eager' | 'lazy';
  * }}
  */
-const ProductItem = React.memo(({ product, index, numberInRow }) => {
+const ProductItem = React.memo(({product, index, numberInRow}) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '0px 0px 50px 0px' });
-  const controls = useAnimation();
-
-  // Cap the delay to prevent excessive loading times for items lower on the page
-  const delay = Math.min(0.1 * (index % numberInRow), 0.5);
-
-  useEffect(() => {
-    if (isInView) {
-      controls.start("visible");
-    }
-  }, [isInView, controls]);
 
   const [selectedVariant, setSelectedVariant] = useState(() => {
-    return product.variants.nodes.find(variant => variant.availableForSale) || product.variants.nodes[0];
+    return (
+      product.variants.nodes.find((variant) => variant.availableForSale) ||
+      product.variants.nodes[0]
+    );
   });
-  const variantUrl = useVariantUrl(product.handle, selectedVariant.selectedOptions);
 
-  const hasDiscount = product.compareAtPriceRange &&
+  const variantUrl = useVariantUrl(
+    product.handle,
+    selectedVariant.selectedOptions,
+  );
+
+  const hasDiscount =
+    product.compareAtPriceRange &&
     product.compareAtPriceRange.minVariantPrice.amount >
-    product.priceRange.minVariantPrice.amount;
+      product.priceRange.minVariantPrice.amount;
 
   return (
     <div className="product-item-collection product-card" ref={ref}>
-      <motion.div
-        initial={{ opacity: 0, x: -30 }}
-        animate={controls}
-        variants={{
-          visible: {
-            opacity: 1,
-            x: 0,
-            transition: { delay, duration: 0.2 }
-          }
-        }}
-      >
+      <div>
         <div className="mobile-container">
-          <Link key={product.id} prefetch="intent" to={variantUrl} className="collection-product-link">
-            {product.featuredImage && isInView && (
-              <motion.div
-                initial={{ filter: "blur(10px)", opacity: 0 }}
-                animate={{ filter: isImageLoaded ? "blur(0px)" : "blur(10px)", opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="collection-product-image"
-              >
+          <Link
+            key={product.id}
+            prefetch="intent"
+            to={variantUrl}
+            className="collection-product-link"
+          >
+            {product.featuredImage && (
+              <div className="collection-product-image">
                 <Image
                   srcSet={`${product.featuredImage.url}?width=300&quality=15 300w,
                            ${product.featuredImage.url}?width=600&quality=15 600w,
@@ -645,15 +631,19 @@ const ProductItem = React.memo(({ product, index, numberInRow }) => {
                   height="180px"
                   onLoad={() => setIsImageLoaded(true)}
                 />
-              </motion.div>
+              </div>
             )}
           </Link>
           <div className="product-info-container">
             <Link key={product.id} prefetch="intent" to={variantUrl}>
               <h4>{truncateText(product.title, 30)}</h4>
-              <p className="product-description">{truncateText(product.description, 30)}</p> {/* Add truncated description */}
+              <p className="product-description">
+                {truncateText(product.description, 30)}
+              </p>
               <div className="price-container">
-                <small className={`product-price ${hasDiscount ? "discounted" : ""}`}>
+                <small
+                  className={`product-price ${hasDiscount ? 'discounted' : ''}`}
+                >
                   <Money data={selectedVariant.price} />
                 </small>
                 {hasDiscount && selectedVariant.compareAtPrice && (
@@ -675,7 +665,7 @@ const ProductItem = React.memo(({ product, index, numberInRow }) => {
           selectedVariant={selectedVariant}
           setSelectedVariant={setSelectedVariant}
         />
-      </motion.div>
+      </div>
     </div>
   );
 });
