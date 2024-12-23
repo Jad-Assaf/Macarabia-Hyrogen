@@ -171,9 +171,11 @@ export function ProductItem({product, index}) {
       <Link to={`/products/${product.handle}`}>
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
-            <img
+            <LazyLoadImage
               src={images[currentImageIndex]?.url}
               alt={images[currentImageIndex]?.altText || 'Product Image'}
+              effect="blur" // Smooth blur effect
+              afterLoad={() => setIsLoaded(true)}
               aspectRatio="1/1"
               sizes="(min-width: 45em) 20vw, 40vw"
               srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
@@ -183,7 +185,7 @@ export function ProductItem({product, index}) {
               height="180px"
               loading="lazy"
               style={styles.image}
-              className="product-slideshow-image"
+              className="product-slideshow-image lazy-image"
               onClick={handleImageClick} // Click to switch images
             />
             <div
