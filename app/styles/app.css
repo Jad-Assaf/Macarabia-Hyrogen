@@ -54,6 +54,28 @@ html {
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
+.category-container {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.category-container.in-view {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.category-svg-wrapper {
+  filter: blur(10px);
+  transition: filter 0.5s ease, opacity 0.5s ease;
+  opacity: 0;
+}
+
+.category-container.in-view .category-svg-wrapper {
+  filter: blur(0px);
+  opacity: 1;
+}
+
 html {
   scrollbar-color: #0492ff54 #00000014;
   scrollbar-width: thin;
