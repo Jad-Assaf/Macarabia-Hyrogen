@@ -384,11 +384,13 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      {newArrivalsCollection && (
-        <TopProductSections collection={newArrivalsCollection} />
-      )}
-      <CollectionDisplay menuCollections={menuCollections} />
-      <BrandSection brands={brandsData} />
+      <Suspense fallback={<div>Loading top products...</div>}>
+        {newArrivalsCollection && (
+          <TopProductSections collection={newArrivalsCollection} />
+        )}
+        <CollectionDisplay menuCollections={menuCollections} />
+        <BrandSection brands={brandsData} />
+      </Suspense>
     </div>
   );
 }
