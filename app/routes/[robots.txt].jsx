@@ -93,6 +93,7 @@ Disallow: /*/collections/*sort_by*
 Disallow: /collections/*+*
 Disallow: /collections/*%2B*
 Disallow: /collections/*%2b*
+Disallow: /collections/*?*
 Disallow: /*/collections/*+*
 Disallow: /*/collections/*%2B*
 Disallow: /*/collections/*%2b*
