@@ -1,10 +1,10 @@
-import React, {useRef, useEffect, useState} from 'react';
-import {Link} from '@remix-run/react';
-import {ProductRow} from './CollectionDisplay';
-import {Image} from '@shopify/hydrogen-react';
-import {useInView} from 'react-intersection-observer';
+import React, { useRef, useEffect, useState } from 'react';
+import { Link } from '@remix-run/react';
+import { ProductRow } from './CollectionDisplay';
+import { Image } from '@shopify/hydrogen-react';
+import { useInView } from 'react-intersection-observer';
 
-const CollectionRows = ({menuCollections}) => {
+const CollectionRows = ({ menuCollections }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Check if the screen width is less than 768px
@@ -40,7 +40,11 @@ const CollectionRows = ({menuCollections}) => {
               });
 
               return (
-                <div ref={collectionRef} key={collection.id}>
+                <div
+                  ref={collectionRef}
+                  key={collection.id}
+                  className={`fade-in ${collectionInView ? 'visible' : ''}`}
+                >
                   {collectionInView && (
                     <CollectionItem
                       collection={collection}
@@ -68,7 +72,10 @@ const CollectionRows = ({menuCollections}) => {
                     View All
                   </Link>
                 </div>
-                <div ref={productRowRef}>
+                <div
+                  ref={productRowRef}
+                  className={`fade-in ${productRowInView ? 'visible' : ''}`}
+                >
                   {productRowInView && (
                     <ProductRow products={collection.products.nodes} />
                   )}
