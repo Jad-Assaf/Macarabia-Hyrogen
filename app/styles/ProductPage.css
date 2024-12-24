@@ -401,7 +401,8 @@ strong {
     width: 100%;
 }
 
-.product-details li, .product-metafields li{
+.product-details li,
+.product-metafields li {
     font-size: 12px;
     margin-bottom: 0.2rem;
     color: #4a4a4a;
@@ -415,12 +416,16 @@ strong {
     color: #cdcdcd;
 }
 
-.product-item .product-card{
-    min-width: 170px !important;
-    max-width: 170px !important;
+.product-item .product-card {
+    min-width: 180px !important;
+    max-width: 180px !important;
 }
 
-.collection-section{
-    min-height: 434px !important;
+.collection-products-row {
+    gap: 0;
+}
+
+.collection-section {
+    min-height: 400px !important;
     max-height: 434px !important;
 }
