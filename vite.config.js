@@ -27,6 +27,11 @@ export default defineConfig({
       },
     }),
     hydrogen(),
+    visualizer({
+      filename: 'bundle-analysis.html', // Output file
+      template: 'treemap', // Visualization type ('treemap', 'sunburst', 'network')
+      open: true, // Automatically opens the report in the browser
+    }),
     oxygen(),
     remix({
       presets: [hydrogen.preset()],
