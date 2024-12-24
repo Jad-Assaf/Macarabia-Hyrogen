@@ -10,7 +10,6 @@ import {
   CartForm,
   VariantSelector,
 } from '@shopify/hydrogen';
-import {motion} from 'framer-motion';
 import {getVariantUrl} from '~/lib/variants';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImages} from '~/components/ProductImage';
@@ -514,61 +513,61 @@ export function ProductForm({
   );
 }
 
-function DirectCheckoutButton({selectedVariant, quantity}) {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [shouldRedirect, setShouldRedirect] = useState(false);
+// function DirectCheckoutButton({selectedVariant, quantity}) {
+//   const [isAnimating, setIsAnimating] = useState(false);
+//   const [shouldRedirect, setShouldRedirect] = useState(false);
 
-  const handleAnimation = () => {
-    setIsAnimating(true);
-    setTimeout(() => {
-      setIsAnimating(false);
-      setShouldRedirect(true);
-    }, 300);
-  };
+//   const handleAnimation = () => {
+//     setIsAnimating(true);
+//     setTimeout(() => {
+//       setIsAnimating(false);
+//       setShouldRedirect(true);
+//     }, 300);
+//   };
 
-  useEffect(() => {
-    return () => {
-      setShouldRedirect(false);
-    };
-  }, []);
+//   useEffect(() => {
+//     return () => {
+//       setShouldRedirect(false);
+//     };
+//   }, []);
 
-  const isUnavailable = !selectedVariant?.availableForSale;
+//   const isUnavailable = !selectedVariant?.availableForSale;
 
-  return (
-    <CartForm
-      route="/cart"
-      action={CartForm.ACTIONS.LinesAdd}
-      inputs={{
-        lines: [
-          {
-            merchandiseId: selectedVariant?.id,
-            quantity: quantity,
-            selectedOptions: selectedVariant?.selectedOptions,
-          },
-        ],
-      }}
-    >
-      {(fetcher) => {
-        if (shouldRedirect && fetcher.data?.cart?.checkoutUrl) {
-          window.location.href = fetcher.data.cart.checkoutUrl;
-        }
+//   return (
+//     <CartForm
+//       route="/cart"
+//       action={CartForm.ACTIONS.LinesAdd}
+//       inputs={{
+//         lines: [
+//           {
+//             merchandiseId: selectedVariant?.id,
+//             quantity: quantity,
+//             selectedOptions: selectedVariant?.selectedOptions,
+//           },
+//         ],
+//       }}
+//     >
+//       {(fetcher) => {
+//         if (shouldRedirect && fetcher.data?.cart?.checkoutUrl) {
+//           window.location.href = fetcher.data.cart.checkoutUrl;
+//         }
 
-        return (
-          <motion.button
-            type="submit"
-            disabled={isUnavailable || fetcher.state !== 'idle'}
-            className={`buy-now-button ${isUnavailable ? 'disabled' : ''}`}
-            onClick={handleAnimation}
-            animate={isAnimating ? {scale: 1.05} : {scale: 1}}
-            transition={{duration: 0.3}}
-          >
-            Buy Now
-          </motion.button>
-        );
-      }}
-    </CartForm>
-  );
-}
+//         return (
+//           <motion.button
+//             type="submit"
+//             disabled={isUnavailable || fetcher.state !== 'idle'}
+//             className={`buy-now-button ${isUnavailable ? 'disabled' : ''}`}
+//             onClick={handleAnimation}
+//             animate={isAnimating ? {scale: 1.05} : {scale: 1}}
+//             transition={{duration: 0.3}}
+//           >
+//             Buy Now
+//           </motion.button>
+//         );
+//       }}
+//     </CartForm>
+//   );
+// }
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Product() {
