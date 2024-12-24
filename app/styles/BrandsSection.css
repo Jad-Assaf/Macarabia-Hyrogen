@@ -8,6 +8,17 @@
     border-radius: 20px;
 }
 
+.brand-section .brand-grid.hidden {
+    opacity: 0;
+    transform: scale(0.9);
+}
+
+.brand-section .brand-grid.visible {
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.5s ease;
+}
+
 .brand-item:hover img {
     transform: scale(1.01);
 }
