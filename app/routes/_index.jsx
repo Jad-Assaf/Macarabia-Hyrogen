@@ -6,7 +6,7 @@ import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
 import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
-import { getSeoMeta } from '@shopify/hydrogen';
+import {getSeoMeta} from '@shopify/hydrogen';
 
 const cache = new Map();
 
@@ -14,16 +14,24 @@ const cache = new Map();
  * @type {MetaFunction}
  */
 export const meta = ({data}) => {
+  const truncate = (text, maxLength) =>
+    text?.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
   return getSeoMeta({
     title: data?.title || 'Default Title',
-    description: data?.description || 'Default description for this page.',
+    description: truncate(
+      data?.description || 'Default description for this page.',
+      150,
+    ),
     url: data?.url || 'https://macarabia.me',
     jsonLd: [
       {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: data?.title || 'Default Title',
-        description: data?.description || 'Default description',
+        description: truncate(
+          data?.description || 'Default description for this page.',
+          150,
+        ),
         url: data?.url || 'https://macarabia.me',
       },
       {
@@ -174,8 +182,6 @@ async function loadCriticalData({context}) {
   const menuHandles = menu.items.map((item) =>
     item.title.toLowerCase().replace(/\s+/g, '-'),
   );
-
-
 
   const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([

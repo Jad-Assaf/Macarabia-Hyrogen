@@ -36,10 +36,12 @@ export const meta = ({data}) => {
       product?.seoTitle || product?.title || 'Macarabia Product',
       140,
     ),
-    description:
+    description: truncate(
       product?.seoDescription ||
-      product?.description ||
-      'Discover this product.',
+        product?.description ||
+        'Discover this product.',
+      150,
+    ),
     url: `https://macarabia.me/products/${product?.handle}`,
     image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
     jsonLd: [
@@ -54,7 +56,7 @@ export const meta = ({data}) => {
           '@type': 'Brand',
           name: product?.vendor || 'Macarabia',
         },
-        description: product?.description || '',
+        description: truncate(product?.description || '', 150),
         image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
         offers: variants.map((variant) => ({
           '@type': 'Offer',
@@ -258,9 +260,9 @@ function isValueAvailable(allVariants, selectedOptions, optionName, val) {
     allVariants.find((variant) => {
       if (!variant.availableForSale) return false;
       return variant.selectedOptions.every(
-        (so) => updated[so.name] === so.value
+        (so) => updated[so.name] === so.value,
       );
-    })
+    }),
   );
 }
 
@@ -275,7 +277,7 @@ function pickOrSnapVariant(allVariants, newOptions, optionName, chosenVal) {
   let found = allVariants.find(
     (v) =>
       v.availableForSale &&
-      v.selectedOptions.every((so) => newOptions[so.name] === so.value)
+      v.selectedOptions.every((so) => newOptions[so.name] === so.value),
   );
 
   // 2) If no perfect match, fallback
@@ -324,7 +326,7 @@ export function ProductForm({
       selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
         acc[name] = value;
         return acc;
-      }, {})
+      }, {}),
     );
   }, [selectedVariant, product]);
 
@@ -336,7 +338,12 @@ export function ProductForm({
       const newOptions = {...prev, [optionName]: chosenVal};
 
       // Attempt to find or “snap” to a variant
-      const found = pickOrSnapVariant(variants, newOptions, optionName, chosenVal);
+      const found = pickOrSnapVariant(
+        variants,
+        newOptions,
+        optionName,
+        chosenVal,
+      );
 
       if (found) {
         // Overwrite newOptions with found's entire set

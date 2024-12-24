@@ -1,6 +1,5 @@
 import {defineConfig} from 'vite';
 import {hydrogen} from '@shopify/hydrogen/vite';
-import { visualizer } from 'rollup-plugin-visualizer';
 import {oxygen} from '@shopify/mini-oxygen/vite';
 import {vitePlugin as remix} from '@remix-run/dev';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -28,11 +27,6 @@ export default defineConfig({
       },
     }),
     hydrogen(),
-    visualizer({
-      filename: 'bundle-analysis.html', // Output file
-      template: 'treemap', // Visualization type ('treemap', 'sunburst', 'network')
-      open: true, // Automatically opens the report in the browser
-    }),
     oxygen(),
     remix({
       presets: [hydrogen.preset()],

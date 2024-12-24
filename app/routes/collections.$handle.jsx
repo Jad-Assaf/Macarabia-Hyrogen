@@ -166,7 +166,7 @@ export const meta = ({data}) => {
         '@context': 'http://schema.org/',
         '@type': 'ItemList',
         name: collection?.title || 'Collection',
-        description: truncateText(collection?.description || '', 155),
+        description: truncateText(collection?.description || '', 150),
         url: `https://macarabia.me/collections/${collection?.handle || ''}`,
         itemListElement: collection?.products?.nodes
           ?.slice(0, 20)
@@ -1140,41 +1140,6 @@ function ProductForm({product, selectedVariant, setSelectedVariant}) {
     </div>
   );
 }
-
-// /**
-//  * @param {{ option: VariantOption }}
-//  */
-// function ProductOptions({ option }) {
-//   return (
-//     <div className="product-options" key={option.name}>
-//       <h5>{option.name}</h5>
-//       <div className="product-options-grid">
-//         {option.values.map(({ value, isAvailable, isActive, to }) => {
-//           return (
-//             <Link
-//               className="product-options-item"
-//               key={option.name + value}
-//               prefetch="intent"
-//               preventScrollReset
-//               replace
-//               to={to}
-//               onClick={(e) => {
-//                 e.preventDefault(); // Add this line
-//                 // Handle variant selection here if needed
-//               }}
-//               style={{
-//                 border: isActive ? '1px solid black' : '1px solid transparent',
-//                 opacity: isAvailable ? 1 : 0.3,
-//               }}
-//             >
-//               {value}
-//             </Link>
-//           );
-//         })}
-//       </div>
-//     </div>
-//   );
-// }
 
 const MENU_QUERY = `#graphql
   query GetMenu($handle: String!) {
