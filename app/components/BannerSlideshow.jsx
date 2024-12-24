@@ -5,6 +5,7 @@ export function BannerSlideshow({banners, interval = 5000}) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [animationStyle, setAnimationStyle] = useState({});
+  const [startX, setStartX] = useState(0); // Track starting point of the swipe
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -39,15 +40,42 @@ export function BannerSlideshow({banners, interval = 5000}) {
     }, 500);
   }, [currentIndex]);
 
-  const handleSwipe = (direction) => {
-    if (direction === 'left') {
-      setCurrentIndex((prevIndex) =>
-        prevIndex === banners.length - 1 ? 0 : prevIndex + 1,
-      );
-    } else if (direction === 'right') {
+  const handleTouchStart = (e) => {
+    setStartX(e.touches[0].clientX); // Record the starting X position of the touch
+  };
+
+  const handleTouchMove = (e) => {
+    // Calculate the difference between the starting and current X positions
+    const touchDiff = e.touches[0].clientX - startX;
+
+    // Update animation style to show swipe effect
+    setAnimationStyle({
+      transform: `translateX(${touchDiff}px)`,
+      transition: 'none',
+    });
+  };
+
+  const handleTouchEnd = (e) => {
+    const endX = e.changedTouches[0].clientX; // Get the ending X position of the touch
+    const touchDiff = endX - startX;
+
+    // Determine swipe direction and update the currentIndex
+    if (touchDiff > 100) {
+      // Swipe right
       setCurrentIndex((prevIndex) =>
         prevIndex === 0 ? banners.length - 1 : prevIndex - 1,
       );
+    } else if (touchDiff < -100) {
+      // Swipe left
+      setCurrentIndex((prevIndex) =>
+        prevIndex === banners.length - 1 ? 0 : prevIndex + 1,
+      );
+    } else {
+      // Reset animation if the swipe was too short
+      setAnimationStyle({
+        transform: 'translateX(0)',
+        transition: 'transform 0.3s ease',
+      });
     }
   };
 
@@ -93,58 +121,17 @@ export function BannerSlideshow({banners, interval = 5000}) {
     ));
   }, [banners, currentIndex, animationStyle]);
 
-  const renderedMobileBanners = useMemo(() => {
-    return banners.map((banner, index) => (
-      <div
-        key={index}
-        className={`banner-slide ${
-          index === currentIndex ? 'active' : 'inactive'
-        }`}
-        style={{
-          ...styles.bannerSlide,
-          ...animationStyle,
-          opacity: index === currentIndex ? 1 : 0,
-          transform:
-            index === currentIndex
-              ? 'translateX(0)'
-              : index > currentIndex
-              ? 'translateX(50px)'
-              : 'translateX(-50px)',
-        }}
-      >
-        <a
-          href={banner.link}
-          target="_self"
-          rel="noopener noreferrer"
-          style={styles.link}
-        >
-          <Image
-            data={{
-              altText: `Banner ${index + 1}`,
-              url: banner.mobileImageUrl,
-            }}
-            width="100vw"
-            height="auto"
-            className="banner-image"
-            style={styles.bannerImage}
-            loading="eager"
-            decoding="sync"
-          />
-        </a>
-      </div>
-    ));
-  }, [banners, currentIndex, animationStyle]);
-
   return (
-    <div className="banner-slideshow" style={styles.bannerSlideshow}>
+    <div
+      className="banner-slideshow"
+      style={styles.bannerSlideshow}
+      onTouchStart={handleTouchStart} // Start tracking swipe
+      onTouchMove={handleTouchMove} // Update animation during swipe
+      onTouchEnd={handleTouchEnd} // Complete swipe handling
+    >
       {/* Desktop Banners */}
       <div className="desktop-banners">
         {renderedDesktopBanners[currentIndex]}
-      </div>
-
-      {/* Mobile Banners */}
-      <div className="mobile-banners">
-        {renderedMobileBanners[currentIndex]}
       </div>
 
       {/* Progress Bar */}
