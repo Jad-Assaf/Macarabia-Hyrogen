@@ -8,22 +8,6 @@
     border-radius: 20px;
 }
 
-.brand-section {
-    text-align: center;
-    margin: 40px 0;
-}
-
-.brand-grid {
-    margin-top: 20px;
-}
-
-.brand-item img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
-    transition: transform 0.3s ease;
-}
-
 .brand-item:hover img {
     transform: scale(1.01);
 }

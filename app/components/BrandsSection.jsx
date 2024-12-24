@@ -16,11 +16,6 @@ export default function BrandSection({brands}) {
       <h2>Shop By Brand</h2>
       <div
         className={`brand-grid ${isVisible ? 'visible' : 'hidden'}`}
-        style={{
-          display: 'grid',
-          gap: '20px',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-        }}
       >
         {brands.map((brand, index) => (
           <a
