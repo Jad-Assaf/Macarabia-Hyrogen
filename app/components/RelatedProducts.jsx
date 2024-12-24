@@ -79,9 +79,9 @@ function RelatedProductItem({ product, index }) {
                         data={product.images.edges[0]?.node}
                         aspectRatio="1/1"
                         sizes="(min-width: 45em) 20vw, 40vw"
-                        srcSet={`${product.images.edges[0]?.node.url}?width=300&quality=30 300w,
-                                 ${product.images.edges[0]?.node.url}?width=600&quality=30 600w,
-                                 ${product.images.edges[0]?.node.url}?width=1200&quality=30 1200w`}
+                        srcSet={`${product.images.edges[0]?.node.url}?width=300&quality=10 300w,
+                                 ${product.images.edges[0]?.node.url}?width=600&quality=10 600w,
+                                 ${product.images.edges[0]?.node.url}?width=1200&quality=10 1200w`}
                         alt={product.images.edges[0]?.node.altText || product.title}
                         width="150px"
                         height="150px"

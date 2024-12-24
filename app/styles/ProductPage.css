@@ -414,3 +414,13 @@ strong {
     border-color: #cdcdcd;
     color: #cdcdcd;
 }
+
+.product-item .product-card{
+    min-width: 170px !important;
+    max-width: 170px !important;
+}
+
+.collection-section{
+    min-height: 434px !important;
+    max-height: 434px !important;
+}
