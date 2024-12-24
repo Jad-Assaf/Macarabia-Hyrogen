@@ -1,6 +1,5 @@
 import {Link, useLocation} from '@remix-run/react';
 import {CartForm, VariantSelector} from '@shopify/hydrogen';
-import {motion} from 'framer-motion';
 import React, {useEffect, useState} from 'react';
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
@@ -251,61 +250,61 @@ function ProductOptions({option, selectedOptions, onOptionChange}) {
   );
 }
 
-export function DirectCheckoutButton({selectedVariant, quantity}) {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [shouldRedirect, setShouldRedirect] = useState(false); // Track whether redirect is needed
+// export function DirectCheckoutButton({selectedVariant, quantity}) {
+//   const [isAnimating, setIsAnimating] = useState(false);
+//   const [shouldRedirect, setShouldRedirect] = useState(false); // Track whether redirect is needed
 
-  const handleAnimation = () => {
-    setIsAnimating(true);
-    setTimeout(() => {
-      setIsAnimating(false);
-      setShouldRedirect(true); // Allow redirection after animation
-    }, 300); // Complete animation before redirecting
-  };
+//   const handleAnimation = () => {
+//     setIsAnimating(true);
+//     setTimeout(() => {
+//       setIsAnimating(false);
+//       setShouldRedirect(true); // Allow redirection after animation
+//     }, 300); // Complete animation before redirecting
+//   };
 
-  useEffect(() => {
-    return () => {
-      setShouldRedirect(false); // Reset redirection when leaving the component
-    };
-  }, []);
+//   useEffect(() => {
+//     return () => {
+//       setShouldRedirect(false); // Reset redirection when leaving the component
+//     };
+//   }, []);
 
-  const isUnavailable = !selectedVariant?.availableForSale;
+//   const isUnavailable = !selectedVariant?.availableForSale;
 
-  return (
-    <CartForm
-      route="/cart"
-      action={CartForm.ACTIONS.LinesAdd}
-      inputs={{
-        lines: [
-          {
-            merchandiseId: selectedVariant?.id,
-            quantity: quantity,
-            selectedOptions: selectedVariant?.selectedOptions,
-          },
-        ],
-      }}
-    >
-      {(fetcher) => {
-        if (shouldRedirect && fetcher.data?.cart?.checkoutUrl) {
-          window.location.href = fetcher.data.cart.checkoutUrl;
-        }
+//   return (
+//     <CartForm
+//       route="/cart"
+//       action={CartForm.ACTIONS.LinesAdd}
+//       inputs={{
+//         lines: [
+//           {
+//             merchandiseId: selectedVariant?.id,
+//             quantity: quantity,
+//             selectedOptions: selectedVariant?.selectedOptions,
+//           },
+//         ],
+//       }}
+//     >
+//       {(fetcher) => {
+//         if (shouldRedirect && fetcher.data?.cart?.checkoutUrl) {
+//           window.location.href = fetcher.data.cart.checkoutUrl;
+//         }
 
-        return (
-          <motion.button
-            type="submit"
-            disabled={isUnavailable || fetcher.state !== 'idle'}
-            className={`buy-now-button ${isUnavailable ? 'disabled' : ''}`}
-            onClick={handleAnimation}
-            animate={isAnimating ? {scale: 1.05} : {scale: 1}}
-            transition={{duration: 0.3}}
-          >
-            Buy Now
-          </motion.button>
-        );
-      }}
-    </CartForm>
-  );
-}
+//         return (
+//           <motion.button
+//             type="submit"
+//             disabled={isUnavailable || fetcher.state !== 'idle'}
+//             className={`buy-now-button ${isUnavailable ? 'disabled' : ''}`}
+//             onClick={handleAnimation}
+//             animate={isAnimating ? {scale: 1.05} : {scale: 1}}
+//             transition={{duration: 0.3}}
+//           >
+//             Buy Now
+//           </motion.button>
+//         );
+//       }}
+//     </CartForm>
+//   );
+// }
 
 /** @typedef {import('@shopify/hydrogen').VariantOption} VariantOption */
 /** @typedef {import('storefrontapi.generated').ProductFragment} ProductFragment */

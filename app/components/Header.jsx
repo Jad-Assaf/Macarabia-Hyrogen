@@ -4,7 +4,6 @@ import {useAside} from '~/components/Aside';
 import {Image} from '@shopify/hydrogen-react';
 import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
-// import { motion } from 'framer-motion';  // REMOVED
 
 export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   const {shop, menu} = header;

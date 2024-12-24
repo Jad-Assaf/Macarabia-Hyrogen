@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Image } from '@shopify/hydrogen';
+import {useEffect, useState} from 'react';
+import {Image} from '@shopify/hydrogen';
 import Lightbox from 'yet-another-react-lightbox';
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
-import { motion } from 'framer-motion';
 import 'yet-another-react-lightbox/styles.css';
 import '../styles/ProductImage.css';
-import { useSwipeable } from 'react-swipeable';
+import {useSwipeable} from 'react-swipeable';
 
 const LeftArrowIcon = () => (
   <svg
@@ -40,7 +39,7 @@ const RightArrowIcon = () => (
  *   images: Array<{node: ProductFragment['images']['edges'][0]['node']}>;
  * }}
  */
-export function ProductImages({ images, selectedVariantImage }) {
+export function ProductImages({images, selectedVariantImage}) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageKey, setImageKey] = useState(0);
@@ -49,7 +48,9 @@ export function ProductImages({ images, selectedVariantImage }) {
 
   useEffect(() => {
     if (selectedVariantImage) {
-      const variantImageIndex = images.findIndex(({ node }) => node.id === selectedVariantImage.id);
+      const variantImageIndex = images.findIndex(
+        ({node}) => node.id === selectedVariantImage.id,
+      );
       if (variantImageIndex >= 0 && !isVariantSelected) {
         setSelectedImageIndex(variantImageIndex);
         setIsVariantSelected(true);
@@ -70,14 +71,14 @@ export function ProductImages({ images, selectedVariantImage }) {
 
   const handlePrevImage = () => {
     setSelectedImageIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1,
     );
     setIsVariantSelected(false);
   };
 
   const handleNextImage = () => {
     setSelectedImageIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1,
     );
     setIsVariantSelected(false);
   };
@@ -93,10 +94,12 @@ export function ProductImages({ images, selectedVariantImage }) {
     <div className="product-images-container">
       <div className="thumbContainer">
         <div className="thumbnails">
-          {images.map(({ node: image }, index) => (
+          {images.map(({node: image}, index) => (
             <div
               key={image.id}
-              className={`thumbnail ${index === selectedImageIndex ? 'active' : ''}`}
+              className={`thumbnail ${
+                index === selectedImageIndex ? 'active' : ''
+              }`}
               onClick={() => setSelectedImageIndex(index)}
             >
               <Image
@@ -115,14 +118,15 @@ export function ProductImages({ images, selectedVariantImage }) {
       <div
         className="main-image"
         onClick={() => setIsLightboxOpen(true)}
-        style={{ cursor: 'grab' }}
+        style={{cursor: 'grab'}}
         {...swipeHandlers} // Attach swipe handlers to the main image
       >
         {selectedImage && (
-          <motion.div
-            initial={{ filter: 'blur(10px)' }}
-            animate={{ filter: isImageLoaded ? 'blur(0px)' : 'blur(10px)' }}
-            transition={{ duration: 0.3 }}
+          <div
+            style={{
+              filter: isImageLoaded ? 'blur(0px)' : 'blur(10px)',
+              transition: 'filter 0.3s ease',
+            }}
           >
             <Image
               key={imageKey}
@@ -135,7 +139,7 @@ export function ProductImages({ images, selectedVariantImage }) {
               loading="eager"
               onLoad={() => setIsImageLoaded(true)}
             />
-          </motion.div>
+          </div>
         )}
         <div className="ImageArrows">
           <button
@@ -164,7 +168,7 @@ export function ProductImages({ images, selectedVariantImage }) {
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
           index={selectedImageIndex}
-          slides={images.map(({ node }) => ({ src: node.url }))}
+          slides={images.map(({node}) => ({src: node.url}))}
           onIndexChange={setSelectedImageIndex}
           plugins={[Fullscreen]}
         />

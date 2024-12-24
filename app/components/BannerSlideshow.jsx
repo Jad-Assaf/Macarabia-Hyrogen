@@ -95,7 +95,7 @@ export function BannerSlideshow({banners, interval = 5000}) {
           rel="noopener noreferrer"
           style={styles.link}
         >
-          <img
+          <Image
             src={banner.desktopImageUrl}
             srcSet={`${banner.desktopImageUrl}?width=300&quality=50 300w,
                    ${banner.desktopImageUrl}?width=600&quality=50 600w,
@@ -136,7 +136,7 @@ export function BannerSlideshow({banners, interval = 5000}) {
           rel="noopener noreferrer"
           style={styles.link}
         >
-          <img
+          <Image
             src={banner.mobileImageUrl}
             srcSet={`${banner.mobileImageUrl}?width=300&quality=50 300w,
                    ${banner.mobileImageUrl}?width=600&quality=50 600w,
