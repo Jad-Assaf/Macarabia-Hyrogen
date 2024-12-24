@@ -422,7 +422,7 @@ strong {
 }
 
 .collection-products-row {
-    gap: 0;
+    gap: 0 !important;
 }
 
 .collection-section {
