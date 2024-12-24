@@ -416,13 +416,13 @@ strong {
     color: #cdcdcd;
 }
 
-.product-item .product-card {
+.product-item, .product-item .product-card {
     min-width: 180px !important;
     max-width: 180px !important;
 }
 
 .collection-products-row {
-    gap: 0 !important;
+    gap: 5px !important;
 }
 
 .collection-section {
