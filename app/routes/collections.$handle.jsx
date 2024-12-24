@@ -45,7 +45,7 @@ export const meta = ({data}) => {
     title: `${collection?.title || 'Collection'} | Macarabia`,
     description: truncateText(
       collection?.description || 'Explore our latest collection at Macarabia.',
-      155,
+      150,
     ),
     url: `https://macarabia.me/collections/${collection?.handle || ''}`,
     image:
@@ -58,7 +58,7 @@ export const meta = ({data}) => {
         '@type': 'CollectionPage',
         name: collection?.title || 'Collection',
         url: `https://macarabia.me/collections/${collection?.handle || ''}`,
-        description: truncateText(collection?.description || '', 155),
+        description: truncateText(collection?.description || '', 150),
         image: {
           '@type': 'ImageObject',
           url:
@@ -87,7 +87,7 @@ export const meta = ({data}) => {
             '@type': 'Brand',
             name: product?.vendor || 'Macarabia',
           },
-          description: truncateText(product?.description || '', 500),
+          description: truncateText(product?.description || '', 150),
           image: `https://macarabia.me/products/${product?.featuredImage?.url}`,
           offers: {
             '@type': 'Offer',
