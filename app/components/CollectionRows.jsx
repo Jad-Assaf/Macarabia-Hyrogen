@@ -6,8 +6,8 @@ import {useInView} from 'react-intersection-observer';
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
+  const [loadedCollections, setLoadedCollections] = useState([]); // Tracks loaded collections
   const [loadingQueue, setLoadingQueue] = useState([]); // Queue of collections to load
-  const [currentlyLoading, setCurrentlyLoading] = useState(null); // Tracks the currently loading collection
 
   // Check if the screen width is less than 768px
   useEffect(() => {
@@ -26,25 +26,25 @@ const CollectionRows = ({menuCollections}) => {
     ? menuCollections.slice(0, 14)
     : menuCollections;
 
-  useEffect(() => {
-    if (!currentlyLoading && loadingQueue.length > 0) {
-      const nextCollection = loadingQueue[0];
-      setCurrentlyLoading(nextCollection);
-    }
-  }, [currentlyLoading, loadingQueue]);
-
   const handleInView = (collectionId) => {
-    if (!loadingQueue.includes(collectionId)) {
+    if (
+      !loadedCollections.includes(collectionId) &&
+      !loadingQueue.includes(collectionId)
+    ) {
       setLoadingQueue((prevQueue) => [...prevQueue, collectionId]);
     }
   };
 
-  const handleLoadComplete = (collectionId) => {
-    setLoadingQueue((prevQueue) =>
-      prevQueue.filter((id) => id !== collectionId),
-    );
-    setCurrentlyLoading(null);
-  };
+  useEffect(() => {
+    if (
+      loadingQueue.length > 0 &&
+      !loadedCollections.includes(loadingQueue[0])
+    ) {
+      const nextCollection = loadingQueue[0];
+      setLoadedCollections((prevLoaded) => [...prevLoaded, nextCollection]);
+      setLoadingQueue((prevQueue) => prevQueue.slice(1));
+    }
+  }, [loadingQueue, loadedCollections]);
 
   return (
     <>
@@ -64,22 +64,21 @@ const CollectionRows = ({menuCollections}) => {
                 }
               }, [inView]);
 
-              const isLoading = currentlyLoading === collection.id;
+              const isLoaded = loadedCollections.includes(collection.id);
 
               return (
                 <div
                   key={collection.id}
                   ref={ref}
                   style={{
-                    opacity: isLoading ? 1 : 0,
+                    opacity: isLoaded ? 1 : 0,
                     transition: `opacity 0.5s ease ${collectionIndex * 0.1}s`,
                   }}
                 >
-                  {isLoading && (
+                  {isLoaded && (
                     <CollectionItem
                       collection={collection}
                       index={collectionIndex}
-                      onLoadComplete={() => handleLoadComplete(collection.id)}
                     />
                   )}
                 </div>
@@ -99,7 +98,7 @@ const CollectionRows = ({menuCollections}) => {
               }
             }, [productRowInView]);
 
-            const isLoading = currentlyLoading === collection.id;
+            const isLoaded = loadedCollections.includes(collection.id);
 
             return (
               <div key={collection.id} className="collection-section">
@@ -115,15 +114,12 @@ const CollectionRows = ({menuCollections}) => {
                 <div
                   ref={productRowRef}
                   style={{
-                    opacity: isLoading ? 1 : 0,
+                    opacity: isLoaded ? 1 : 0,
                     transition: 'opacity 0.5s ease',
                   }}
                 >
-                  {isLoading && (
-                    <ProductRow
-                      products={collection.products.nodes}
-                      onLoadComplete={() => handleLoadComplete(collection.id)}
-                    />
+                  {isLoaded && (
+                    <ProductRow products={collection.products.nodes} />
                   )}
                 </div>
               </div>
@@ -135,15 +131,7 @@ const CollectionRows = ({menuCollections}) => {
   );
 };
 
-const CollectionItem = ({collection, onLoadComplete}) => {
-  useEffect(() => {
-    // Simulate load completion
-    const timer = setTimeout(() => {
-      onLoadComplete();
-    }, 500); // Simulate loading duration
-    return () => clearTimeout(timer);
-  }, [onLoadComplete]);
-
+const CollectionItem = ({collection}) => {
   return (
     <Link
       to={`/collections/${collection.handle}`}
