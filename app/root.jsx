@@ -223,32 +223,24 @@ export function ErrorBoundary() {
   }
 
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <Layout {...data}>
-          {' '}
-          {/* Use the fetched data instead of root.data */}
-          <div className="route-error">
-            <h1>Oops</h1>
-            <h2>{errorStatus}</h2>
-            {errorMessage && (
-              <fieldset>
-                <pre>{errorMessage}</pre>
-              </fieldset>
-            )}
-          </div>
-        </Layout>
-        <ScrollRestoration nonce={useNonce()} />
-        <Scripts nonce={useNonce()} />
-        <LiveReload nonce={useNonce()} />
-      </body>
-    </html>
+    <>
+      <Layout {...data}>
+        {' '}
+        {/* Use the fetched data instead of root.data */}
+        <div className="route-error">
+          <h1>Oops</h1>
+          <h2>{errorStatus}</h2>
+          {errorMessage && (
+            <fieldset>
+              <pre>{errorMessage}</pre>
+            </fieldset>
+          )}
+        </div>
+      </Layout>
+      <ScrollRestoration nonce={useNonce()} />
+      <Scripts nonce={useNonce()} />
+      <LiveReload nonce={useNonce()} />
+    </>
   );
 }
 
