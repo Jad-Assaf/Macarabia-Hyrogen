@@ -1,4 +1,3 @@
-// CollectionRows.jsx
 import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
 import {ProductRow} from './CollectionDisplay';

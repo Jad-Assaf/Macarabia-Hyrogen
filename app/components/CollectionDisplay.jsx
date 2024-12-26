@@ -17,26 +17,10 @@ export function truncateText(text, maxWords) {
 }
 
 // Simplified CollectionDisplay
-export const CollectionDisplay = React.memo(({ menuCollections }) => {
-  const [visibleCollections, setVisibleCollections] = useState([]);
-
-  useEffect(() => {
-    let index = 0;
-    const loadNext = async () => {
-      if (index < menuCollections.length) {
-        setVisibleCollections((prev) => [...prev, menuCollections[index]]);
-        index++;
-        loadNext();
-      }
-    };
-    loadNext();
-  }, [menuCollections]);
-
+export const CollectionDisplay = React.memo(({menuCollections}) => {
   return (
     <div className="collections-container">
-      {visibleCollections.map((collection) => (
-        <CollectionRows key={collection.id} menuCollections={[collection]} />
-      ))}
+      <CollectionRows menuCollections={menuCollections} />
     </div>
   );
 });

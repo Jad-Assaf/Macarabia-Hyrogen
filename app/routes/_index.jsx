@@ -1,4 +1,3 @@
-// index.jsx
 import React, {Suspense, lazy, startTransition} from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
@@ -175,13 +174,13 @@ export async function loader(args) {
   });
 }
 
-async function loadCriticalData({context}) {
-  const {storefront} = context;
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
 
   // Use the hardcoded MANUAL_MENU_HANDLES
   const menuHandles = MANUAL_MENU_HANDLES;
 
-  const {shop} = await storefront.query(
+  const { shop } = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -189,23 +188,15 @@ async function loadCriticalData({context}) {
           description
         }
       }
-    `,
+    `
   );
 
-  const sliderCollections = await fetchCollectionsByHandles(
-    context,
-    menuHandles,
-  );
-
-  const menuCollections = await fetchMenuCollectionsSequential(
-    context,
-    menuHandles,
-  );
-
-  const newArrivalsCollection = await fetchCollectionByHandle(
-    context,
-    'new-arrivals',
-  );
+  const [sliderCollections, menuCollections, newArrivalsCollection] =
+    await Promise.all([
+      fetchCollectionsByHandles(context, menuHandles),
+      fetchMenuCollections(context, menuHandles),
+      fetchCollectionByHandle(context, 'new-arrivals'),
+    ]);
 
   return {
     sliderCollections,
@@ -226,55 +217,46 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-// Fetch menu collections sequentially
-async function fetchMenuCollectionsSequential(context, menuHandles) {
-  const collectionsGrouped = [];
-
-  for (const handle of menuHandles) {
+// Fetch menu collections
+async function fetchMenuCollections(context, menuHandles) {
+  const collectionsPromises = menuHandles.map(async (handle) => {
     const {menu} = await context.storefront.query(GET_MENU_QUERY, {
       variables: {handle},
     });
 
     if (!menu || !menu.items || menu.items.length === 0) {
-      continue;
+      return null;
     }
 
-    const collections = [];
-
-    for (const item of menu.items) {
+    const collectionPromises = menu.items.map(async (item) => {
       const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
       const {collectionByHandle} = await context.storefront.query(
         GET_COLLECTION_BY_HANDLE_QUERY,
         {variables: {handle: sanitizedHandle}},
       );
-      if (collectionByHandle) {
-        collections.push(collectionByHandle);
-      }
-    }
+      return collectionByHandle || null;
+    });
 
-    if (collections.length > 0) {
-      collectionsGrouped.push(collections);
-    }
-  }
+    const collections = await Promise.all(collectionPromises);
+    return collections.filter(Boolean);
+  });
 
-  return collectionsGrouped;
+  const collectionsGrouped = await Promise.all(collectionsPromises);
+  return collectionsGrouped.filter(Boolean);
 }
 
 // Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
-  const collections = [];
-
-  for (const handle of handles) {
+  const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
       GET_COLLECTION_BY_HANDLE_QUERY,
       {variables: {handle}},
     );
-    if (collectionByHandle) {
-      collections.push(collectionByHandle);
-    }
-  }
+    return collectionByHandle || null;
+  });
 
-  return collections;
+  const collections = await Promise.all(collectionPromises);
+  return collections.filter(Boolean);
 }
 
 const brandsData = [
@@ -407,7 +389,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData} = useLoaderData();
+  const { banners, sliderCollections, deferredData } = useLoaderData();
 
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
