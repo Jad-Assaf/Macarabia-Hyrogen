@@ -33,6 +33,7 @@ const CollectionRows = ({menuCollections}) => {
       {displayedCollections.map((menuCollection, index) => {
         const [containerRef, containerInView] = useInView({
           triggerOnce: true,
+          rootMargin: '200px', // Trigger slightly before entering the viewport
         });
 
         return (
@@ -44,25 +45,27 @@ const CollectionRows = ({menuCollections}) => {
                 containerInView ? 'visible' : ''
               }`}
             >
-              {menuCollection.map((collection, collectionIndex) => (
-                <div
-                  key={collection.id}
-                  className="animated-menu-item"
-                  style={{
-                    animationDelay: `${collectionIndex * 0.2}s`,
-                  }}
-                >
-                  <CollectionItem
-                    collection={collection}
-                    index={collectionIndex}
-                  />
-                </div>
-              ))}
+              {containerInView &&
+                menuCollection.map((collection, collectionIndex) => (
+                  <div
+                    key={collection.id}
+                    className="animated-menu-item"
+                    style={{
+                      animationDelay: `${collectionIndex * 0.2}s`,
+                    }}
+                  >
+                    <CollectionItem
+                      collection={collection}
+                      index={collectionIndex}
+                    />
+                  </div>
+                ))}
             </div>
 
             {menuCollection.slice(0, 2).map((collection) => {
               const [productRowRef, productRowInView] = useInView({
                 triggerOnce: true,
+                rootMargin: '200px',
               });
 
               return (
@@ -98,9 +101,36 @@ const CollectionRows = ({menuCollections}) => {
 
 const CollectionItem = ({collection, index}) => {
   const ref = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Ensure animations are triggered only once when the item is in view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      {rootMargin: '200px'},
+    );
+
+    if (ref.current) observer.observe(ref.current);
+
+    return () => {
+      if (ref.current) observer.unobserve(ref.current);
+    };
+  }, []);
 
   return (
-    <div ref={ref} className="animated-menu-item">
+    <div
+      ref={ref}
+      className="animated-menu-item"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'scale(1)' : 'scale(0.95)',
+        transition: 'opacity 0.5s ease, transform 0.5s ease',
+      }}
+    >
       <Link
         to={`/collections/${collection.handle}`}
         className="menu-item-container"
