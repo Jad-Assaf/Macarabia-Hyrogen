@@ -7,6 +7,7 @@ import {useInView} from 'react-intersection-observer';
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
 
+  // Check if the screen width is less than 768px
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
@@ -18,6 +19,7 @@ const CollectionRows = ({menuCollections}) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Get the collections to display
   const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
@@ -27,45 +29,43 @@ const CollectionRows = ({menuCollections}) => {
       {displayedCollections.map((menuCollection, index) => {
         const [containerRef, containerInView] = useInView({
           triggerOnce: true,
-          rootMargin: '100px',
+          rootMargin: '200px', // Adjusted for smoother lazy loading
         });
 
         return (
-          <React.Fragment key={menuCollection.id || index}>
+          <React.Fragment key={menuCollection.id}>
+            {/* Render the menu slider */}
             <div
               ref={containerRef}
               className={`menu-slider-container fade-in ${
                 containerInView ? 'visible' : ''
               }`}
-              style={{
-                opacity: containerInView ? 1 : 0,
-                transform: containerInView
-                  ? 'translateY(0)'
-                  : 'translateY(50px)',
-                transition: 'opacity 0.6s ease, transform 0.6s ease',
-              }}
             >
               {containerInView &&
                 menuCollection.map((collection, collectionIndex) => (
-                  <CollectionItem
-                    key={collection.id || collectionIndex}
-                    collection={collection}
-                    delay={collectionIndex * 0.1}
-                  />
+                  <div
+                    key={collection.id}
+                    className="animated-menu-item"
+                    style={{
+                      animationDelay: `${collectionIndex * 0.2}s`,
+                    }}
+                  >
+                    <CollectionItem
+                      collection={collection}
+                      index={collectionIndex}
+                    />
+                  </div>
                 ))}
             </div>
 
             {menuCollection.slice(0, 2).map((collection) => {
               const [productRowRef, productRowInView] = useInView({
                 triggerOnce: true,
-                rootMargin: '100px',
+                rootMargin: '200px',
               });
 
               return (
-                <div
-                  key={collection.id || index}
-                  className="collection-section"
-                >
+                <div key={collection.id} className="collection-section">
                   <div className="collection-header">
                     <h3>{collection.title}</h3>
                     <Link
@@ -80,16 +80,9 @@ const CollectionRows = ({menuCollections}) => {
                     className={`product-row fade-in ${
                       productRowInView ? 'visible' : ''
                     }`}
-                    style={{
-                      opacity: productRowInView ? 1 : 0,
-                      transform: productRowInView
-                        ? 'translateY(0)'
-                        : 'translateY(50px)',
-                      transition: 'opacity 0.6s ease, transform 0.6s ease',
-                    }}
                   >
                     {productRowInView && (
-                      <ProductRow products={collection.products?.nodes || []} />
+                      <ProductRow products={collection.products.nodes} />
                     )}
                   </div>
                 </div>
@@ -102,7 +95,7 @@ const CollectionRows = ({menuCollections}) => {
   );
 };
 
-const CollectionItem = ({collection, delay}) => {
+const CollectionItem = ({collection, index}) => {
   const ref = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -111,7 +104,7 @@ const CollectionItem = ({collection, delay}) => {
       ([entry]) => {
         if (entry.isIntersecting) setIsVisible(true);
       },
-      {rootMargin: '100px'},
+      {rootMargin: '200px'},
     );
 
     if (ref.current) observer.observe(ref.current);
@@ -127,7 +120,9 @@ const CollectionItem = ({collection, delay}) => {
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'scale(1)' : 'scale(0.95)',
-        transition: `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`,
+        transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${
+          index * 0.1
+        }s`,
       }}
     >
       <Link
@@ -137,8 +132,8 @@ const CollectionItem = ({collection, delay}) => {
         {collection.image && (
           <Image
             srcSet={`${collection.image.url}?width=300&quality=15 300w,
-                                 ${collection.image.url}?width=600&quality=15 600w,
-                                 ${collection.image.url}?width=1200&quality=15 1200w`}
+                     ${collection.image.url}?width=600&quality=15 600w,
+                     ${collection.image.url}?width=1200&quality=15 1200w`}
             alt={collection.image.altText || collection.title}
             className="menu-item-image"
             width={150}
