@@ -73,6 +73,15 @@ const CollectionRows = ({menuCollections}) => {
     }
   };
 
+  useEffect(() => {
+    let timer;
+    if (inView) {
+      // Add a small delay before we mark it loaded
+      timer = setTimeout(() => handleInView(collection.id), 500);
+    }
+    return () => clearTimeout(timer);
+  }, [inView]);
+
   return (
     <>
       {displayedCollections.map((menuCollection) => (
@@ -82,7 +91,7 @@ const CollectionRows = ({menuCollections}) => {
             {menuCollection.map((collection, collectionIndex) => {
               const [ref, inView] = useInView({
                 triggerOnce: true,
-                rootMargin: '200px',
+                rootMargin: '00px',
               });
 
               useEffect(() => {
@@ -118,7 +127,7 @@ const CollectionRows = ({menuCollections}) => {
           {menuCollection.slice(0, 2).map((collection) => {
             const [productRowRef, productRowInView] = useInView({
               triggerOnce: true,
-              rootMargin: '200px',
+              rootMargin: '100px',
             });
 
             useEffect(() => {
