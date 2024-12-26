@@ -362,7 +362,11 @@
     /* list-style: inside; */
 }
 
-.ProductPageBottom table{
+.ProductPageBottom table * {
+    vertical-align: top;
+}
+
+.ProductPageBottom table {
     width: unset !important;
 }
 
@@ -420,7 +424,8 @@ strong {
     color: #cdcdcd;
 }
 
-.product-item, .product-item .product-card {
+.product-item,
+.product-item .product-card {
     min-width: 180px !important;
     max-width: 180px !important;
 }

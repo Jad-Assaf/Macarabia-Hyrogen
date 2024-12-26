@@ -6,7 +6,6 @@ import {useInView} from 'react-intersection-observer';
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
-  const [loadedCollections, setLoadedCollections] = useState([]); // Tracks which collections have been loaded
 
   // Check if the screen width is less than 768px
   useEffect(() => {
@@ -25,12 +24,6 @@ const CollectionRows = ({menuCollections}) => {
     ? menuCollections.slice(0, 14)
     : menuCollections;
 
-  const handleInView = (collectionId) => {
-    if (!loadedCollections.includes(collectionId)) {
-      setLoadedCollections((prev) => [...prev, collectionId]);
-    }
-  };
-
   return (
     <>
       {displayedCollections.map((menuCollection) => (
@@ -43,29 +36,16 @@ const CollectionRows = ({menuCollections}) => {
                 rootMargin: '200px',
               });
 
-              useEffect(() => {
-                if (inView) {
-                  handleInView(collection.id);
-                }
-              }, [inView]);
-
-              const isLoaded = loadedCollections.includes(collection.id);
-
               return (
                 <div
                   key={collection.id}
                   ref={ref}
                   style={{
-                    opacity: isLoaded ? 1 : 0,
+                    opacity: inView ? 1 : 0,
                     transition: `opacity 0.5s ease ${collectionIndex * 0.1}s`,
                   }}
                 >
-                  {isLoaded && (
-                    <CollectionItem
-                      collection={collection}
-                      index={collectionIndex}
-                    />
-                  )}
+                  <CollectionItem collection={collection} index={collectionIndex} />
                 </div>
               );
             })}
@@ -76,14 +56,6 @@ const CollectionRows = ({menuCollections}) => {
               triggerOnce: true,
               rootMargin: '200px',
             });
-
-            useEffect(() => {
-              if (productRowInView) {
-                handleInView(collection.id);
-              }
-            }, [productRowInView]);
-
-            const isLoaded = loadedCollections.includes(collection.id);
 
             return (
               <div key={collection.id} className="collection-section">
@@ -99,11 +71,11 @@ const CollectionRows = ({menuCollections}) => {
                 <div
                   ref={productRowRef}
                   style={{
-                    opacity: isLoaded ? 1 : 0,
+                    opacity: productRowInView ? 1 : 0,
                     transition: 'opacity 0.5s ease',
                   }}
                 >
-                  {isLoaded && (
+                  {productRowInView && (
                     <ProductRow products={collection.products.nodes} />
                   )}
                 </div>
