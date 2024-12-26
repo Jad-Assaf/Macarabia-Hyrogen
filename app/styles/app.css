@@ -274,14 +274,8 @@ button {
   padding: 10px;
   min-width: 200px;
   max-width: 200px;
-  min-height: 347.188px !important;
   margin-left: 5px;
   text-align: center;
-}
-
-.product-slideshow img{
-  min-width: 180px;
-  min-height: 180px;
 }
 
 .grid-cols-2 .product-card,
