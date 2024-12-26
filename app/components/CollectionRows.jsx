@@ -4,7 +4,7 @@ import {ProductRow} from './CollectionDisplay';
 import {Image} from '@shopify/hydrogen-react';
 import {useInView} from 'react-intersection-observer';
 
-/* 1) Minimal shimmer keyframes. You could also put this in a global CSS file. */
+/* Minimal shimmer keyframes (already provided). In a real app, put them in CSS. */
 const shimmerKeyframes = `
 @keyframes placeholderShimmer {
   0% {
@@ -16,53 +16,82 @@ const shimmerKeyframes = `
 }
 `;
 
-/* We inject keyframes into <head> (only on client). 
-   For a real app, place this in your CSS. */
+/* Inject the keyframes into <head> if on client. */
 if (typeof document !== 'undefined') {
   const styleTag = document.createElement('style');
   styleTag.innerHTML = shimmerKeyframes;
   document.head.appendChild(styleTag);
 }
 
-/* 2) A small shimmer placeholder for an individual collection item. */
-function ShimmerCollectionItem() {
+/* A shimmer placeholder for an individual collection item */
+function ShimmerOverlay({width = 150, height = 150}) {
   return (
-    <div style={styles.shimmerContainer}>
-      <div style={styles.shimmerImage} />
-      <div style={styles.shimmerLine} />
-    </div>
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width,
+        height,
+        background: '#f6f7f8',
+        backgroundImage:
+          'linear-gradient(to right, #f6f7f8 0%, #eaeaea 20%, #f6f7f8 40%, #f6f7f8 100%)',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: '800px 104px',
+        animation: 'placeholderShimmer 1s linear infinite forwards',
+        borderRadius: '8px',
+      }}
+    />
   );
 }
 
-/* 3) A small shimmer placeholder for product rows. 
-   We'll just show 4 boxes to represent 4 loading items. */
+/**
+ * Show 4 shimmer boxes in a row for product placeholders
+ */
 function ShimmerProductRow() {
   return (
-    <div style={styles.rowShimmerContainer}>
-      {[...Array(4)].map((_, idx) => (
-        <div key={idx} style={styles.rowShimmerBox} />
+    <div
+      style={{
+        display: 'flex',
+        gap: '1rem',
+        position: 'relative',
+        margin: '1rem 0',
+      }}
+    >
+      {Array.from({length: 4}).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            width: '150px',
+            height: '180px',
+            borderRadius: '8px',
+            background: '#f6f7f8',
+            backgroundImage:
+              'linear-gradient(to right, #f6f7f8 0%, #eaeaea 20%, #f6f7f8 40%, #f6f7f8 100%)',
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: '800px 104px',
+            animation: 'placeholderShimmer 1s linear infinite forwards',
+          }}
+        />
       ))}
     </div>
   );
 }
 
-/* Your existing code, extended to show a shimmer if !isLoaded */
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
-  const [loadedCollections, setLoadedCollections] = useState([]); // Tracks which collections have been loaded
+  const [loadedCollections, setLoadedCollections] = useState([]);
 
-  // Check if the screen width is less than 768px
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
     };
     handleResize();
     window.addEventListener('resize', handleResize);
-
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Get the collections to display
+  // Possibly limit total groups for mobile
   const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
@@ -77,12 +106,12 @@ const CollectionRows = ({menuCollections}) => {
     <>
       {displayedCollections.map((menuCollection) => (
         <React.Fragment key={menuCollection.id}>
-          {/* Render the menu slider */}
+          {/* "menu-slider-container" row */}
           <div className="menu-slider-container">
             {menuCollection.map((collection, collectionIndex) => {
               const [ref, inView] = useInView({
                 triggerOnce: true,
-                rootMargin: '00px',
+                rootMargin: '200px',
               });
 
               useEffect(() => {
@@ -91,6 +120,9 @@ const CollectionRows = ({menuCollections}) => {
                 }
               }, [inView]);
 
+              // "Loaded" means it's in the viewport (Intersection observer),
+              // so we mount the <CollectionItem> or keep the shimmer if we prefer.
+              // But the item itself will handle the actual image load.
               const isLoaded = loadedCollections.includes(collection.id);
 
               return (
@@ -100,6 +132,7 @@ const CollectionRows = ({menuCollections}) => {
                   style={{
                     opacity: isLoaded ? 1 : 0,
                     transition: `opacity 0.5s ease ${collectionIndex * 0.1}s`,
+                    position: 'relative',
                   }}
                 >
                   {isLoaded ? (
@@ -108,17 +141,29 @@ const CollectionRows = ({menuCollections}) => {
                       index={collectionIndex}
                     />
                   ) : (
-                    <ShimmerCollectionItem />
+                    /* If not inView yet, we can either show nothing or show a placeholder 
+                       for the entire container. For example: */
+                    <div
+                      style={{
+                        width: '150px',
+                        height: '200px',
+                        position: 'relative',
+                      }}
+                    >
+                      <ShimmerOverlay width={150} height={150} />
+                      {/* Possibly a smaller line for the title, or skip it */}
+                    </div>
                   )}
                 </div>
               );
             })}
           </div>
 
+          {/* First 2 => ProductRow */}
           {menuCollection.slice(0, 2).map((collection) => {
             const [productRowRef, productRowInView] = useInView({
               triggerOnce: true,
-              rootMargin: '00px',
+              rootMargin: '200px',
             });
 
             useEffect(() => {
@@ -162,12 +207,25 @@ const CollectionRows = ({menuCollections}) => {
   );
 };
 
-const CollectionItem = ({collection}) => {
+export default CollectionRows;
+
+/**
+ * 2) Updated <CollectionItem> that shows a local shimmer overlay
+ *    while the actual <Image> is still loading.
+ */
+export function CollectionItem({collection}) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   return (
     <Link
       to={`/collections/${collection.handle}`}
       className="menu-item-container"
+      style={{position: 'relative', display: 'inline-block', width: '150px'}}
     >
+      {/* The shimmer overlay is absolutely positioned on top
+          until we see the image’s onLoad event. */}
+      {!imgLoaded && <ShimmerOverlay width={150} height={150} />}
+
       {collection.image && (
         <Image
           srcSet={`${collection.image.url}?width=300&quality=15 300w,
@@ -178,62 +236,17 @@ const CollectionItem = ({collection}) => {
           width={150}
           height={150}
           loading="lazy"
+          onLoad={() => setImgLoaded(true)}
+          /* onError={() => handle error if needed} */
+          style={
+            {
+              // If you want to keep space for the image even while loading,
+              // ensure width/height or aspect ratio is defined.
+            }
+          }
         />
       )}
       <div className="category-title">{collection.title}</div>
     </Link>
   );
-};
-
-export default CollectionRows;
-
-/* Inline styling for the shimmer placeholders */
-const styles = {
-  shimmerContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    width: '150px',
-    margin: '0 auto',
-  },
-  shimmerImage: {
-    width: '150px',
-    height: '150px',
-    borderRadius: '8px',
-    background: '#f6f7f8',
-    backgroundImage:
-      'linear-gradient(to right, #f6f7f8 0%, #eaeaea 20%, #f6f7f8 40%, #f6f7f8 100%)',
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: '800px 104px',
-    animation: 'placeholderShimmer 1s linear infinite forwards',
-    marginBottom: '8px',
-  },
-  shimmerLine: {
-    width: '70%',
-    height: '12px',
-    borderRadius: '4px',
-    background: '#f6f7f8',
-    backgroundImage:
-      'linear-gradient(to right, #f6f7f8 0%, #eaeaea 20%, #f6f7f8 40%, #f6f7f8 100%)',
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: '800px 104px',
-    animation: 'placeholderShimmer 1s linear infinite forwards',
-  },
-  rowShimmerContainer: {
-    display: 'flex',
-    gap: '1rem',
-    overflow: 'hidden',
-    padding: '1rem 0',
-  },
-  rowShimmerBox: {
-    width: '150px',
-    height: '180px',
-    borderRadius: '8px',
-    background: '#f6f7f8',
-    backgroundImage:
-      'linear-gradient(to right, #f6f7f8 0%, #eaeaea 20%, #f6f7f8 40%, #f6f7f8 100%)',
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: '800px 104px',
-    animation: 'placeholderShimmer 1s linear infinite forwards',
-  },
-};
+}
