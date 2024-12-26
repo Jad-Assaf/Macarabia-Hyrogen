@@ -1,10 +1,10 @@
-import React, {useRef, useEffect, useState} from 'react';
-import {Link} from '@remix-run/react';
-import {ProductRow} from './CollectionDisplay';
-import {Image} from '@shopify/hydrogen-react';
-import {useInView} from 'react-intersection-observer';
+import React, { useRef, useEffect, useState } from 'react';
+import { Link } from '@remix-run/react';
+import { ProductRow } from './CollectionDisplay';
+import { Image } from '@shopify/hydrogen-react';
+import { useInView } from 'react-intersection-observer';
 
-const CollectionRows = ({menuCollections}) => {
+const CollectionRows = ({ menuCollections }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Check if the screen width is less than 768px
