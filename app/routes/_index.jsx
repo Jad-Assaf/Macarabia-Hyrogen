@@ -1,3 +1,4 @@
+// index.jsx
 import React, {Suspense, lazy, startTransition} from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
@@ -176,10 +177,9 @@ export async function loader(args) {
 
 async function loadCriticalData({context}) {
   const {storefront} = context;
-  const menuHandle = 'main-menu';
-  const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-    variables: {handle: menuHandle},
-  });
+
+  // Use the hardcoded MANUAL_MENU_HANDLES
+  const menuHandles = MANUAL_MENU_HANDLES;
 
   const {shop} = await storefront.query(
     `#graphql
@@ -192,20 +192,20 @@ async function loadCriticalData({context}) {
     `,
   );
 
-  if (!menu) {
-    throw new Response('Menu not found', {status: 404});
-  }
-
-  const menuHandles = menu.items.map((item) =>
-    item.title.toLowerCase().replace(/\s+/g, '-'),
+  const sliderCollections = await fetchCollectionsByHandles(
+    context,
+    menuHandles,
   );
 
-  const [sliderCollections, menuCollections, newArrivalsCollection] =
-    await Promise.all([
-      fetchCollectionsByHandles(context, menuHandles),
-      fetchMenuCollections(context, menuHandles),
-      fetchCollectionByHandle(context, 'new-arrivals'),
-    ]);
+  const menuCollections = await fetchMenuCollectionsSequential(
+    context,
+    menuHandles,
+  );
+
+  const newArrivalsCollection = await fetchCollectionByHandle(
+    context,
+    'new-arrivals',
+  );
 
   return {
     sliderCollections,
@@ -226,46 +226,55 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-// Fetch menu collections
-async function fetchMenuCollections(context, menuHandles) {
-  const collectionsPromises = menuHandles.map(async (handle) => {
+// Fetch menu collections sequentially
+async function fetchMenuCollectionsSequential(context, menuHandles) {
+  const collectionsGrouped = [];
+
+  for (const handle of menuHandles) {
     const {menu} = await context.storefront.query(GET_MENU_QUERY, {
       variables: {handle},
     });
 
     if (!menu || !menu.items || menu.items.length === 0) {
-      return null;
+      continue;
     }
 
-    const collectionPromises = menu.items.map(async (item) => {
+    const collections = [];
+
+    for (const item of menu.items) {
       const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
       const {collectionByHandle} = await context.storefront.query(
         GET_COLLECTION_BY_HANDLE_QUERY,
         {variables: {handle: sanitizedHandle}},
       );
-      return collectionByHandle || null;
-    });
+      if (collectionByHandle) {
+        collections.push(collectionByHandle);
+      }
+    }
 
-    const collections = await Promise.all(collectionPromises);
-    return collections.filter(Boolean);
-  });
+    if (collections.length > 0) {
+      collectionsGrouped.push(collections);
+    }
+  }
 
-  const collectionsGrouped = await Promise.all(collectionsPromises);
-  return collectionsGrouped.filter(Boolean);
+  return collectionsGrouped;
 }
 
 // Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
-  const collectionPromises = handles.map(async (handle) => {
+  const collections = [];
+
+  for (const handle of handles) {
     const {collectionByHandle} = await context.storefront.query(
       GET_COLLECTION_BY_HANDLE_QUERY,
       {variables: {handle}},
     );
-    return collectionByHandle || null;
-  });
+    if (collectionByHandle) {
+      collections.push(collectionByHandle);
+    }
+  }
 
-  const collections = await Promise.all(collectionPromises);
-  return collections.filter(Boolean);
+  return collections;
 }
 
 const brandsData = [
