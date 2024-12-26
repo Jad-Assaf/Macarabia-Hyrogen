@@ -109,28 +109,9 @@ body {
   }
 }
 
-/* Shimmer container to cover the entire row area */
-.shimmer-container {
-  width: 100%;
-  height: 200px;
-  /* Adjust to fit your product row height */
-  background: #f6f7f8;
-  background: linear-gradient(to right, #f6f7f8 8%, #eaeaea 18%, #f6f7f8 33%);
-  background-size: 800px 100%;
-  animation: shimmer 1.2s linear infinite;
-  border-radius: 4px;
-  /* Optional for smooth corners */
-}
-
-/* Keyframes for the shimmer animation */
-@keyframes shimmer {
-  0% {
-    background-position: -800px 0;
-  }
-
-  100% {
-    background-position: 800px 0;
-  }
+div#headlessui-disclosure-panel-\:r53\: {
+  overflow-y: auto;
+  max-height: 220px;
 }
 
 img {
