@@ -19,7 +19,6 @@ const CollectionRows = ({menuCollections}) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Get the collections to display
   const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
@@ -29,12 +28,12 @@ const CollectionRows = ({menuCollections}) => {
       {displayedCollections.map((menuCollection, index) => {
         const [containerRef, containerInView] = useInView({
           triggerOnce: true,
-          rootMargin: '200px', // Adjusted for smoother lazy loading
+          rootMargin: '100px', // Trigger slightly before visibility
         });
 
         return (
           <React.Fragment key={menuCollection.id}>
-            {/* Render the menu slider */}
+            {/* Lazy-loaded menu slider */}
             <div
               ref={containerRef}
               className={`menu-slider-container fade-in ${
@@ -43,25 +42,19 @@ const CollectionRows = ({menuCollections}) => {
             >
               {containerInView &&
                 menuCollection.map((collection, collectionIndex) => (
-                  <div
+                  <CollectionItem
                     key={collection.id}
-                    className="animated-menu-item"
-                    style={{
-                      animationDelay: `${collectionIndex * 0.2}s`,
-                    }}
-                  >
-                    <CollectionItem
-                      collection={collection}
-                      index={collectionIndex}
-                    />
-                  </div>
+                    collection={collection}
+                    index={collectionIndex}
+                  />
                 ))}
             </div>
 
+            {/* Render first two collections */}
             {menuCollection.slice(0, 2).map((collection) => {
               const [productRowRef, productRowInView] = useInView({
                 triggerOnce: true,
-                rootMargin: '200px',
+                rootMargin: '100px',
               });
 
               return (
@@ -82,7 +75,7 @@ const CollectionRows = ({menuCollections}) => {
                     }`}
                   >
                     {productRowInView && (
-                      <ProductRow products={collection.products.nodes} />
+                      <ProductRow products={collection.products?.nodes || []} />
                     )}
                   </div>
                 </div>
@@ -97,32 +90,16 @@ const CollectionRows = ({menuCollections}) => {
 
 const CollectionItem = ({collection, index}) => {
   const ref = useRef(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setIsVisible(true);
-      },
-      {rootMargin: '200px'},
-    );
-
-    if (ref.current) observer.observe(ref.current);
-    return () => {
-      if (ref.current) observer.unobserve(ref.current);
-    };
-  }, []);
 
   return (
     <div
       ref={ref}
       className="animated-menu-item"
       style={{
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'scale(1)' : 'scale(0.95)',
-        transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${
-          index * 0.1
-        }s`,
+        animationDelay: `${index * 0.2}s`,
+        opacity: 1,
+        transform: 'scale(1)',
+        transition: `opacity 0.5s ease, transform 0.5s ease`,
       }}
     >
       <Link
