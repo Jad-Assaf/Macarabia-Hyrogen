@@ -7,7 +7,6 @@ import {useInView} from 'react-intersection-observer';
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check if the screen width is less than 768px
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
@@ -28,11 +27,11 @@ const CollectionRows = ({menuCollections}) => {
       {displayedCollections.map((menuCollection, index) => {
         const [containerRef, containerInView] = useInView({
           triggerOnce: true,
-          rootMargin: '100px', // Trigger slightly earlier for smoother transitions
+          rootMargin: '100px',
         });
 
         return (
-          <React.Fragment key={menuCollection.id}>
+          <React.Fragment key={menuCollection.id || index}>
             <div
               ref={containerRef}
               className={`menu-slider-container fade-in ${
@@ -46,13 +45,14 @@ const CollectionRows = ({menuCollections}) => {
                 transition: 'opacity 0.6s ease, transform 0.6s ease',
               }}
             >
-              {menuCollection.map((collection, collectionIndex) => (
-                <CollectionItem
-                  key={collection.id}
-                  collection={collection}
-                  delay={collectionIndex * 0.1} // Add delay for staggered effect
-                />
-              ))}
+              {containerInView &&
+                menuCollection.map((collection, collectionIndex) => (
+                  <CollectionItem
+                    key={collection.id || collectionIndex}
+                    collection={collection}
+                    delay={collectionIndex * 0.1}
+                  />
+                ))}
             </div>
 
             {menuCollection.slice(0, 2).map((collection) => {
@@ -62,7 +62,10 @@ const CollectionRows = ({menuCollections}) => {
               });
 
               return (
-                <div key={collection.id} className="collection-section">
+                <div
+                  key={collection.id || index}
+                  className="collection-section"
+                >
                   <div className="collection-header">
                     <h3>{collection.title}</h3>
                     <Link
@@ -86,7 +89,7 @@ const CollectionRows = ({menuCollections}) => {
                     }}
                   >
                     {productRowInView && (
-                      <ProductRow products={collection.products.nodes} />
+                      <ProductRow products={collection.products?.nodes || []} />
                     )}
                   </div>
                 </div>
