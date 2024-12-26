@@ -1,4 +1,3 @@
-// index.jsx
 import React, {Suspense, lazy, startTransition} from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
@@ -161,6 +160,7 @@ export async function loader(args) {
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
       menuCollections: criticalData.menuCollections,
+      newArrivalsCollection: criticalData.newArrivalsCollection,
     },
   };
 
@@ -176,8 +176,11 @@ export async function loader(args) {
 
 async function loadCriticalData({context}) {
   const {storefront} = context;
+  const menuHandle = 'main-menu';
+  const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+    variables: {handle: menuHandle},
+  });
 
-  // Fetch shop details
   const {shop} = await storefront.query(
     `#graphql
       query ShopDetails {
@@ -189,22 +192,25 @@ async function loadCriticalData({context}) {
     `,
   );
 
-  // Initialize arrays to hold fetched collections
-  const sliderCollections = [];
-  const menuCollections = [];
-
-  // Sequentially fetch each collection based on MANUAL_MENU_HANDLES
-  for (const handle of MANUAL_MENU_HANDLES) {
-    const collection = await fetchCollectionByHandle(context, handle);
-    if (collection) {
-      sliderCollections.push(collection);
-      menuCollections.push(collection);
-    }
+  if (!menu) {
+    throw new Response('Menu not found', {status: 404});
   }
+
+  const menuHandles = menu.items.map((item) =>
+    item.title.toLowerCase().replace(/\s+/g, '-'),
+  );
+
+  const [sliderCollections, menuCollections, newArrivalsCollection] =
+    await Promise.all([
+      fetchCollectionsByHandles(context, menuHandles),
+      fetchMenuCollections(context, menuHandles),
+      fetchCollectionByHandle(context, 'new-arrivals'),
+    ]);
 
   return {
     sliderCollections,
     menuCollections,
+    newArrivalsCollection,
     title: shop.name,
     description: shop.description,
     url: 'https://macarabia.me',
@@ -218,6 +224,48 @@ async function fetchCollectionByHandle(context, handle) {
     {variables: {handle}},
   );
   return collectionByHandle || null;
+}
+
+// Fetch menu collections
+async function fetchMenuCollections(context, menuHandles) {
+  const collectionsPromises = menuHandles.map(async (handle) => {
+    const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+      variables: {handle},
+    });
+
+    if (!menu || !menu.items || menu.items.length === 0) {
+      return null;
+    }
+
+    const collectionPromises = menu.items.map(async (item) => {
+      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+      const {collectionByHandle} = await context.storefront.query(
+        GET_COLLECTION_BY_HANDLE_QUERY,
+        {variables: {handle: sanitizedHandle}},
+      );
+      return collectionByHandle || null;
+    });
+
+    const collections = await Promise.all(collectionPromises);
+    return collections.filter(Boolean);
+  });
+
+  const collectionsGrouped = await Promise.all(collectionsPromises);
+  return collectionsGrouped.filter(Boolean);
+}
+
+// Fetch collections by handles for sliders
+async function fetchCollectionsByHandles(context, handles) {
+  const collectionPromises = handles.map(async (handle) => {
+    const {collectionByHandle} = await context.storefront.query(
+      GET_COLLECTION_BY_HANDLE_QUERY,
+      {variables: {handle}},
+    );
+    return collectionByHandle || null;
+  });
+
+  const collections = await Promise.all(collectionPromises);
+  return collections.filter(Boolean);
 }
 
 const brandsData = [
@@ -353,12 +401,15 @@ export default function Homepage() {
   const {banners, sliderCollections, deferredData} = useLoaderData();
 
   const menuCollections = deferredData?.menuCollections || [];
+  const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      <TopProductSections collection={null} />
+      {newArrivalsCollection && (
+        <TopProductSections collection={newArrivalsCollection} />
+      )}
       <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
