@@ -2,7 +2,6 @@ import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
 import {ProductRow} from './CollectionDisplay';
 import {Image} from '@shopify/hydrogen-react';
-import {useInView} from 'react-intersection-observer';
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -25,73 +24,40 @@ const CollectionRows = ({menuCollections}) => {
 
   // Get the collections to display
   const displayedCollections = isMobile
-    ? menuCollections.slice(0, 14)
+    ? menuCollections.slice(0, 10)
     : menuCollections;
 
   return (
     <>
-      {displayedCollections.map((menuCollection, index) => {
-        const [containerRef, containerInView] = useInView({
-          triggerOnce: true,
-        });
+      {displayedCollections.map((menuCollection, index) => (
+        <React.Fragment key={menuCollection.id}>
+          {/* Render the menu slider */}
+          <div className="menu-slider-container">
+            {menuCollection.map((collection, collectionIndex) => (
+              <CollectionItem
+                key={collection.id}
+                collection={collection}
+                index={collectionIndex}
+              />
+            ))}
+          </div>
 
-        return (
-          <React.Fragment key={menuCollection.id}>
-            {/* Render the menu slider */}
-            <div
-              ref={containerRef}
-              className={`menu-slider-container fade-in ${
-                containerInView ? 'visible' : ''
-              }`}
-            >
-              {menuCollection.map((collection, collectionIndex) => (
-                <div
-                  key={collection.id}
-                  className="animated-menu-item"
-                  style={{
-                    animationDelay: `${collectionIndex * 0.2}s`,
-                  }}
+          {menuCollection.slice(0, 2).map((collection) => (
+            <div key={collection.id} className="collection-section">
+              <div className="collection-header">
+                <h3>{collection.title}</h3>
+                <Link
+                  to={`/collections/${collection.handle}`}
+                  className="view-all-link"
                 >
-                  <CollectionItem
-                    collection={collection}
-                    index={collectionIndex}
-                  />
-                </div>
-              ))}
+                  View All
+                </Link>
+              </div>
+              <ProductRow products={collection.products.nodes} />
             </div>
-
-            {menuCollection.slice(0, 2).map((collection) => {
-              const [productRowRef, productRowInView] = useInView({
-                triggerOnce: true,
-              });
-
-              return (
-                <div key={collection.id} className="collection-section">
-                  <div className="collection-header">
-                    <h3>{collection.title}</h3>
-                    <Link
-                      to={`/collections/${collection.handle}`}
-                      className="view-all-link"
-                    >
-                      View All
-                    </Link>
-                  </div>
-                  <div
-                    ref={productRowRef}
-                    className={`product-row fade-in ${
-                      productRowInView ? 'visible' : ''
-                    }`}
-                  >
-                    {productRowInView && (
-                      <ProductRow products={collection.products.nodes} />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </React.Fragment>
-        );
-      })}
+          ))}
+        </React.Fragment>
+      ))}
     </>
   );
 };
@@ -114,7 +80,7 @@ const CollectionItem = ({collection, index}) => {
             className="menu-item-image"
             width={150}
             height={150}
-            loading="lazy"
+            loading='lazy'
           />
         )}
         <div className="category-title">{collection.title}</div>
