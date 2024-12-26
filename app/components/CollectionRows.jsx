@@ -68,8 +68,6 @@ const CollectionRows = ({menuCollections}) => {
   );
 };
 
-export default CollectionRows;
-
 /**
  * Renders one “group” of sub-collections (the array `menuCollection`),
  * as well as the first 2 “ProductRows” from that group,
