@@ -6,8 +6,7 @@ import {useInView} from 'react-intersection-observer';
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
-  const [loadedCollections, setLoadedCollections] = useState([]); // Tracks loaded collections
-  const [loadingQueue, setLoadingQueue] = useState([]); // Queue of collections to load
+  const [loadedCollections, setLoadedCollections] = useState([]); // Tracks which collections have been loaded
 
   // Check if the screen width is less than 768px
   useEffect(() => {
@@ -27,24 +26,10 @@ const CollectionRows = ({menuCollections}) => {
     : menuCollections;
 
   const handleInView = (collectionId) => {
-    if (
-      !loadedCollections.includes(collectionId) &&
-      !loadingQueue.includes(collectionId)
-    ) {
-      setLoadingQueue((prevQueue) => [...prevQueue, collectionId]);
+    if (!loadedCollections.includes(collectionId)) {
+      setLoadedCollections((prev) => [...prev, collectionId]);
     }
   };
-
-  useEffect(() => {
-    if (
-      loadingQueue.length > 0 &&
-      !loadedCollections.includes(loadingQueue[0])
-    ) {
-      const nextCollection = loadingQueue[0];
-      setLoadedCollections((prevLoaded) => [...prevLoaded, nextCollection]);
-      setLoadingQueue((prevQueue) => prevQueue.slice(1));
-    }
-  }, [loadingQueue, loadedCollections]);
 
   return (
     <>
