@@ -2,12 +2,16 @@ import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
 import {ProductRow} from './CollectionDisplay';
 import {Image} from '@shopify/hydrogen-react';
-import {useInView} from 'react-intersection-observer';
 
-const CollectionRows = ({menuCollections}) => {
+/**
+ * This component receives `menuCollections` as a single array (flattened).
+ * We display them one by one in sequence.
+ */
+export default function CollectionRows({menuCollections}) {
   const [isMobile, setIsMobile] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0); // which collection index is currently shown
 
-  // Check if the screen width is less than 768px
+  // Check screen size
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
@@ -17,150 +21,99 @@ const CollectionRows = ({menuCollections}) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Decide how many collections to display
+  // Decide how many to show on mobile
   const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
 
+  // A callback that each CollectionItem calls once its fade-in is done
+  const handleCollectionLoaded = (index) => {
+    // If this collection is the current activeIndex, increment to reveal the next
+    setActiveIndex((prev) => (index === prev ? prev + 1 : prev));
+  };
+
   return (
     <>
-      {displayedCollections.map((menuCollection, collectionGroupIndex) => (
-        <CollectionGroup
-          key={collectionGroupIndex}
-          menuCollection={menuCollection}
-        />
-      ))}
+      {displayedCollections.map((collection, index) => {
+        // If an item’s index is > activeIndex, don’t show it yet
+        const isVisible = index <= activeIndex;
+
+        return (
+          <div key={collection.id} className="sequential-collection-container">
+            {isVisible && (
+              <CollectionItem
+                collection={collection}
+                index={index}
+                onLoadComplete={() => handleCollectionLoaded(index)}
+              />
+            )}
+          </div>
+        );
+      })}
     </>
   );
-};
+}
 
-const CollectionGroup = ({menuCollection}) => {
-  /**
-   * We’ll use a single Intersection Observer for the entire "group" of
-   * `CollectionItem` plus the `ProductRow`—so we observe a wrapper div.
-   */
-  const {ref, inView} = useInView({
-    triggerOnce: true,
-    rootMargin: '200px',
-  });
+function CollectionItem({collection, index, onLoadComplete}) {
+  // We'll fade in this item, then call onLoadComplete when done
+  const [isFadingIn, setIsFadingIn] = useState(false);
 
-  /**
-   * This state tells us how many CollectionItems have been “revealed” so far.
-   * If we have, say, 5 items in `menuCollection`, we will let
-   * `revealedCount` go from -1 to 4 (or 0 to 4, whichever you prefer).
-   */
-  const [revealedCount, setRevealedCount] = useState(-1);
-
-  /**
-   * Once the parent container is inView, we trigger a timed reveal
-   * for each CollectionItem (and eventually for ProductRow).
-   */
   useEffect(() => {
-    if (!inView) return;
+    // Start fade-in, then after 600ms (for example) notify parent
+    setIsFadingIn(true);
+    const timer = setTimeout(() => {
+      onLoadComplete?.();
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [onLoadComplete]);
 
-    // If already in view, start revealing items in sequence
-    const itemCount = menuCollection.length;
-    // We reveal each item in 300ms intervals (change as needed):
-    menuCollection.forEach((_, index) => {
-      setTimeout(() => {
-        setRevealedCount((prev) => Math.max(prev, index));
-      }, index * 300);
-    });
-
-    return () => {
-      // Optional: if you'd like to clear timeouts on unmount
-    };
-  }, [inView, menuCollection]);
-
-  /**
-   * We only show the ProductRow once all items in the group
-   * have been revealed. i.e. once `revealedCount` reaches itemCount - 1.
-   */
-  const allItemsRevealed = revealedCount >= menuCollection.length - 1;
+  // Feel free to style or animate however you want:
+  const containerStyle = {
+    opacity: isFadingIn ? 1 : 0,
+    transition: 'opacity 0.6s ease',
+  };
 
   return (
-    <div ref={ref}>
-      {/* 
-         We’ll map over the entire array to render each CollectionItem.
-         Each item’s opacity depends on whether its index <= revealedCount.
-      */}
+    <div style={containerStyle}>
+      {/* The "slider" portion */}
       <div className="menu-slider-container">
-        {menuCollection.map((collection, index) => {
-          const isVisible = index <= revealedCount; // fade in once revealed
-          return (
-            <div
-              key={collection.id}
-              style={{
-                opacity: isVisible ? 1 : 0,
-                transition: `opacity 0.5s ease ${index * 0.1}s`,
-              }}
-            >
-              {isVisible && (
-                <CollectionItem collection={collection} index={index} />
-              )}
-            </div>
-          );
-        })}
+        <div className="menu-item-container">
+          <Link to={`/collections/${collection.handle}`}>
+            {collection.image && (
+              <Image
+                srcSet={`${collection.image.url}?width=300&quality=15 300w,
+                         ${collection.image.url}?width=600&quality=15 600w,
+                         ${collection.image.url}?width=1200&quality=15 1200w`}
+                alt={collection.image.altText || collection.title}
+                className="menu-item-image"
+                width={150}
+                height={150}
+                loading="lazy"
+              />
+            )}
+            <div className="category-title">{collection.title}</div>
+          </Link>
+        </div>
       </div>
 
-      {/* 
-         Then we show the ProductRow only after all items in this group
-         have been revealed. You can also apply a small delay if you wish.
-      */}
-      {allItemsRevealed && (
-        <>
-          {/**
-           * In your original code, you only take `menuCollection.slice(0, 2)`
-           * for the product row. Keep the same logic or adapt as needed:
-           */}
-          {menuCollection.slice(0, 2).map((collection) => (
-            <div key={collection.id} className="collection-section">
-              <div className="collection-header">
-                <h3>{collection.title}</h3>
-                <Link
-                  to={`/collections/${collection.handle}`}
-                  className="view-all-link"
-                >
-                  View All
-                </Link>
-              </div>
-              <div
-                style={{
-                  opacity: 1,
-                  transition: 'opacity 0.5s ease',
-                }}
-              >
-                <ProductRow products={collection.products.nodes} />
-              </div>
-            </div>
-          ))}
-        </>
-      )}
+      {/* Optionally: If you want a ProductRow for *every* collection */}
+      <div className="collection-section">
+        <div className="collection-header">
+          <h3>{collection.title}</h3>
+          <Link
+            to={`/collections/${collection.handle}`}
+            className="view-all-link"
+          >
+            View All
+          </Link>
+        </div>
+        <div style={{transition: 'opacity 0.5s ease'}}>
+          {/* Render products if they exist */}
+          {collection.products?.nodes?.length ? (
+            <ProductRow products={collection.products.nodes} />
+          ) : null}
+        </div>
+      </div>
     </div>
   );
-};
-
-const CollectionItem = ({collection}) => {
-  return (
-    <Link
-      to={`/collections/${collection.handle}`}
-      className="menu-item-container"
-    >
-      {collection.image && (
-        <Image
-          srcSet={`${collection.image.url}?width=300&quality=15 300w,
-                   ${collection.image.url}?width=600&quality=15 600w,
-                   ${collection.image.url}?width=1200&quality=15 1200w`}
-          alt={collection.image.altText || collection.title}
-          className="menu-item-image"
-          width={150}
-          height={150}
-          loading="lazy"
-        />
-      )}
-      <div className="category-title">{collection.title}</div>
-    </Link>
-  );
-};
-
-export default CollectionRows;
+}
