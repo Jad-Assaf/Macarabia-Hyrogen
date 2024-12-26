@@ -4,6 +4,49 @@ import {ProductRow} from './CollectionDisplay';
 import {Image} from '@shopify/hydrogen-react';
 import {useInView} from 'react-intersection-observer';
 
+/* 1) Minimal shimmer keyframes. You could also put this in a global CSS file. */
+const shimmerKeyframes = `
+@keyframes placeholderShimmer {
+  0% {
+    background-position: -800px 0;
+  }
+  100% {
+    background-position: 800px 0;
+  }
+}
+`;
+
+/* We inject keyframes into <head> (only on client). 
+   For a real app, place this in your CSS. */
+if (typeof document !== 'undefined') {
+  const styleTag = document.createElement('style');
+  styleTag.innerHTML = shimmerKeyframes;
+  document.head.appendChild(styleTag);
+}
+
+/* 2) A small shimmer placeholder for an individual collection item. */
+function ShimmerCollectionItem() {
+  return (
+    <div style={styles.shimmerContainer}>
+      <div style={styles.shimmerImage} />
+      <div style={styles.shimmerLine} />
+    </div>
+  );
+}
+
+/* 3) A small shimmer placeholder for product rows. 
+   We'll just show 4 boxes to represent 4 loading items. */
+function ShimmerProductRow() {
+  return (
+    <div style={styles.rowShimmerContainer}>
+      {[...Array(4)].map((_, idx) => (
+        <div key={idx} style={styles.rowShimmerBox} />
+      ))}
+    </div>
+  );
+}
+
+/* Your existing code, extended to show a shimmer if !isLoaded */
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
   const [loadedCollections, setLoadedCollections] = useState([]); // Tracks which collections have been loaded
@@ -13,7 +56,6 @@ const CollectionRows = ({menuCollections}) => {
     const handleResize = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
     };
-
     handleResize();
     window.addEventListener('resize', handleResize);
 
@@ -60,11 +102,13 @@ const CollectionRows = ({menuCollections}) => {
                     transition: `opacity 0.5s ease ${collectionIndex * 0.1}s`,
                   }}
                 >
-                  {isLoaded && (
+                  {isLoaded ? (
                     <CollectionItem
                       collection={collection}
                       index={collectionIndex}
                     />
+                  ) : (
+                    <ShimmerCollectionItem />
                   )}
                 </div>
               );
@@ -103,8 +147,10 @@ const CollectionRows = ({menuCollections}) => {
                     transition: 'opacity 0.5s ease',
                   }}
                 >
-                  {isLoaded && (
+                  {isLoaded ? (
                     <ProductRow products={collection.products.nodes} />
+                  ) : (
+                    <ShimmerProductRow />
                   )}
                 </div>
               </div>
@@ -140,3 +186,54 @@ const CollectionItem = ({collection}) => {
 };
 
 export default CollectionRows;
+
+/* Inline styling for the shimmer placeholders */
+const styles = {
+  shimmerContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '150px',
+    margin: '0 auto',
+  },
+  shimmerImage: {
+    width: '150px',
+    height: '150px',
+    borderRadius: '8px',
+    background: '#f6f7f8',
+    backgroundImage:
+      'linear-gradient(to right, #f6f7f8 0%, #eaeaea 20%, #f6f7f8 40%, #f6f7f8 100%)',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '800px 104px',
+    animation: 'placeholderShimmer 1s linear infinite forwards',
+    marginBottom: '8px',
+  },
+  shimmerLine: {
+    width: '70%',
+    height: '12px',
+    borderRadius: '4px',
+    background: '#f6f7f8',
+    backgroundImage:
+      'linear-gradient(to right, #f6f7f8 0%, #eaeaea 20%, #f6f7f8 40%, #f6f7f8 100%)',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '800px 104px',
+    animation: 'placeholderShimmer 1s linear infinite forwards',
+  },
+  rowShimmerContainer: {
+    display: 'flex',
+    gap: '1rem',
+    overflow: 'hidden',
+    padding: '1rem 0',
+  },
+  rowShimmerBox: {
+    width: '150px',
+    height: '180px',
+    borderRadius: '8px',
+    background: '#f6f7f8',
+    backgroundImage:
+      'linear-gradient(to right, #f6f7f8 0%, #eaeaea 20%, #f6f7f8 40%, #f6f7f8 100%)',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '800px 104px',
+    animation: 'placeholderShimmer 1s linear infinite forwards',
+  },
+};
