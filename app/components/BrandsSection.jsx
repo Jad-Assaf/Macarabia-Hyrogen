@@ -35,7 +35,7 @@ export default function BrandSection({ brands }) {
                 url: brand.image, // URL of the brand image
               }}
               width="150px" // Set a reasonable width for brand logos
-              height="auto" // Set a reasonable height for brand logos
+              height={auto} // Set a reasonable height for brand logos
               sizes="(min-width: 45em) 10vw, 20vw" // Responsive sizes
             />
           </a>

@@ -13,17 +13,12 @@ const CollectionRows = ({menuCollections}) => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
     };
 
-    // Set the initial value
     handleResize();
-
-    // Add event listener
     window.addEventListener('resize', handleResize);
 
-    // Cleanup event listener
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Get the collections to display
   const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
@@ -33,39 +28,37 @@ const CollectionRows = ({menuCollections}) => {
       {displayedCollections.map((menuCollection, index) => {
         const [containerRef, containerInView] = useInView({
           triggerOnce: true,
-          rootMargin: '200px', // Trigger slightly before entering the viewport
+          rootMargin: '100px', // Trigger slightly earlier for smoother transitions
         });
 
         return (
           <React.Fragment key={menuCollection.id}>
-            {/* Render the menu slider */}
             <div
               ref={containerRef}
               className={`menu-slider-container fade-in ${
                 containerInView ? 'visible' : ''
               }`}
+              style={{
+                opacity: containerInView ? 1 : 0,
+                transform: containerInView
+                  ? 'translateY(0)'
+                  : 'translateY(50px)',
+                transition: 'opacity 0.6s ease, transform 0.6s ease',
+              }}
             >
-              {containerInView &&
-                menuCollection.map((collection, collectionIndex) => (
-                  <div
-                    key={collection.id}
-                    className="animated-menu-item"
-                    style={{
-                      animationDelay: `${collectionIndex * 0.2}s`,
-                    }}
-                  >
-                    <CollectionItem
-                      collection={collection}
-                      index={collectionIndex}
-                    />
-                  </div>
-                ))}
+              {menuCollection.map((collection, collectionIndex) => (
+                <CollectionItem
+                  key={collection.id}
+                  collection={collection}
+                  delay={collectionIndex * 0.1} // Add delay for staggered effect
+                />
+              ))}
             </div>
 
             {menuCollection.slice(0, 2).map((collection) => {
               const [productRowRef, productRowInView] = useInView({
                 triggerOnce: true,
-                rootMargin: '200px',
+                rootMargin: '100px',
               });
 
               return (
@@ -84,6 +77,13 @@ const CollectionRows = ({menuCollections}) => {
                     className={`product-row fade-in ${
                       productRowInView ? 'visible' : ''
                     }`}
+                    style={{
+                      opacity: productRowInView ? 1 : 0,
+                      transform: productRowInView
+                        ? 'translateY(0)'
+                        : 'translateY(50px)',
+                      transition: 'opacity 0.6s ease, transform 0.6s ease',
+                    }}
                   >
                     {productRowInView && (
                       <ProductRow products={collection.products.nodes} />
@@ -99,23 +99,19 @@ const CollectionRows = ({menuCollections}) => {
   );
 };
 
-const CollectionItem = ({collection, index}) => {
+const CollectionItem = ({collection, delay}) => {
   const ref = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Ensure animations are triggered only once when the item is in view
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
+        if (entry.isIntersecting) setIsVisible(true);
       },
-      {rootMargin: '200px'},
+      {rootMargin: '100px'},
     );
 
     if (ref.current) observer.observe(ref.current);
-
     return () => {
       if (ref.current) observer.unobserve(ref.current);
     };
@@ -128,7 +124,7 @@ const CollectionItem = ({collection, index}) => {
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'scale(1)' : 'scale(0.95)',
-        transition: 'opacity 0.5s ease, transform 0.5s ease',
+        transition: `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`,
       }}
     >
       <Link
