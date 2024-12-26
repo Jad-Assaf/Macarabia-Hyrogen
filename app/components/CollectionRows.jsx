@@ -1,9 +1,9 @@
 // CollectionRows.jsx
 import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
-import {ProductRow} from './ProductRow'; // Ensure correct import
 import {Image} from '@shopify/hydrogen-react';
 import {useInView} from 'react-intersection-observer';
+import { ProductRow } from './CollectionDisplay';
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
