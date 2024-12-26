@@ -1,5 +1,5 @@
-import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
-import {defer} from '@shopify/remix-oxygen';
+import { useNonce, getShopAnalytics, Analytics } from '@shopify/hydrogen';
+import { defer } from '@shopify/remix-oxygen';
 import {
   Links,
   Meta,
@@ -16,9 +16,9 @@ import favicon from '~/assets/macarabia-favicon-black_32x32.jpg';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import tailwindCss from './styles/tailwind.css?url';
-import {PageLayout} from '~/components/PageLayout';
-import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
-import {useEffect, useState} from 'react';
+import { PageLayout } from '~/components/PageLayout';
+import { FOOTER_QUERY, HEADER_QUERY } from '~/lib/fragments';
+import { useEffect, useState } from 'react';
 import ClarityTracker from './components/ClarityTracker';
 
 /**
@@ -38,12 +38,12 @@ export const shouldRevalidate = ({
 
 export function links() {
   return [
-    {rel: 'stylesheet', href: appStyles},
-    {rel: 'stylesheet', href: resetStyles},
-    {rel: 'stylesheet', href: tailwindCss},
-    {rel: 'preconnect', href: 'https://cdn.shopify.com'},
-    {rel: 'preconnect', href: 'https://shop.app'},
-    {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    { rel: 'stylesheet', href: appStyles },
+    { rel: 'stylesheet', href: resetStyles },
+    { rel: 'stylesheet', href: tailwindCss },
+    { rel: 'preconnect', href: 'https://cdn.shopify.com' },
+    { rel: 'preconnect', href: 'https://shop.app' },
+    { rel: 'icon', type: 'image/svg+xml', href: favicon },
   ];
 }
 
@@ -53,7 +53,7 @@ export function links() {
 export async function loader(args) {
   const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
-  const {storefront, env} = args.context;
+  const { storefront, env } = args.context;
 
   return defer({
     ...deferredData,
@@ -85,13 +85,13 @@ const processMenuItems = (items) => {
   }));
 };
 
-async function loadCriticalData({context}) {
-  const {storefront} = context;
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
 
   try {
     // Fetch header data using the HEADER_QUERY
     const header = await storefront.query(HEADER_QUERY, {
-      variables: {headerMenuHandle: 'main-menu'},
+      variables: { headerMenuHandle: 'main-menu' },
     });
 
     // Process nested menus to extract images
@@ -101,23 +101,23 @@ async function loadCriticalData({context}) {
 
     console.log('Processed Menu Items:', header.menu.items);
 
-    return {header};
+    return { header };
   } catch (error) {
     console.error('Error fetching header data:', error);
-    return {header: null}; // Fallback in case of error
+    return { header: null }; // Fallback in case of error
   }
 }
 
 /**
  * Load data for rendering content below the fold.
  */
-function loadDeferredData({context}) {
-  const {storefront, customerAccount, cart} = context;
+function loadDeferredData({ context }) {
+  const { storefront, customerAccount, cart } = context;
 
   const footer = storefront
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
-      variables: {footerMenuHandle: 'footer-menu'},
+      variables: { footerMenuHandle: 'footer-menu' },
     })
     .catch((error) => {
       console.error(error);
@@ -134,10 +134,9 @@ function loadDeferredData({context}) {
 /**
  * Layout component for the application.
  */
-export function Layout({children, ...data}) {
-  // Accept data props
+export function Layout({ children }) {
   const nonce = useNonce();
-  const loaderData = useRouteLoaderData('root');
+  const data = useRouteLoaderData('root');
   const navigation = useNavigation();
   const [nprogress, setNProgress] = useState(null); // Store NProgress instance
   const clarityId = 'pfyepst8v5'; // Replace with your Clarity project ID
@@ -145,9 +144,9 @@ export function Layout({children, ...data}) {
   useEffect(() => {
     // Load NProgress once and set it in the state
     const loadNProgress = async () => {
-      const {default: NProgress} = await import('nprogress');
+      const { default: NProgress } = await import('nprogress');
       await import('nprogress/nprogress.css');
-      NProgress.configure({showSpinner: true});
+      NProgress.configure({ showSpinner: true });
       setNProgress(NProgress); // Set NProgress once it's loaded
     };
 
@@ -168,7 +167,7 @@ export function Layout({children, ...data}) {
         nprogress.done();
       }
     };
-  }, [navigation.state, nprogress]);
+  }, [navigation.state, nprogress]); 
 
   return (
     <html lang="en">
@@ -179,14 +178,16 @@ export function Layout({children, ...data}) {
         <Links />
       </head>
       <body>
-        <ClarityTracker clarityId={clarityId} />
-        {loaderData ? (
+        <ClarityTracker
+          clarityId={clarityId}
+        />
+        {data ? (
           <Analytics.Provider
-            cart={loaderData.cart}
-            shop={loaderData.shop}
-            consent={loaderData.consent}
+            cart={data.cart}
+            shop={data.shop}
+            consent={data.consent}
           >
-            <PageLayout {...loaderData}>{children}</PageLayout>
+            <PageLayout {...data}>{children}</PageLayout>
           </Analytics.Provider>
         ) : (
           children
@@ -211,7 +212,6 @@ export default function App() {
  */
 export function ErrorBoundary() {
   const error = useRouteError();
-  const data = useRouteLoaderData('root'); // Fetch the loader data
   let errorMessage = 'Unknown error';
   let errorStatus = 500;
 
@@ -223,24 +223,31 @@ export function ErrorBoundary() {
   }
 
   return (
-    <>
-      <Layout {...data}>
-        {' '}
-        {/* Use the fetched data instead of root.data */}
-        <div className="route-error">
-          <h1>Oops</h1>
-          <h2>{errorStatus}</h2>
-          {errorMessage && (
-            <fieldset>
-              <pre>{errorMessage}</pre>
-            </fieldset>
-          )}
-        </div>
-      </Layout>
-      <ScrollRestoration nonce={useNonce()} />
-      <Scripts nonce={useNonce()} />
-      <LiveReload nonce={useNonce()} />
-    </>
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <Layout {...root.data}>
+          <div className="route-error">
+            <h1>Oops</h1>
+            <h2>{errorStatus}</h2>
+            {errorMessage && (
+              <fieldset>
+                <pre>{errorMessage}</pre>
+              </fieldset>
+            )}
+          </div>
+        </Layout>
+        {/** Make sure to remember to pass the nonce to components within the ErrorBoundary **/}
+        <ScrollRestoration nonce={nonce} />
+        <Scripts nonce={nonce} />
+        <LiveReload nonce={nonce} />
+      </body>
+    </html>
   );
 }
 

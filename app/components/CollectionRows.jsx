@@ -30,68 +30,54 @@ const CollectionRows = ({menuCollections}) => {
 
   return (
     <>
-      {displayedCollections.map((menuCollection, index) => {
-        const [containerRef, containerInView] = useInView({
-          triggerOnce: true,
-        });
-
-        return (
-          <React.Fragment key={menuCollection.id}>
-            {/* Render the menu slider */}
-            <div
-              ref={containerRef}
-              className={`menu-slider-container fade-in ${
-                containerInView ? 'visible' : ''
-              }`}
-            >
-              {menuCollection.map((collection, collectionIndex) => (
-                <div
-                  key={collection.id}
-                  className="animated-menu-item"
-                  style={{
-                    animationDelay: `${collectionIndex * 0.2}s`,
-                  }}
-                >
-                  <CollectionItem
-                    collection={collection}
-                    index={collectionIndex}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {menuCollection.slice(0, 2).map((collection) => {
-              const [productRowRef, productRowInView] = useInView({
+      {displayedCollections.map((menuCollection, index) => (
+        <React.Fragment key={menuCollection.id}>
+          {/* Render the menu slider */}
+          <div className="menu-slider-container">
+            {menuCollection.map((collection, collectionIndex) => {
+              const [collectionRef, collectionInView] = useInView({
                 triggerOnce: true,
               });
 
               return (
-                <div key={collection.id} className="collection-section">
-                  <div className="collection-header">
-                    <h3>{collection.title}</h3>
-                    <Link
-                      to={`/collections/${collection.handle}`}
-                      className="view-all-link"
-                    >
-                      View All
-                    </Link>
-                  </div>
-                  <div
-                    ref={productRowRef}
-                    className={`product-row fade-in ${
-                      productRowInView ? 'visible' : ''
-                    }`}
-                  >
-                    {productRowInView && (
-                      <ProductRow products={collection.products.nodes} />
-                    )}
-                  </div>
+                <div ref={collectionRef} key={collection.id}>
+                  {collectionInView && (
+                    <CollectionItem
+                      collection={collection}
+                      index={collectionIndex}
+                    />
+                  )}
                 </div>
               );
             })}
-          </React.Fragment>
-        );
-      })}
+          </div>
+
+          {menuCollection.slice(0, 2).map((collection) => {
+            const [productRowRef, productRowInView] = useInView({
+              triggerOnce: true,
+            });
+
+            return (
+              <div key={collection.id} className="collection-section">
+                <div className="collection-header">
+                  <h3>{collection.title}</h3>
+                  <Link
+                    to={`/collections/${collection.handle}`}
+                    className="view-all-link"
+                  >
+                    View All
+                  </Link>
+                </div>
+                <div ref={productRowRef}>
+                  {productRowInView && (
+                    <ProductRow products={collection.products.nodes} />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </React.Fragment>
+      ))}
     </>
   );
 };
