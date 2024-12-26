@@ -359,7 +359,11 @@
 
 .ProductPageBottom * {
     line-height: 2;
-    list-style: inside;
+    /* list-style: inside; */
+}
+
+.ProductPageBottom table{
+    width: unset !important;
 }
 
 .ProductPageBottom h3 {

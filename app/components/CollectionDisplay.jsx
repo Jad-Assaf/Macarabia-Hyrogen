@@ -25,11 +25,7 @@ export const CollectionDisplay = React.memo(({menuCollections}) => {
   );
 });
 
-function ShimmerContainer() {
-  return <div className="shimmer-container" />;
-}
-
-export function ProductRow({products, isLoading}) {
+export function ProductRow({products}) {
   const rowRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -56,16 +52,6 @@ export function ProductRow({products, isLoading}) {
     rowRef.current.scrollBy({left: distance, behavior: 'smooth'});
   };
 
-  // Render shimmer if data is still loading
-  if (isLoading) {
-    return (
-      <div className="product-row-container">
-        <ShimmerContainer />
-      </div>
-    );
-  }
-
-  // Otherwise, render the actual content
   return (
     <div className="product-row-container">
       <button className="home-prev-button" onClick={() => scrollRow(-600)}>
