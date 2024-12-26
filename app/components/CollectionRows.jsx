@@ -29,7 +29,7 @@ const CollectionRows = ({menuCollections}) => {
       {displayedCollections.map((menuCollection, index) => {
         const [containerRef, containerInView] = useInView({
           triggerOnce: true,
-          rootMargin: '200px', // Adjusted for smoother lazy loading
+          rootMargin: '200px',
         });
 
         return (
@@ -37,19 +37,13 @@ const CollectionRows = ({menuCollections}) => {
             {/* Render the menu slider */}
             <div
               ref={containerRef}
-              className={`menu-slider-container fade-in ${
+              className={`menu-slider-container ${
                 containerInView ? 'visible' : ''
               }`}
             >
               {containerInView &&
                 menuCollection.map((collection, collectionIndex) => (
-                  <div
-                    key={collection.id}
-                    className="animated-menu-item"
-                    style={{
-                      animationDelay: `${collectionIndex * 0.2}s`,
-                    }}
-                  >
+                  <div key={collection.id} className="animated-menu-item">
                     <CollectionItem
                       collection={collection}
                       index={collectionIndex}
@@ -77,7 +71,7 @@ const CollectionRows = ({menuCollections}) => {
                   </div>
                   <div
                     ref={productRowRef}
-                    className={`product-row fade-in ${
+                    className={`product-row ${
                       productRowInView ? 'visible' : ''
                     }`}
                   >
@@ -114,17 +108,7 @@ const CollectionItem = ({collection, index}) => {
   }, []);
 
   return (
-    <div
-      ref={ref}
-      className="animated-menu-item"
-      style={{
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'scale(1)' : 'scale(0.95)',
-        transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${
-          index * 0.1
-        }s`,
-      }}
-    >
+    <div ref={ref} className="animated-menu-item">
       <Link
         to={`/collections/${collection.handle}`}
         className="menu-item-container"
