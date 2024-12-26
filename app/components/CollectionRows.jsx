@@ -1,19 +1,22 @@
-import React, {useRef, useEffect, useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Link} from '@remix-run/react';
 import {ProductRow} from './CollectionDisplay';
 import {Image} from '@shopify/hydrogen-react';
-import {useInView} from 'react-intersection-observer';
 
 /**
- * menuCollections is still an array of arrays,
- * e.g. [ [colA1, colA2], [colB1, colB2], ... ].
+ * menuCollections is still an array of arrays, e.g.:
+ * [
+ *   [Apple Macbook, Apple iPhone, ...], // group0
+ *   [Samsung phones, Samsung tablets],  // group1
+ *   ...
+ * ]
  */
-const CollectionRows = ({menuCollections}) => {
+export default function CollectionRows({menuCollections}) {
   const [isMobile, setIsMobile] = useState(false);
-  const [loadedCollections, setLoadedCollections] = useState([]); // which individual sub-collections have loaded
-  const [activeGroupIndex, setActiveGroupIndex] = useState(0); // which group is currently allowed to render
+  // Which group is shown right now?
+  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
 
-  // Check if the screen width is less than 768px
+  // Check if screen width < 768px
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
@@ -23,170 +26,105 @@ const CollectionRows = ({menuCollections}) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Trim total groups for mobile if needed
+  // Possibly limit the number of groups on mobile
   const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
 
-  // This function is called when a sub-collection or productRow is in view
-  const handleInView = (collectionId) => {
-    if (!loadedCollections.includes(collectionId)) {
-      setLoadedCollections((prev) => [...prev, collectionId]);
-    }
-  };
-
-  // This function is called when the entire group finishes loading
-  // so we can “unlock” the next group
-  const handleGroupLoaded = (groupIndex) => {
-    // If the current group is the same as groupIndex, let the next group appear
-    setActiveGroupIndex((prev) => (prev === groupIndex ? prev + 1 : prev));
-  };
-
   return (
     <>
       {displayedCollections.map((menuCollection, groupIndex) => {
-        // If this group’s index is greater than the activeGroupIndex, skip rendering
+        // If this group's index is > activeGroupIndex, do not render yet
         if (groupIndex > activeGroupIndex) {
-          return null;
+          return null; // hide future rows
         }
 
-        // Otherwise render the group
-        // We’ll pass a callback so that once the group is fully “observed,”
-        // it calls handleGroupLoaded to reveal the next group.
+        // Otherwise show it
         return (
           <CollectionGroup
-            key={`group-${groupIndex}`}
+            key={groupIndex}
             menuCollection={menuCollection}
             groupIndex={groupIndex}
-            handleInView={handleInView}
-            loadedCollections={loadedCollections}
-            onGroupLoaded={handleGroupLoaded}
+            // once the fade-in completes for this group, reveal the next
+            onGroupFadeComplete={() =>
+              setActiveGroupIndex((prev) => Math.max(prev, groupIndex + 1))
+            }
           />
         );
       })}
     </>
   );
-};
+}
 
 /**
- * Renders one “group” of sub-collections (the array `menuCollection`),
- * as well as the first 2 “ProductRows” from that group,
- * exactly as your original code does. The difference:
- * - We track when all sub-collections are in view,
- *   and then call `onGroupLoaded(groupIndex)`.
+ * Renders a single row (group) of sub-collections.
+ * After it finishes its fade-in, call onGroupFadeComplete().
  */
-function CollectionGroup({
-  menuCollection,
-  groupIndex,
-  handleInView,
-  loadedCollections,
-  onGroupLoaded,
-}) {
-  const [groupDone, setGroupDone] = useState(false);
+function CollectionGroup({menuCollection, groupIndex, onGroupFadeComplete}) {
+  // We'll do a fade from 0 → 1 opacity over 600ms
+  const [fadeIn, setFadeIn] = useState(false);
 
-  // We might consider the group “done” once all sub-collections in this group
-  // are in `loadedCollections`. Or, you could do an IntersectionObserver on a "groupRef".
   useEffect(() => {
-    // If every sub-collection in `menuCollection` has been loaded, mark group as done
-    const allLoaded = menuCollection.every((col) =>
-      loadedCollections.includes(col.id),
-    );
+    // Trigger the fade as soon as we mount
+    setFadeIn(true);
 
-    if (allLoaded && !groupDone) {
-      setGroupDone(true);
-      // Let the parent know we’re done
-      onGroupLoaded(groupIndex);
-    }
-  }, [menuCollection, loadedCollections, groupDone, onGroupLoaded, groupIndex]);
+    // Once 600ms pass, we consider the fade done
+    const timer = setTimeout(() => {
+      onGroupFadeComplete?.();
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [onGroupFadeComplete]);
+
+  const containerStyle = {
+    opacity: fadeIn ? 1 : 0,
+    transition: 'opacity 0.6s ease',
+  };
 
   return (
-    <React.Fragment>
-      {/* “Row” of sub-collections, same as your original “menu-slider-container” */}
+    <div style={containerStyle}>
       <div className="menu-slider-container">
-        {menuCollection.map((collection, collectionIndex) => {
-          const [ref, inView] = useInView({
-            triggerOnce: true,
-            rootMargin: '200px',
-          });
-
-          useEffect(() => {
-            if (inView) {
-              handleInView(collection.id);
-            }
-          }, [inView]);
-
-          const isLoaded = loadedCollections.includes(collection.id);
-
-          return (
-            <div
-              key={collection.id}
-              ref={ref}
-              style={{
-                opacity: isLoaded ? 1 : 0,
-                transition: `opacity 0.5s ease ${collectionIndex * 0.1}s`,
-              }}
-            >
-              {isLoaded && (
-                <CollectionItem
-                  collection={collection}
-                  index={collectionIndex}
-                />
-              )}
-            </div>
-          );
-        })}
+        {menuCollection.map((collection, collectionIndex) => (
+          <div
+            key={collection.id}
+            style={{
+              // If you still want a *stagger* within the row, you can do so:
+              transitionDelay: `${collectionIndex * 0.1}s`,
+            }}
+          >
+            <CollectionItem collection={collection} />
+          </div>
+        ))}
       </div>
 
-      {/* The first 2 items get “ProductRow” exactly as before */}
-      {menuCollection.slice(0, 2).map((collection) => {
-        const [productRowRef, productRowInView] = useInView({
-          triggerOnce: true,
-          rootMargin: '200px',
-        });
-
-        useEffect(() => {
-          if (productRowInView) {
-            handleInView(collection.id);
-          }
-        }, [productRowInView]);
-
-        const isLoaded = loadedCollections.includes(collection.id);
-
-        return (
-          <div key={collection.id} className="collection-section">
-            <div className="collection-header">
-              <h3>{collection.title}</h3>
-              <Link
-                to={`/collections/${collection.handle}`}
-                className="view-all-link"
-              >
-                View All
-              </Link>
-            </div>
-            <div
-              ref={productRowRef}
-              style={{
-                opacity: isLoaded ? 1 : 0,
-                transition: 'opacity 0.5s ease',
-              }}
+      {/* "ProductRow" for the first 2 items in this group, same as your code */}
+      {menuCollection.slice(0, 2).map((collection) => (
+        <div key={collection.id} className="collection-section">
+          <div className="collection-header">
+            <h3>{collection.title}</h3>
+            <Link
+              to={`/collections/${collection.handle}`}
+              className="view-all-link"
             >
-              {isLoaded && (
-                <ProductRow products={collection.products.nodes} />
-              )}
-            </div>
+              View All
+            </Link>
           </div>
-        );
-      })}
-    </React.Fragment>
+          {/* Render the product row if it exists */}
+          {collection.products?.nodes?.length ? (
+            <ProductRow products={collection.products.nodes} />
+          ) : null}
+        </div>
+      ))}
+    </div>
   );
 }
 
+/**
+ * Basic sub-collection item
+ */
 function CollectionItem({collection}) {
   return (
-    <Link
-      to={`/collections/${collection.handle}`}
-      className="menu-item-container"
-    >
+    <Link to={`/collections/${collection.handle}`} className="menu-item-container">
       {collection.image && (
         <Image
           srcSet={`${collection.image.url}?width=300&quality=15 300w,
@@ -203,5 +141,3 @@ function CollectionItem({collection}) {
     </Link>
   );
 }
-
-export default CollectionRows;
