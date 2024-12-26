@@ -13,12 +13,17 @@ const CollectionRows = ({menuCollections}) => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
     };
 
+    // Set the initial value
     handleResize();
+
+    // Add event listener
     window.addEventListener('resize', handleResize);
 
+    // Cleanup event listener
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Get the collections to display
   const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
@@ -28,33 +33,36 @@ const CollectionRows = ({menuCollections}) => {
       {displayedCollections.map((menuCollection, index) => {
         const [containerRef, containerInView] = useInView({
           triggerOnce: true,
-          rootMargin: '100px', // Trigger slightly before visibility
         });
 
         return (
           <React.Fragment key={menuCollection.id}>
-            {/* Lazy-loaded menu slider */}
+            {/* Render the menu slider */}
             <div
               ref={containerRef}
               className={`menu-slider-container fade-in ${
                 containerInView ? 'visible' : ''
               }`}
             >
-              {containerInView &&
-                menuCollection.map((collection, collectionIndex) => (
+              {menuCollection.map((collection, collectionIndex) => (
+                <div
+                  key={collection.id}
+                  className="animated-menu-item"
+                  style={{
+                    animationDelay: `${collectionIndex * 0.2}s`,
+                  }}
+                >
                   <CollectionItem
-                    key={collection.id}
                     collection={collection}
                     index={collectionIndex}
                   />
-                ))}
+                </div>
+              ))}
             </div>
 
-            {/* Render first two collections */}
             {menuCollection.slice(0, 2).map((collection) => {
               const [productRowRef, productRowInView] = useInView({
                 triggerOnce: true,
-                rootMargin: '100px',
               });
 
               return (
@@ -75,7 +83,7 @@ const CollectionRows = ({menuCollections}) => {
                     }`}
                   >
                     {productRowInView && (
-                      <ProductRow products={collection.products?.nodes || []} />
+                      <ProductRow products={collection.products.nodes} />
                     )}
                   </div>
                 </div>
@@ -92,16 +100,7 @@ const CollectionItem = ({collection, index}) => {
   const ref = useRef(null);
 
   return (
-    <div
-      ref={ref}
-      className="animated-menu-item"
-      style={{
-        animationDelay: `${index * 0.2}s`,
-        opacity: 1,
-        transform: 'scale(1)',
-        transition: `opacity 0.5s ease, transform 0.5s ease`,
-      }}
-    >
+    <div ref={ref} className="animated-menu-item">
       <Link
         to={`/collections/${collection.handle}`}
         className="menu-item-container"
@@ -109,8 +108,8 @@ const CollectionItem = ({collection, index}) => {
         {collection.image && (
           <Image
             srcSet={`${collection.image.url}?width=300&quality=15 300w,
-                     ${collection.image.url}?width=600&quality=15 600w,
-                     ${collection.image.url}?width=1200&quality=15 1200w`}
+                                 ${collection.image.url}?width=600&quality=15 600w,
+                                 ${collection.image.url}?width=1200&quality=15 1200w`}
             alt={collection.image.altText || collection.title}
             className="menu-item-image"
             width={150}
@@ -123,5 +122,33 @@ const CollectionItem = ({collection, index}) => {
     </div>
   );
 };
+
+const LeftArrowIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="15 18 9 12 15 6"></polyline>
+  </svg>
+);
+
+const RightArrowIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="9 18 15 12 9 6"></polyline>
+  </svg>
+);
 
 export default CollectionRows;
