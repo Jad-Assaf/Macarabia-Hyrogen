@@ -1,9 +1,8 @@
-// CollectionRows.jsx
 import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
+import {ProductRow} from './CollectionDisplay';
 import {Image} from '@shopify/hydrogen-react';
 import {useInView} from 'react-intersection-observer';
-import { ProductRow } from './CollectionDisplay';
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -31,10 +30,7 @@ const CollectionRows = ({menuCollections}) => {
 
   return (
     <>
-      {displayedCollections.map((menuCollection) => {
-        // Ensure menuCollection is an object with a products array
-        const collectionsArray = menuCollection.products?.nodes || [];
-
+      {displayedCollections.map((menuCollection, index) => {
         const [containerRef, containerInView] = useInView({
           triggerOnce: true,
         });
@@ -48,7 +44,7 @@ const CollectionRows = ({menuCollections}) => {
                 containerInView ? 'visible' : ''
               }`}
             >
-              {collectionsArray.map((collection, collectionIndex) => (
+              {menuCollection.map((collection, collectionIndex) => (
                 <div
                   key={collection.id}
                   className="animated-menu-item"
@@ -64,8 +60,7 @@ const CollectionRows = ({menuCollections}) => {
               ))}
             </div>
 
-            {/* Display only the first two collections for the product rows */}
-            {collectionsArray.slice(0, 2).map((collection) => {
+            {menuCollection.slice(0, 2).map((collection) => {
               const [productRowRef, productRowInView] = useInView({
                 triggerOnce: true,
               });
@@ -113,8 +108,8 @@ const CollectionItem = ({collection, index}) => {
         {collection.image && (
           <Image
             srcSet={`${collection.image.url}?width=300&quality=15 300w,
-                     ${collection.image.url}?width=600&quality=15 600w,
-                     ${collection.image.url}?width=1200&quality=15 1200w`}
+                                 ${collection.image.url}?width=600&quality=15 600w,
+                                 ${collection.image.url}?width=1200&quality=15 1200w`}
             alt={collection.image.altText || collection.title}
             className="menu-item-image"
             width={150}
