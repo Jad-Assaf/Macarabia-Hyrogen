@@ -18,43 +18,9 @@ export function truncateText(text, maxWords) {
 
 // Simplified CollectionDisplay
 export const CollectionDisplay = React.memo(({menuCollections}) => {
-  const [visibleCollections, setVisibleCollections] = useState([]); // Collections to display
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const batchSize = 1; // Number of collections to load at a time
-
-  useEffect(() => {
-    if (currentIndex < menuCollections.length) {
-      // Load the next batch of collections
-      setVisibleCollections(menuCollections.slice(0, currentIndex + batchSize));
-    }
-  }, [currentIndex, menuCollections]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          // Increment the current index to load more collections
-          setCurrentIndex((prevIndex) => prevIndex + batchSize);
-        }
-      },
-      {rootMargin: '200px'}, // Adjust for earlier triggering
-    );
-
-    const target = document.querySelector('.collections-container-end');
-    if (target) observer.observe(target);
-
-    return () => {
-      if (target) observer.unobserve(target);
-    };
-  }, []);
-
   return (
     <div className="collections-container">
-      <CollectionRows menuCollections={visibleCollections} />
-      {/* Placeholder element to trigger loading of more collections */}
-      {currentIndex < menuCollections.length && (
-        <div className="collections-container-end" style={{height: '50px'}} />
-      )}
+      <CollectionRows menuCollections={menuCollections} />
     </div>
   );
 });
