@@ -127,6 +127,8 @@
     border-radius: 50%;
     max-width: 45vw;
     width: 150px;
+    min-width: 150px;
+    min-height: 150px;
     height: auto;
 }
 
