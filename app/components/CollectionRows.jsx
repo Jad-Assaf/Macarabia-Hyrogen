@@ -42,7 +42,7 @@ const CollectionRows = ({menuCollections}) => {
                   ref={ref}
                   style={{
                     opacity: inView ? 1 : 0,
-                    transition: `opacity 0.3s ease ${collectionIndex * 0.1}s`,
+                    transition: `opacity 0.5s ease ${collectionIndex * 0.1}s`,
                   }}
                 >
                   <CollectionItem
@@ -75,7 +75,7 @@ const CollectionRows = ({menuCollections}) => {
                   ref={productRowRef}
                   style={{
                     opacity: productRowInView ? 1 : 0,
-                    transition: 'opacity 0.3s ease',
+                    transition: 'opacity 0.5s ease',
                   }}
                 >
                   {productRowInView && (
