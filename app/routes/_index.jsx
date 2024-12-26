@@ -234,8 +234,7 @@ async function fetchMenuCollections(context, menuHandles) {
   });
 
   const collectionsGrouped = await Promise.all(collectionsPromises);
-  // Flatten the array-of-arrays into a single array:
-  return collectionsGrouped.filter(Boolean).flat();
+  return collectionsGrouped.filter(Boolean);
 }
 
 // Fetch collections by handles for sliders
