@@ -29,7 +29,7 @@ const CollectionRows = ({menuCollections}) => {
       {displayedCollections.map((menuCollection, index) => {
         const [containerRef, containerInView] = useInView({
           triggerOnce: true,
-          rootMargin: '500px',
+          rootMargin: '1000px',
         });
 
         return (
@@ -55,7 +55,7 @@ const CollectionRows = ({menuCollections}) => {
             {menuCollection.slice(0, 2).map((collection) => {
               const [productRowRef, productRowInView] = useInView({
                 triggerOnce: true,
-                rootMargin: '500px',
+                rootMargin: '1000px',
               });
 
               return (
@@ -98,7 +98,7 @@ const CollectionItem = ({collection, index}) => {
       ([entry]) => {
         if (entry.isIntersecting) setIsVisible(true);
       },
-      {rootMargin: '500px'},
+      {rootMargin: '1000px'},
     );
 
     if (ref.current) observer.observe(ref.current);
