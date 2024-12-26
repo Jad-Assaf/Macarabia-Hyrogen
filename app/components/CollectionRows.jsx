@@ -6,7 +6,8 @@ import {useInView} from 'react-intersection-observer';
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
-  const [loadedCollections, setLoadedCollections] = useState([]); // Tracks which collections have been loaded
+  const [loadingQueue, setLoadingQueue] = useState([]); // Queue of collections to load
+  const [currentlyLoading, setCurrentlyLoading] = useState(null); // Tracks the currently loading collection
 
   // Check if the screen width is less than 768px
   useEffect(() => {
@@ -25,10 +26,24 @@ const CollectionRows = ({menuCollections}) => {
     ? menuCollections.slice(0, 14)
     : menuCollections;
 
-  const handleInView = (collectionId) => {
-    if (!loadedCollections.includes(collectionId)) {
-      setLoadedCollections((prev) => [...prev, collectionId]);
+  useEffect(() => {
+    if (!currentlyLoading && loadingQueue.length > 0) {
+      const nextCollection = loadingQueue[0];
+      setCurrentlyLoading(nextCollection);
     }
+  }, [currentlyLoading, loadingQueue]);
+
+  const handleInView = (collectionId) => {
+    if (!loadingQueue.includes(collectionId)) {
+      setLoadingQueue((prevQueue) => [...prevQueue, collectionId]);
+    }
+  };
+
+  const handleLoadComplete = (collectionId) => {
+    setLoadingQueue((prevQueue) =>
+      prevQueue.filter((id) => id !== collectionId),
+    );
+    setCurrentlyLoading(null);
   };
 
   return (
@@ -49,21 +64,22 @@ const CollectionRows = ({menuCollections}) => {
                 }
               }, [inView]);
 
-              const isLoaded = loadedCollections.includes(collection.id);
+              const isLoading = currentlyLoading === collection.id;
 
               return (
                 <div
                   key={collection.id}
                   ref={ref}
                   style={{
-                    opacity: isLoaded ? 1 : 0,
+                    opacity: isLoading ? 1 : 0,
                     transition: `opacity 0.5s ease ${collectionIndex * 0.1}s`,
                   }}
                 >
-                  {isLoaded && (
+                  {isLoading && (
                     <CollectionItem
                       collection={collection}
                       index={collectionIndex}
+                      onLoadComplete={() => handleLoadComplete(collection.id)}
                     />
                   )}
                 </div>
@@ -83,7 +99,7 @@ const CollectionRows = ({menuCollections}) => {
               }
             }, [productRowInView]);
 
-            const isLoaded = loadedCollections.includes(collection.id);
+            const isLoading = currentlyLoading === collection.id;
 
             return (
               <div key={collection.id} className="collection-section">
@@ -99,12 +115,15 @@ const CollectionRows = ({menuCollections}) => {
                 <div
                   ref={productRowRef}
                   style={{
-                    opacity: isLoaded ? 1 : 0,
+                    opacity: isLoading ? 1 : 0,
                     transition: 'opacity 0.5s ease',
                   }}
                 >
-                  {isLoaded && (
-                    <ProductRow products={collection.products.nodes} />
+                  {isLoading && (
+                    <ProductRow
+                      products={collection.products.nodes}
+                      onLoadComplete={() => handleLoadComplete(collection.id)}
+                    />
                   )}
                 </div>
               </div>
@@ -116,7 +135,15 @@ const CollectionRows = ({menuCollections}) => {
   );
 };
 
-const CollectionItem = ({collection}) => {
+const CollectionItem = ({collection, onLoadComplete}) => {
+  useEffect(() => {
+    // Simulate load completion
+    const timer = setTimeout(() => {
+      onLoadComplete();
+    }, 500); // Simulate loading duration
+    return () => clearTimeout(timer);
+  }, [onLoadComplete]);
+
   return (
     <Link
       to={`/collections/${collection.handle}`}
