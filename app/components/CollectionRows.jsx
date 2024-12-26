@@ -70,7 +70,7 @@ const CollectionItem = ({collection, index}) => {
       ([entry]) => {
         if (entry.isIntersecting) setIsVisible(true);
       },
-      {rootMargin: '500px'},
+      {rootMargin: '100px'},
     );
 
     if (ref.current) observer.observe(ref.current);
