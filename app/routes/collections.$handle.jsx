@@ -26,19 +26,18 @@ import {AddToCartButton} from '../components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 import '../styles/CollectionSlider.css';
 
+const truncateText = (text, maxLength) => {
+  if (!text) return '';
+  return text.length > maxLength
+    ? `${text.slice(0, maxLength).trim()}...`
+    : text;
+};
+
 /**
  * @type {MetaFunction<typeof loader>}
  */
 export const meta = ({data}) => {
   const collection = data?.collection;
-
-  // Utility to truncate text
-  const truncateText = (text, maxLength) => {
-    if (!text) return '';
-    return text.length > maxLength
-      ? `${text.slice(0, maxLength).trim()}...`
-      : text;
-  };
 
   return getSeoMeta({
     title: `${collection?.title || 'Collection'} | Macarabia`,
