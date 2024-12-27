@@ -105,6 +105,7 @@ export function ProductItem({product, index}) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Added state
   const slideshowInterval = 3000; // Time for each slide
 
   const images = product.images?.nodes || [];
@@ -142,10 +143,11 @@ export function ProductItem({product, index}) {
       clearInterval(imageTimer);
       clearInterval(progressTimer);
     };
-  }, [isHovered, images.length]);
+  }, [isHovered, images.length, slideshowInterval]);
 
   useEffect(() => {
     setProgress(0); // Reset progress when the current image changes
+    setIsLoading(true); // Set loading state to true when image changes
   }, [currentImageIndex]);
 
   const selectedVariant =
@@ -157,6 +159,11 @@ export function ProductItem({product, index}) {
     selectedVariant?.compareAtPrice &&
     selectedVariant.compareAtPrice.amount > selectedVariant.price.amount;
 
+  // Handle image load
+  const handleImageLoad = () => {
+    setIsLoading(false);
+  };
+
   return (
     <div
       ref={ref}
@@ -167,21 +174,30 @@ export function ProductItem({product, index}) {
       <Link to={`/products/${product.handle}`}>
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
-            <img
-              src={images[currentImageIndex]?.url}
-              alt={images[currentImageIndex]?.altText || 'Product Image'}
-              aspectRatio="1/1"
-              sizes="(min-width: 45em) 20vw, 40vw"
-              srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
-                                     ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
-                                     ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
-              width="180px"
-              height="180px"
-              loading="lazy"
-              style={styles.image}
-              className="product-slideshow-image"
-              onClick={handleImageClick} // Click to switch images
-            />
+            <div className="product-image-wrapper">
+              {' '}
+              {/* Added wrapper */}
+              {isLoading && <div className="product-shimmer-effect"></div>}{' '}
+              {/* Shimmer */}
+              <img
+                src={`${images[currentImageIndex]?.url}?width=300&quality=7`} // Ensure src is present
+                srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
+                       ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
+                       ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
+                alt={images[currentImageIndex]?.altText || 'Product Image'}
+                aspectRatio="1/1"
+                sizes="(min-width: 45em) 20vw, 40vw"
+                width="180px"
+                height="180px"
+                loading="lazy"
+                style={styles.image}
+                className={`product-slideshow-image ${
+                  isLoading ? '' : 'product-image-loaded'
+                }`}
+                onLoad={handleImageLoad}
+                onClick={handleImageClick} // Click to switch images
+              />
+            </div>
             <div
               className="product-slideshow-progress-bar"
               style={styles.progressBar}
@@ -210,7 +226,10 @@ export function ProductItem({product, index}) {
                     backgroundColor:
                       currentImageIndex === index ? '#000' : '#e0e0e0',
                   }}
-                  onClick={() => setCurrentImageIndex(index)}
+                  onClick={() => {
+                    setCurrentImageIndex(index);
+                    setIsLoading(true); // Reset loading state when dot is clicked
+                  }}
                 ></div>
               ))}
             </div>
