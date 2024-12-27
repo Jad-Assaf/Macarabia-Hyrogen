@@ -219,7 +219,7 @@ async function fetchCollectionByHandle(context, handle) {
 
 // Fetch menu collections
 async function fetchMenuCollections(context, menuHandles) {
-  const chunkSize = 3;
+  const chunkSize = 1;
 
   // Helper function to chunk an array
   function chunkArray(array, size) {
