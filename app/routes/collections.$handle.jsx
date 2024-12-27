@@ -16,7 +16,6 @@ import {
 } from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
-import {truncateText} from '~/components/CollectionDisplay';
 import {DrawerFilter} from '~/modules/drawer-filter';
 import {FILTER_URL_PREFIX} from '~/lib/const';
 import React, {useEffect, useRef, useState} from 'react';
