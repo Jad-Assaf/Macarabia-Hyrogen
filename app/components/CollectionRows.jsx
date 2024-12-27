@@ -40,7 +40,11 @@ const CollectionRows = ({menuCollections}) => {
               });
 
               return (
-                <div ref={collectionRef} key={collection.id}>
+                <div
+                  className="animated-menu-item"
+                  ref={collectionRef}
+                  key={collection.id}
+                >
                   {collectionInView && (
                     <CollectionItem
                       collection={collection}
@@ -86,7 +90,6 @@ const CollectionItem = ({collection, index}) => {
   const ref = useRef(null);
 
   return (
-    <div ref={ref} className="animated-menu-item">
       <Link
         to={`/collections/${collection.handle}`}
         className="menu-item-container"
@@ -105,7 +108,6 @@ const CollectionItem = ({collection, index}) => {
         )}
         <div className="category-title">{collection.title}</div>
       </Link>
-    </div>
   );
 };
 
