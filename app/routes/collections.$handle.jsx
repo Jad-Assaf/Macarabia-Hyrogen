@@ -1060,7 +1060,7 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
             <Link key={product.id} prefetch="intent" to={variantUrl}>
               <h4>{truncateText(product.title, 30)}</h4>
               <p className="product-description">
-                {truncateText(product.description, 30)}
+                {truncateText(product.description, 60)}
               </p>
               <div className="price-container">
                 <small
