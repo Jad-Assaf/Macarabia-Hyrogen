@@ -100,14 +100,14 @@ const RightArrowIcon = () => (
   </svg>
 );
 
-export function ProductItem({product, index}) {
+export function ProductItem({product, index, handle}) { // Added `handle` as a prop
   const ref = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // State for loading
-  const slideshowInterval = 3000; // Time for each slide
+  const [isLoading, setIsLoading] = useState(handle === 'new-arrivals'); // Initialize shimmer only for 'new-arrivals'
 
+  const slideshowInterval = 3000; // Time for each slide
   const images = product.images?.nodes || [];
 
   // Handle image click to switch images
@@ -175,7 +175,7 @@ export function ProductItem({product, index}) {
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
             <div className="product-image-wrapper" style={styles.imageWrapper}>
-              {isLoading && (
+              {isLoading && handle === 'new-arrivals' && ( // Check the handle before showing shimmer
                 <div
                   className="product-shimmer-effect"
                   aria-hidden="true"
