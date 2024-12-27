@@ -104,6 +104,41 @@ body {
   max-height: 233px;
 }
 
+.menu-item-image-wrapper {
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+
+.menu-item-shimmer-effect {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right,
+      #f0f0f0 0%,
+      #e0e0e0 20%,
+      #f0f0f0 40%,
+      #f0f0f0 100%);
+  background-size: 200% 100%;
+  animation: menu-item-shimmer 1.5s infinite;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+@keyframes menu-item-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.menu-item-image-hidden {
+  display: none;
+}
+
 @keyframes fadeIn {
   to {
     opacity: 1;

@@ -87,25 +87,36 @@ const CollectionRows = ({menuCollections}) => {
 };
 
 const CollectionItem = ({collection, index}) => {
+  const [isLoading, setIsLoading] = useState(true);
   const ref = useRef(null);
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+  };
 
   return (
     <Link
       to={`/collections/${collection.handle}`}
       className="menu-item-container"
     >
-      {collection.image && (
-        <Image
-          srcSet={`${collection.image.url}?width=300&quality=15 300w,
-                                 ${collection.image.url}?width=600&quality=15 600w,
-                                 ${collection.image.url}?width=1200&quality=15 1200w`}
-          alt={collection.image.altText || collection.title}
-          className="menu-item-image"
-          width={150}
-          height={150}
-          loading="lazy"
-        />
-      )}
+      <div className="menu-item-image-wrapper">
+        {isLoading && <div className="menu-item-shimmer-effect"></div>}
+        {collection.image && (
+          <Image
+            srcSet={`${collection.image.url}?width=300&quality=15 300w,
+                             ${collection.image.url}?width=600&quality=15 600w,
+                             ${collection.image.url}?width=1200&quality=15 1200w`}
+            alt={collection.image.altText || collection.title}
+            className={`menu-item-image ${
+              isLoading ? 'menu-item-image-hidden' : ''
+            }`}
+            width={150}
+            height={150}
+            loading="lazy"
+            onLoad={handleImageLoad}
+          />
+        )}
+      </div>
       <div className="category-title">{collection.title}</div>
     </Link>
   );
