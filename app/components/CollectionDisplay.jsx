@@ -17,15 +17,10 @@ export function truncateText(text, maxWords) {
 }
 
 // Simplified CollectionDisplay
-export const CollectionDisplay = React.memo(({collection}) => {
-  if (!collection) {
-    return null;
-  }
-
+export const CollectionDisplay = React.memo(({menuCollections}) => {
   return (
     <div className="collections-container">
-      {/* Wrap the single collection in an array for CollectionRows */}
-      <CollectionRows menuCollections={[collection]} />
+      <CollectionRows menuCollections={menuCollections} />
     </div>
   );
 });

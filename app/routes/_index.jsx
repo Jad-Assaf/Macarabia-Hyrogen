@@ -174,13 +174,13 @@ export async function loader(args) {
   });
 }
 
-async function loadCriticalData({context}) {
-  const {storefront} = context;
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
 
   // Use the hardcoded MANUAL_MENU_HANDLES
   const menuHandles = MANUAL_MENU_HANDLES;
 
-  const {shop} = await storefront.query(
+  const { shop } = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -188,7 +188,7 @@ async function loadCriticalData({context}) {
           description
         }
       }
-    `,
+    `
   );
 
   const [sliderCollections, menuCollections, newArrivalsCollection] =
@@ -235,8 +235,8 @@ async function fetchMenuCollections(context, menuHandles) {
   const collectionsGrouped = [];
   for (const chunk of handleChunks) {
     const chunkPromises = chunk.map(async (handle) => {
-      const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-        variables: {handle},
+      const { menu } = await context.storefront.query(GET_MENU_QUERY, {
+        variables: { handle },
       });
 
       if (!menu || !menu.items || menu.items.length === 0) {
@@ -245,9 +245,9 @@ async function fetchMenuCollections(context, menuHandles) {
 
       const collectionPromises = menu.items.map(async (item) => {
         const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-        const {collectionByHandle} = await context.storefront.query(
+        const { collectionByHandle } = await context.storefront.query(
           GET_COLLECTION_BY_HANDLE_QUERY,
-          {variables: {handle: sanitizedHandle}},
+          { variables: { handle: sanitizedHandle } }
         );
         return collectionByHandle || null;
       });
@@ -412,11 +412,6 @@ export default function Homepage() {
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
-  // Find the specific collection you want to display, e.g., 'apple'
-  const appleCollection = menuCollections.find(
-    (collection) => collection.handle === 'apple'
-  );
-
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
@@ -424,10 +419,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {/* Pass the single collection object to CollectionDisplay */}
-      {appleCollection && (
-        <CollectionDisplay collection={appleCollection} />
-      )}
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
