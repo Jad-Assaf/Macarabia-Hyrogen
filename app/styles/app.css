@@ -150,19 +150,20 @@ body {
 
 /* Shimmer Effect Container */
 .product-shimmer-effect {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
-  background: linear-gradient(to right,
-      #eeeeee 0%,
-      #dddddd 20%,
-      #eeeeee 40%,
-      #eeeeee 100%);
-  background-size: 200% 100%;
+    height: 100%;
+    background: linear-gradient(to right,
+        #f0f0f0 0%,
+        #e0e0e0 20%,
+        #f0f0f0 40%,
+        #f0f0f0 100%);
+    background-size: 200% 100%;
+    animation: menu-item-shimmer 3s infinite;
+    position: absolute;
+    top: 0;
+    left: 0;
   animation: shimmer 1.5s infinite;
-  z-index: 1;
+  border-radius: 5px;
 }
 
 /* Shimmer Animation */
