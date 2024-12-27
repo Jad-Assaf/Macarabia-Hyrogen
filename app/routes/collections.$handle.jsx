@@ -1037,7 +1037,7 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
         <div className="mobile-container">
           <Link
             key={product.id}
-            prefetch="intent"
+            prefetch="none"
             to={variantUrl}
             className="collection-product-link"
           >
@@ -1057,7 +1057,7 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
             )}
           </Link>
           <div className="product-info-container">
-            <Link key={product.id} prefetch="intent" to={variantUrl}>
+            <Link key={product.id} prefetch="none" to={variantUrl}>
               <h4>{truncateText(product.title, 30)}</h4>
               <p className="product-description">
                 {truncateText(product.description, 60)}
