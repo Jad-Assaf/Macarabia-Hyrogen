@@ -219,30 +219,48 @@ async function fetchCollectionByHandle(context, handle) {
 
 // Fetch menu collections
 async function fetchMenuCollections(context, menuHandles) {
-  const collectionsPromises = menuHandles.map(async (handle) => {
-    const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-      variables: {handle},
-    });
+  const chunkSize = 3;
 
-    if (!menu || !menu.items || menu.items.length === 0) {
-      return null;
+  // Helper function to chunk an array
+  function chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
     }
+    return chunks;
+  }
 
-    const collectionPromises = menu.items.map(async (item) => {
-      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-      const {collectionByHandle} = await context.storefront.query(
-        GET_COLLECTION_BY_HANDLE_QUERY,
-        {variables: {handle: sanitizedHandle}},
-      );
-      return collectionByHandle || null;
+  const handleChunks = chunkArray(menuHandles, chunkSize);
+
+  const collectionsGrouped = [];
+  for (const chunk of handleChunks) {
+    const chunkPromises = chunk.map(async (handle) => {
+      const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+        variables: {handle},
+      });
+
+      if (!menu || !menu.items || menu.items.length === 0) {
+        return null;
+      }
+
+      const collectionPromises = menu.items.map(async (item) => {
+        const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+        const {collectionByHandle} = await context.storefront.query(
+          GET_COLLECTION_BY_HANDLE_QUERY,
+          {variables: {handle: sanitizedHandle}},
+        );
+        return collectionByHandle || null;
+      });
+
+      const collections = await Promise.all(collectionPromises);
+      return collections.filter(Boolean);
     });
 
-    const collections = await Promise.all(collectionPromises);
-    return collections.filter(Boolean);
-  });
+    const chunkResults = await Promise.all(chunkPromises);
+    collectionsGrouped.push(...chunkResults.filter(Boolean));
+  }
 
-  const collectionsGrouped = await Promise.all(collectionsPromises);
-  return collectionsGrouped.filter(Boolean);
+  return collectionsGrouped;
 }
 
 // Fetch collections by handles for sliders
