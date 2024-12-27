@@ -119,10 +119,11 @@ body {
       #f0f0f0 40%,
       #f0f0f0 100%);
   background-size: 200% 100%;
-  animation: menu-item-shimmer 1.5s infinite;
+  animation: menu-item-shimmer 3s infinite;
   position: absolute;
   top: 0;
   left: 0;
+  border-radius: 50%;
 }
 
 @keyframes menu-item-shimmer {

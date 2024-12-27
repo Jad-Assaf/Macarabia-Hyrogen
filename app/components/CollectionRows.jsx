@@ -7,23 +7,16 @@ import {useInView} from 'react-intersection-observer';
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check if the screen width is less than 768px
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
     };
 
-    // Set the initial value
     handleResize();
-
-    // Add event listener
     window.addEventListener('resize', handleResize);
-
-    // Cleanup event listener
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Get the collections to display
   const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
@@ -35,8 +28,10 @@ const CollectionRows = ({menuCollections}) => {
           {/* Render the menu slider */}
           <div className="menu-slider-container">
             {menuCollection.map((collection, collectionIndex) => {
+              // Use InView at the container level to simplify logic
               const [collectionRef, collectionInView] = useInView({
                 triggerOnce: true,
+                threshold: 0.1, // Adjust as needed
               });
 
               return (
@@ -45,20 +40,21 @@ const CollectionRows = ({menuCollections}) => {
                   ref={collectionRef}
                   key={collection.id}
                 >
-                  {collectionInView && (
-                    <CollectionItem
-                      collection={collection}
-                      index={collectionIndex}
-                    />
-                  )}
+                  {/* Render the collection item unconditionally */}
+                  <CollectionItem
+                    collection={collection}
+                    index={collectionIndex}
+                  />
                 </div>
               );
             })}
           </div>
 
+          {/* Render additional collections */}
           {menuCollection.slice(0, 2).map((collection) => {
             const [productRowRef, productRowInView] = useInView({
               triggerOnce: true,
+              threshold: 0.1,
             });
 
             return (
