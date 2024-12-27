@@ -100,12 +100,13 @@ const RightArrowIcon = () => (
   </svg>
 );
 
-export function ProductItem({product, index}) {
+export function ProductItem({ product, index }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Added loading state
-  const slideshowInterval = 3000; // Time for each slide
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const slideshowInterval = 3000; // Time for each slide in milliseconds
 
   const images = product.images?.nodes || [];
 
@@ -120,7 +121,7 @@ export function ProductItem({product, index}) {
   useEffect(() => {
     let imageTimer, progressTimer;
 
-    if (isHovered) {
+    if (isHovered && images.length > 1) {
       // Image slideshow timer
       imageTimer = setInterval(() => {
         setCurrentImageIndex((prevIndex) =>
@@ -147,6 +148,7 @@ export function ProductItem({product, index}) {
   useEffect(() => {
     setProgress(0); // Reset progress when the current image changes
     setIsLoading(true); // Set loading state to true when image changes
+    setHasError(false); // Reset error state
   }, [currentImageIndex]);
 
   const selectedVariant =
@@ -163,6 +165,15 @@ export function ProductItem({product, index}) {
     setIsLoading(false);
   };
 
+  // Handle image error
+  const handleImageError = () => {
+    setIsLoading(false);
+    setHasError(true);
+  };
+
+  // Force image re-render by using a unique key
+  const imageKey = `${product.id}-${currentImageIndex}`;
+
   return (
     <div
       className="product-card"
@@ -173,28 +184,30 @@ export function ProductItem({product, index}) {
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
             <div className="product-image-wrapper">
-              {' '}
-              {/* Added wrapper */}
-              {isLoading && <div className="product-shimmer-effect"></div>}{' '}
-              {/* Shimmer */}
-              <img
-                src={`${images[currentImageIndex]?.url}?width=300&quality=7`} // Ensure src is present
-                srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
-                       ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
-                       ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
-                alt={images[currentImageIndex]?.altText || 'Product Image'}
-                aspectRatio="1/1"
-                sizes="(min-width: 45em) 20vw, 40vw"
-                width="180px"
-                height="180px"
-                loading="lazy"
-                style={styles.image}
-                className={`product-slideshow-image ${
-                  isLoading ? '' : 'product-image-loaded'
-                }`}
-                onLoad={handleImageLoad}
-                onClick={handleImageClick} // Click to switch images
-              />
+              {isLoading && <div className="product-shimmer-effect"></div>} {/* Shimmer */}
+              {!hasError ? (
+                <img
+                  key={imageKey} // Force re-render when index changes
+                  src={`${images[currentImageIndex]?.url}?width=300&quality=7`}
+                  srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
+                         ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
+                         ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
+                  alt={images[currentImageIndex]?.altText || 'Product Image'}
+                  sizes="(min-width: 45em) 20vw, 40vw"
+                  width="180px"
+                  height="180px"
+                  loading="lazy"
+                  style={styles.image}
+                  className={`product-slideshow-image ${
+                    isLoading ? '' : 'product-image-loaded'
+                  }`}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError} // Handle errors
+                  onClick={handleImageClick} // Click to switch images
+                />
+              ) : (
+                <div className="image-error">Image not available</div>
+              )}
             </div>
             <div
               className="product-slideshow-progress-bar"
@@ -209,28 +222,30 @@ export function ProductItem({product, index}) {
               ></div>
             </div>
             {/* Indicator Dots */}
-            <div
-              className="product-slideshow-dots"
-              style={styles.dotsContainer}
-            >
-              {images.map((_, index) => (
-                <div
-                  key={index}
-                  className={`product-slideshow-dot ${
-                    currentImageIndex === index ? 'active' : ''
-                  }`}
-                  style={{
-                    ...styles.dot,
-                    backgroundColor:
-                      currentImageIndex === index ? '#000' : '#e0e0e0',
-                  }}
-                  onClick={() => {
-                    setCurrentImageIndex(index);
-                    setIsLoading(true); // Reset loading state when dot is clicked
-                  }}
-                ></div>
-              ))}
-            </div>
+            {images.length > 1 && (
+              <div
+                className="product-slideshow-dots"
+                style={styles.dotsContainer}
+              >
+                {images.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`product-slideshow-dot ${
+                      currentImageIndex === index ? 'active' : ''
+                    }`}
+                    style={{
+                      ...styles.dot,
+                      backgroundColor:
+                        currentImageIndex === index ? '#000' : '#e0e0e0',
+                    }}
+                    onClick={() => {
+                      setCurrentImageIndex(index);
+                      setIsLoading(true); // Reset loading state when dot is clicked
+                    }}
+                  ></div>
+                ))}
+              </div>
+            )}
           </div>
         )}
         <h4 className="product-title">{product.title}</h4>
@@ -289,7 +304,7 @@ const styles = {
   },
   image: {
     width: '100%',
-    height: 'auto',
+    height: '100%',
     objectFit: 'cover',
   },
   progressBar: {
@@ -316,8 +331,8 @@ const styles = {
     gap: '8px',
   },
   dot: {
-    width: '5px',
-    height: '5px',
+    width: '8px',
+    height: '8px',
     borderRadius: '50%',
     cursor: 'pointer',
     transition: 'background-color 0.3s ease',
