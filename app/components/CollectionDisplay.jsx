@@ -176,7 +176,10 @@ export function ProductItem({product, index}) {
           <div className="product-slideshow" style={styles.slideshow}>
             <div className="product-image-wrapper" style={styles.imageWrapper}>
               {isLoading && (
-                <div className="product-shimmer-effect"></div> // Shimmer Placeholder
+                <div
+                  className="product-shimmer-effect"
+                  aria-hidden="true"
+                ></div> // Shimmer Placeholder
               )}
               <img
                 src={images[currentImageIndex]?.url}
