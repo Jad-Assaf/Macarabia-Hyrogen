@@ -194,8 +194,10 @@ async function loadCriticalData({ context }) {
   const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([
       fetchCollectionsByHandles(context, menuHandles),
+      fetchMenuCollections(context, 'apple'),
       fetchMenuCollections(context, menuHandles),
       fetchCollectionByHandle(context, 'new-arrivals'),
+      fetchCollectionByHandle(context, 'apple'),
     ]);
 
   return {
@@ -419,7 +421,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={menuCollections} />
+      <CollectionDisplay menuCollections={'apple'} />
       <BrandSection brands={brandsData} />
     </div>
   );
