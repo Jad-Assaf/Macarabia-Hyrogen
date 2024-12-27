@@ -81,7 +81,7 @@ function CollectionItem({collection, index}) {
       className="collection-item"
       key={collection.id}
       to={`/collections/${collection.handle}`}
-      prefetch="none"
+      prefetch="intent"
     >
       {collection?.image && (
         <Image
