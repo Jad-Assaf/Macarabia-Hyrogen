@@ -100,12 +100,11 @@ const RightArrowIcon = () => (
   </svg>
 );
 
-export function ProductItem({ product, index }) {
+export function ProductItem({product, index}) {
   const ref = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // New state for loading
   const slideshowInterval = 3000; // Time for each slide
 
   const images = product.images?.nodes || [];
@@ -147,7 +146,6 @@ export function ProductItem({ product, index }) {
 
   useEffect(() => {
     setProgress(0); // Reset progress when the current image changes
-    setIsLoading(true); // Reset loading state for new image
   }, [currentImageIndex]);
 
   const selectedVariant =
@@ -169,29 +167,21 @@ export function ProductItem({ product, index }) {
       <Link to={`/products/${product.handle}`}>
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
-            <div className="product-image-wrapper" style={styles.imageWrapper}>
-              {isLoading && <div className="product-shimmer-effect"></div>} {/* Shimmer Placeholder */}
-              <img
-                src={images[currentImageIndex]?.url}
-                alt={images[currentImageIndex]?.altText || 'Product Image'}
-                aspectRatio="1/1"
-                sizes="(min-width: 45em) 20vw, 40vw"
-                srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
-                       ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
-                       ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
-                width="180px"
-                height="180px"
-                loading="lazy"
-                style={{
-                  ...styles.image,
-                  opacity: isLoading ? 0 : 1, // Hide image until loaded
-                  transition: 'opacity 0.3s ease-in-out',
-                }}
-                className={`product-slideshow-image ${isLoading ? '' : 'image-loaded'}`}
-                onClick={handleImageClick} // Click to switch images
-                onLoad={handleImageLoad} // Image load handler
-              />
-            </div>
+            <img
+              src={images[currentImageIndex]?.url}
+              alt={images[currentImageIndex]?.altText || 'Product Image'}
+              aspectRatio="1/1"
+              sizes="(min-width: 45em) 20vw, 40vw"
+              srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
+                                     ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
+                                     ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
+              width="180px"
+              height="180px"
+              loading="lazy"
+              style={styles.image}
+              className="product-slideshow-image"
+              onClick={handleImageClick} // Click to switch images
+            />
             <div
               className="product-slideshow-progress-bar"
               style={styles.progressBar}
@@ -209,18 +199,18 @@ export function ProductItem({ product, index }) {
               className="product-slideshow-dots"
               style={styles.dotsContainer}
             >
-              {images.map((_, idx) => (
+              {images.map((_, index) => (
                 <div
-                  key={idx}
+                  key={index}
                   className={`product-slideshow-dot ${
-                    currentImageIndex === idx ? 'active' : ''
+                    currentImageIndex === index ? 'active' : ''
                   }`}
                   style={{
                     ...styles.dot,
                     backgroundColor:
-                      currentImageIndex === idx ? '#000' : '#e0e0e0',
+                      currentImageIndex === index ? '#000' : '#e0e0e0',
                   }}
-                  onClick={() => setCurrentImageIndex(idx)}
+                  onClick={() => setCurrentImageIndex(index)}
                 ></div>
               ))}
             </div>
@@ -274,47 +264,45 @@ export function ProductItem({ product, index }) {
 }
 
 const styles = {
-    slideshow: {
-    position: 'relative',
-    width: '180px',
-    height: '180px',
-    overflow: 'hidden',
-  },
-  imageWrapper: {
+  slideshow: {
     position: 'relative',
     width: '100%',
-    height: '100%',
+    height: 'auto',
+    overflow: 'hidden',
   },
   image: {
     width: '100%',
-    height: '100%',
+    height: 'auto',
     objectFit: 'cover',
   },
   progressBar: {
     position: 'absolute',
-    bottom: '0',
-    left: '0',
-    width: '100%',
-    height: '4px',
+    bottom: '5px',
+    left: '10%',
+    width: '80%',
+    height: '3px',
     backgroundColor: '#e0e0e0',
+    borderRadius: '30px',
   },
   progress: {
     height: '100%',
     backgroundColor: '#000',
     transition: 'width 0.1s linear',
+    borderRadius: '30px',
   },
   dotsContainer: {
     position: 'absolute',
-    bottom: '8px',
+    bottom: '15px',
     left: '50%',
     transform: 'translateX(-50%)',
     display: 'flex',
-    gap: '4px',
+    gap: '8px',
   },
   dot: {
-    width: '8px',
-    height: '8px',
+    width: '5px',
+    height: '5px',
     borderRadius: '50%',
     cursor: 'pointer',
+    transition: 'background-color 0.3s ease',
   },
 };
