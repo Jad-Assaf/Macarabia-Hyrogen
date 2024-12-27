@@ -84,6 +84,15 @@ export async function loader(args) {
     });
   }
 
+  const menuHandles = MANUAL_MENU_HANDLES;
+
+  const collectionsGenerator = fetchMenuCollections(args.context, menuHandles);
+
+  const menuCollections = [];
+  for await (const chunk of collectionsGenerator) {
+    menuCollections.push(...chunk);
+  }
+
   const banners = [
     {
       desktopImageUrl:
@@ -218,10 +227,9 @@ async function fetchCollectionByHandle(context, handle) {
 }
 
 // Fetch menu collections
-async function fetchMenuCollections(context, menuHandles) {
+async function* fetchMenuCollections(context, menuHandles) {
   const chunkSize = 3;
 
-  // Helper function to chunk an array
   function chunkArray(array, size) {
     const chunks = [];
     for (let i = 0; i < array.length; i += size) {
@@ -232,7 +240,6 @@ async function fetchMenuCollections(context, menuHandles) {
 
   const handleChunks = chunkArray(menuHandles, chunkSize);
 
-  const collectionsGrouped = [];
   for (const chunk of handleChunks) {
     const chunkPromises = chunk.map(async (handle) => {
       const { menu } = await context.storefront.query(GET_MENU_QUERY, {
@@ -257,10 +264,8 @@ async function fetchMenuCollections(context, menuHandles) {
     });
 
     const chunkResults = await Promise.all(chunkPromises);
-    collectionsGrouped.push(...chunkResults.filter(Boolean));
+    yield chunkResults.filter(Boolean); // Stream one chunk of results
   }
-
-  return collectionsGrouped;
 }
 
 // Fetch collections by handles for sliders

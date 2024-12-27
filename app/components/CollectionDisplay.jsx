@@ -18,12 +18,33 @@ export function truncateText(text, maxWords) {
 
 // Simplified CollectionDisplay
 export const CollectionDisplay = React.memo(({menuCollections}) => {
+  const [displayedCollections, setDisplayedCollections] = useState([]);
+
+  useEffect(() => {
+    if (menuCollections && menuCollections[Symbol.asyncIterator]) {
+      const loadChunks = async () => {
+        for await (const chunk of menuCollections) {
+          setDisplayedCollections((prev) => [...prev, ...chunk]);
+        }
+      };
+      loadChunks();
+    } else {
+      // Fallback for when menuCollections is not a generator
+      setDisplayedCollections(menuCollections || []);
+    }
+  }, [menuCollections]);
+
   return (
     <div className="collections-container">
-      <CollectionRows menuCollections={menuCollections} />
+      {displayedCollections.length > 0 ? (
+        <CollectionRows menuCollections={displayedCollections} />
+      ) : (
+        <p>Loading collections...</p>
+      )}
     </div>
   );
 });
+
 
 export function ProductRow({products}) {
   const rowRef = useRef(null);
