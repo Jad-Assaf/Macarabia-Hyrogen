@@ -148,6 +148,39 @@ body {
   /* Visible when loaded */
 }
 
+/* Shimmer Effect Container */
+.product-shimmer-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right,
+      #eeeeee 0%,
+      #dddddd 20%,
+      #eeeeee 40%,
+      #eeeeee 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  z-index: 1;
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Hide Shimmer When Image is Loaded */
+.product-slideshow-image.image-loaded+.product-shimmer-effect {
+  display: none;
+}
+
 @keyframes fadeIn {
   to {
     opacity: 1;
