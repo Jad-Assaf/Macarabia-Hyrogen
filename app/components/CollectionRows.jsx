@@ -1,21 +1,29 @@
 import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
 import {ProductRow} from './CollectionDisplay';
+import {Image} from '@shopify/hydrogen-react';
 import {useInView} from 'react-intersection-observer';
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
 
+  // Check if the screen width is less than 768px
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
     };
 
+    // Set the initial value
     handleResize();
+
+    // Add event listener
     window.addEventListener('resize', handleResize);
+
+    // Cleanup event listener
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Get the collections to display
   const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
@@ -29,7 +37,6 @@ const CollectionRows = ({menuCollections}) => {
             {menuCollection.map((collection, collectionIndex) => {
               const [collectionRef, collectionInView] = useInView({
                 triggerOnce: true,
-                threshold: 0.1,
               });
 
               return (
@@ -38,7 +45,6 @@ const CollectionRows = ({menuCollections}) => {
                   ref={collectionRef}
                   key={collection.id}
                 >
-                  {/* Render the collection item only if in view */}
                   {collectionInView && (
                     <CollectionItem
                       collection={collection}
@@ -50,11 +56,9 @@ const CollectionRows = ({menuCollections}) => {
             })}
           </div>
 
-          {/* Render additional collections */}
           {menuCollection.slice(0, 2).map((collection) => {
             const [productRowRef, productRowInView] = useInView({
               triggerOnce: true,
-              threshold: 0.1,
             });
 
             return (
@@ -99,7 +103,7 @@ const CollectionItem = ({collection, index}) => {
         {isLoading && <div className="menu-item-shimmer-effect"></div>}
         {collection.image && (
           <img
-            src={`${collection.image.url}?width=300&quality=15`} // Ensure src is present
+            src={`${collection.image.url}?width=300&quality=15`} // Added src
             srcSet={`${collection.image.url}?width=300&quality=15 300w,
                      ${collection.image.url}?width=600&quality=15 600w,
                      ${collection.image.url}?width=1200&quality=15 1200w`}
