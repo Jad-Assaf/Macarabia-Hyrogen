@@ -100,13 +100,12 @@ const RightArrowIcon = () => (
   </svg>
 );
 
-export function ProductItem({ product, index }) {
+export function ProductItem({product, index}) {
+  const ref = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const slideshowInterval = 3000; // Time for each slide in milliseconds
+  const slideshowInterval = 3000; // Time for each slide
 
   const images = product.images?.nodes || [];
 
@@ -121,7 +120,7 @@ export function ProductItem({ product, index }) {
   useEffect(() => {
     let imageTimer, progressTimer;
 
-    if (isHovered && images.length > 1) {
+    if (isHovered) {
       // Image slideshow timer
       imageTimer = setInterval(() => {
         setCurrentImageIndex((prevIndex) =>
@@ -143,12 +142,10 @@ export function ProductItem({ product, index }) {
       clearInterval(imageTimer);
       clearInterval(progressTimer);
     };
-  }, [isHovered, images.length, slideshowInterval]);
+  }, [isHovered, images.length]);
 
   useEffect(() => {
     setProgress(0); // Reset progress when the current image changes
-    setIsLoading(true); // Set loading state to true when image changes
-    setHasError(false); // Reset error state
   }, [currentImageIndex]);
 
   const selectedVariant =
@@ -160,22 +157,9 @@ export function ProductItem({ product, index }) {
     selectedVariant?.compareAtPrice &&
     selectedVariant.compareAtPrice.amount > selectedVariant.price.amount;
 
-  // Handle image load
-  const handleImageLoad = () => {
-    setIsLoading(false);
-  };
-
-  // Handle image error
-  const handleImageError = () => {
-    setIsLoading(false);
-    setHasError(true);
-  };
-
-  // Force image re-render by using a unique key
-  const imageKey = `${product.id}-${currentImageIndex}`;
-
   return (
     <div
+      ref={ref}
       className="product-card"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -183,32 +167,21 @@ export function ProductItem({ product, index }) {
       <Link to={`/products/${product.handle}`}>
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
-            <div className="product-image-wrapper">
-              {isLoading && <div className="product-shimmer-effect"></div>} {/* Shimmer */}
-              {!hasError ? (
-                <img
-                  key={imageKey} // Force re-render when index changes
-                  src={`${images[currentImageIndex]?.url}?width=300&quality=7`}
-                  srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
-                         ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
-                         ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
-                  alt={images[currentImageIndex]?.altText || 'Product Image'}
-                  sizes="(min-width: 45em) 20vw, 40vw"
-                  width="180px"
-                  height="180px"
-                  loading="lazy"
-                  style={styles.image}
-                  className={`product-slideshow-image ${
-                    isLoading ? '' : 'product-image-loaded'
-                  }`}
-                  onLoad={handleImageLoad}
-                  onError={handleImageError} // Handle errors
-                  onClick={handleImageClick} // Click to switch images
-                />
-              ) : (
-                <div className="image-error">Image not available</div>
-              )}
-            </div>
+            <img
+              src={images[currentImageIndex]?.url}
+              alt={images[currentImageIndex]?.altText || 'Product Image'}
+              aspectRatio="1/1"
+              sizes="(min-width: 45em) 20vw, 40vw"
+              srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
+                                     ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
+                                     ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
+              width="180px"
+              height="180px"
+              loading="lazy"
+              style={styles.image}
+              className="product-slideshow-image"
+              onClick={handleImageClick} // Click to switch images
+            />
             <div
               className="product-slideshow-progress-bar"
               style={styles.progressBar}
@@ -222,30 +195,25 @@ export function ProductItem({ product, index }) {
               ></div>
             </div>
             {/* Indicator Dots */}
-            {images.length > 1 && (
-              <div
-                className="product-slideshow-dots"
-                style={styles.dotsContainer}
-              >
-                {images.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`product-slideshow-dot ${
-                      currentImageIndex === index ? 'active' : ''
-                    }`}
-                    style={{
-                      ...styles.dot,
-                      backgroundColor:
-                        currentImageIndex === index ? '#000' : '#e0e0e0',
-                    }}
-                    onClick={() => {
-                      setCurrentImageIndex(index);
-                      setIsLoading(true); // Reset loading state when dot is clicked
-                    }}
-                  ></div>
-                ))}
-              </div>
-            )}
+            <div
+              className="product-slideshow-dots"
+              style={styles.dotsContainer}
+            >
+              {images.map((_, index) => (
+                <div
+                  key={index}
+                  className={`product-slideshow-dot ${
+                    currentImageIndex === index ? 'active' : ''
+                  }`}
+                  style={{
+                    ...styles.dot,
+                    backgroundColor:
+                      currentImageIndex === index ? '#000' : '#e0e0e0',
+                  }}
+                  onClick={() => setCurrentImageIndex(index)}
+                ></div>
+              ))}
+            </div>
           </div>
         )}
         <h4 className="product-title">{product.title}</h4>
@@ -304,7 +272,7 @@ const styles = {
   },
   image: {
     width: '100%',
-    height: '100%',
+    height: 'auto',
     objectFit: 'cover',
   },
   progressBar: {
@@ -331,8 +299,8 @@ const styles = {
     gap: '8px',
   },
   dot: {
-    width: '8px',
-    height: '8px',
+    width: '5px',
+    height: '5px',
     borderRadius: '50%',
     cursor: 'pointer',
     transition: 'background-color 0.3s ease',
