@@ -74,6 +74,8 @@ export async function loader(args) {
   const cacheTTL = 86400 * 1000; // 24 hours in milliseconds
   const now = Date.now();
 
+  const {context} = args;
+
   // Check if data is in cache
   const cachedData = cache.get(cacheKey);
   if (cachedData && cachedData.expiry > now) {
@@ -152,6 +154,28 @@ export async function loader(args) {
 
   const criticalData = await loadCriticalData(args);
 
+  const menuHandles = MANUAL_MENU_HANDLES;
+  const chunkSize = 3;
+
+  // Helper function to chunk the array
+  function chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  const handleChunks = chunkArray(menuHandles, chunkSize);
+
+  // Deferred loading for menuCollections chunks
+  const firstChunk = await fetchChunk(context, handleChunks[0]);
+  const deferredChunks = handleChunks.slice(1).reduce((acc, chunk, index) => {
+    acc[`menuCollectionsChunk${index + 1}`] = fetchChunk(context, chunk);
+    return acc;
+  }, {});
+
+
   const newData = {
     banners,
     title: criticalData.title,
@@ -159,19 +183,49 @@ export async function loader(args) {
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
-      menuCollections: criticalData.menuCollections,
+      menuCollectionsChunk0: firstChunk,
+      ...deferredChunks,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
   };
 
   // Cache the new data
-  cache.set(cacheKey, {value: newData, expiry: now + cacheTTL});
+  cache.set(cacheKey, { value: newData, expiry: now + cacheTTL });
 
   return defer(newData, {
     headers: {
       'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
     },
   });
+}
+
+// Fetch a chunk of menu collections
+async function fetchChunk(context, chunk) {
+  const collections = await Promise.all(
+    chunk.map(async (handle) => {
+      const { menu } = await context.storefront.query(GET_MENU_QUERY, {
+        variables: { handle },
+      });
+
+      if (!menu || !menu.items || menu.items.length === 0) {
+        return null;
+      }
+
+      const collectionPromises = menu.items.map(async (item) => {
+        const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+        const { collectionByHandle } = await context.storefront.query(
+          GET_COLLECTION_BY_HANDLE_QUERY,
+          { variables: { handle: sanitizedHandle } }
+        );
+        return collectionByHandle || null;
+      });
+
+      const collections = await Promise.all(collectionPromises);
+      return collections.filter(Boolean);
+    })
+  );
+
+  return collections.flat().filter(Boolean);
 }
 
 async function loadCriticalData({ context }) {
@@ -407,9 +461,8 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const { banners, sliderCollections, deferredData } = useLoaderData();
+  const {banners, sliderCollections, deferredData} = useLoaderData();
 
-  const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   return (
@@ -419,8 +472,21 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={menuCollections} />
-      <BrandSection brands={brandsData} />
+      {/* Progressive rendering for menuCollections */}
+      {Object.keys(deferredData).map((key) =>
+        key.startsWith('menuCollectionsChunk') ? (
+          <Suspense key={key} fallback={<div>Loading collections...</div>}>
+            <Await
+              resolve={deferredData[key]}
+              errorElement={<div>Error loading collections</div>}
+            >
+              {(menuCollections) => (
+                <CollectionDisplay menuCollections={menuCollections} />
+              )}
+            </Await>
+          </Suspense>
+        ) : null,
+      )}
     </div>
   );
 }

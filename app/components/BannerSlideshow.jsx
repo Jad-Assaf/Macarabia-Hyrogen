@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useMemo} from 'react';
 import {Image} from '@shopify/hydrogen';
 
-export function BannerSlideshow({banners, interval = 5000}) {
+export function BannerSlideshow({banners, interval = 10000}) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [animationStyle, setAnimationStyle] = useState({});
