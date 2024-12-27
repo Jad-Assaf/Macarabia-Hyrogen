@@ -1,8 +1,8 @@
 import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
 import {ProductRow} from './CollectionDisplay';
-import {Image} from '@shopify/hydrogen-react';
 import {useInView} from 'react-intersection-observer';
+import './shimmer.css'; // Ensure this import is present
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
@@ -28,10 +28,9 @@ const CollectionRows = ({menuCollections}) => {
           {/* Render the menu slider */}
           <div className="menu-slider-container">
             {menuCollection.map((collection, collectionIndex) => {
-              // Use InView at the container level to simplify logic
               const [collectionRef, collectionInView] = useInView({
                 triggerOnce: true,
-                threshold: 0.1, // Adjust as needed
+                threshold: 0.1,
               });
 
               return (
@@ -40,11 +39,13 @@ const CollectionRows = ({menuCollections}) => {
                   ref={collectionRef}
                   key={collection.id}
                 >
-                  {/* Render the collection item unconditionally */}
-                  <CollectionItem
-                    collection={collection}
-                    index={collectionIndex}
-                  />
+                  {/* Render the collection item only if in view */}
+                  {collectionInView && (
+                    <CollectionItem
+                      collection={collection}
+                      index={collectionIndex}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -99,12 +100,13 @@ const CollectionItem = ({collection, index}) => {
         {isLoading && <div className="menu-item-shimmer-effect"></div>}
         {collection.image && (
           <img
+            src={`${collection.image.url}?width=300&quality=15`} // Ensure src is present
             srcSet={`${collection.image.url}?width=300&quality=15 300w,
-             ${collection.image.url}?width=600&quality=15 600w,
-             ${collection.image.url}?width=1200&quality=15 1200w`}
+                     ${collection.image.url}?width=600&quality=15 600w,
+                     ${collection.image.url}?width=1200&quality=15 1200w`}
             alt={collection.image.altText || collection.title}
             className={`menu-item-image ${
-              isLoading ? 'menu-item-image-hidden' : ''
+              isLoading ? '' : 'menu-item-image-loaded'
             }`}
             width={150}
             height={150}

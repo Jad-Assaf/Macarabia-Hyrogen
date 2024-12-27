@@ -99,7 +99,7 @@ body {
   display: flex;
 }
 
-.menu-slider-container{
+.menu-slider-container {
   min-height: 233px;
   max-height: 233px;
 }
@@ -136,8 +136,16 @@ body {
   }
 }
 
-.menu-item-image-hidden {
-  display: none;
+/* Replace display: none with opacity */
+.menu-item-image {
+  transition: opacity 0.3s ease;
+  opacity: 0;
+  /* Hidden by default */
+}
+
+.menu-item-image-loaded {
+  opacity: 1;
+  /* Visible when loaded */
 }
 
 @keyframes fadeIn {
