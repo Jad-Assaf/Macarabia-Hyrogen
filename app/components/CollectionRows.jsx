@@ -2,7 +2,6 @@ import React, {useRef, useEffect, useState} from 'react';
 import {Link} from '@remix-run/react';
 import {ProductRow} from './CollectionDisplay';
 import {useInView} from 'react-intersection-observer';
-import './shimmer.css'; // Ensure this import is present
 
 const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
