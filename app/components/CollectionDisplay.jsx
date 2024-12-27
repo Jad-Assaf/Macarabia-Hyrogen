@@ -105,6 +105,7 @@ export function ProductItem({product, index}) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // State for loading
   const slideshowInterval = 3000; // Time for each slide
 
   const images = product.images?.nodes || [];
@@ -115,6 +116,11 @@ export function ProductItem({product, index}) {
     setCurrentImageIndex((prevIndex) =>
       prevIndex === images.length - 1 ? 0 : prevIndex + 1,
     );
+  };
+
+  // Handle image load event
+  const handleImageLoad = () => {
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -146,6 +152,7 @@ export function ProductItem({product, index}) {
 
   useEffect(() => {
     setProgress(0); // Reset progress when the current image changes
+    setIsLoading(true); // Reset loading state for new image
   }, [currentImageIndex]);
 
   const selectedVariant =
@@ -167,21 +174,32 @@ export function ProductItem({product, index}) {
       <Link to={`/products/${product.handle}`}>
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
-            <img
-              src={images[currentImageIndex]?.url}
-              alt={images[currentImageIndex]?.altText || 'Product Image'}
-              aspectRatio="1/1"
-              sizes="(min-width: 45em) 20vw, 40vw"
-              srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
-                                     ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
-                                     ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
-              width="180px"
-              height="180px"
-              loading="lazy"
-              style={styles.image}
-              className="product-slideshow-image"
-              onClick={handleImageClick} // Click to switch images
-            />
+            <div className="product-image-wrapper" style={styles.imageWrapper}>
+              {isLoading && (
+                <div className="product-shimmer-effect"></div> // Shimmer Placeholder
+              )}
+              <img
+                src={images[currentImageIndex]?.url}
+                alt={images[currentImageIndex]?.altText || 'Product Image'}
+                sizes="(min-width: 45em) 20vw, 40vw"
+                srcSet={`${images[currentImageIndex]?.url}?width=300&quality=7 300w,
+                        ${images[currentImageIndex]?.url}?width=600&quality=7 600w,
+                        ${images[currentImageIndex]?.url}?width=1200&quality=7 1200w`}
+                width="180px"
+                height="180px"
+                loading="lazy"
+                style={{
+                  ...styles.image,
+                  opacity: isLoading ? 0 : 1, // Hide image until loaded
+                  transition: 'opacity 0.3s ease-in-out',
+                }}
+                className={`product-slideshow-image ${
+                  isLoading ? '' : 'image-loaded'
+                }`}
+                onClick={handleImageClick} // Click to switch images
+                onLoad={handleImageLoad} // Image load handler
+              />
+            </div>
             <div
               className="product-slideshow-progress-bar"
               style={styles.progressBar}
@@ -199,18 +217,18 @@ export function ProductItem({product, index}) {
               className="product-slideshow-dots"
               style={styles.dotsContainer}
             >
-              {images.map((_, index) => (
+              {images.map((_, idx) => (
                 <div
-                  key={index}
+                  key={idx}
                   className={`product-slideshow-dot ${
-                    currentImageIndex === index ? 'active' : ''
+                    currentImageIndex === idx ? 'active' : ''
                   }`}
                   style={{
                     ...styles.dot,
                     backgroundColor:
-                      currentImageIndex === index ? '#000' : '#e0e0e0',
+                      currentImageIndex === idx ? '#000' : '#e0e0e0',
                   }}
-                  onClick={() => setCurrentImageIndex(index)}
+                  onClick={() => setCurrentImageIndex(idx)}
                 ></div>
               ))}
             </div>
@@ -228,7 +246,8 @@ export function ProductItem({product, index}) {
       </Link>
 
       {/* Add to Cart Button */}
-      {/* <AddToCartButton
+      {/* Uncomment and adjust as needed
+      <AddToCartButton
         disabled={!selectedVariant || !selectedVariant.availableForSale}
         onClick={() => {
           if (product.variants?.nodes?.length > 1) {
@@ -258,12 +277,18 @@ export function ProductItem({product, index}) {
           : product.variants?.nodes?.length > 1
           ? 'Select Options'
           : 'Add to cart'}
-      </AddToCartButton> */}
+      </AddToCartButton>
+      */}
     </div>
   );
 }
 
 const styles = {
+  imageWrapper: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+  },
   slideshow: {
     position: 'relative',
     width: '100%',
