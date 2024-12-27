@@ -17,13 +17,31 @@ export function truncateText(text, maxWords) {
 }
 
 // Simplified CollectionDisplay
-export const CollectionDisplay = React.memo(({menuCollections}) => {
+export const CollectionDisplay = React.memo(({ collectionName }) => {
+  const [collection, setCollection] = useState(null);
+
+  useEffect(() => {
+    // Fetch the specific collection based on collectionName
+    async function fetchCollection() {
+      const response = await fetch(`/api/collections/${collectionName}`);
+      const data = await response.json();
+      setCollection(data);
+    }
+
+    fetchCollection();
+  }, [collectionName]);
+
+  if (!collection) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="collections-container">
-      <CollectionRows menuCollections={menuCollections} />
+      <CollectionRows menuCollections={[collection]} />
     </div>
   );
 });
+
 
 export function ProductRow({products}) {
   const rowRef = useRef(null);
