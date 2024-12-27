@@ -53,26 +53,22 @@ export function ProductRow({products}) {
   };
 
   return (
-    <div className="product-row-container">
-      <button className="home-prev-button" onClick={() => scrollRow(-600)}>
-        <LeftArrowIcon />
-      </button>
-      <div
-        className="collection-products-row"
-        ref={rowRef}
-        onMouseDown={handleMouseDown}
-        onMouseLeave={handleMouseLeave}
-        onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}
+      <><button className="home-prev-button" onClick={() => scrollRow(-600)}>
+          <LeftArrowIcon />
+      </button><div
+          className="collection-products-row"
+          ref={rowRef}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
       >
-        {products.map((product, index) => (
-          <ProductItem key={product.id} product={product} index={index} />
-        ))}
-      </div>
-      <button className="home-next-button" onClick={() => scrollRow(600)}>
-        <RightArrowIcon />
-      </button>
-    </div>
+              {products.map((product, index) => (
+                  <ProductItem key={product.id} product={product} index={index} />
+              ))}
+          </div><button className="home-next-button" onClick={() => scrollRow(600)}>
+              <RightArrowIcon />
+          </button></>
   );
 }
 

@@ -72,7 +72,7 @@ const CollectionRows = ({menuCollections}) => {
                     View All
                   </Link>
                 </div>
-                <div ref={productRowRef}>
+                <div className="product-row-container" ref={productRowRef}>
                   {productRowInView && (
                     <ProductRow products={collection.products.nodes} />
                   )}
@@ -90,24 +90,24 @@ const CollectionItem = ({collection, index}) => {
   const ref = useRef(null);
 
   return (
-      <Link
-        to={`/collections/${collection.handle}`}
-        className="menu-item-container"
-      >
-        {collection.image && (
-          <Image
-            srcSet={`${collection.image.url}?width=300&quality=15 300w,
+    <Link
+      to={`/collections/${collection.handle}`}
+      className="menu-item-container"
+    >
+      {collection.image && (
+        <Image
+          srcSet={`${collection.image.url}?width=300&quality=15 300w,
                                  ${collection.image.url}?width=600&quality=15 600w,
                                  ${collection.image.url}?width=1200&quality=15 1200w`}
-            alt={collection.image.altText || collection.title}
-            className="menu-item-image"
-            width={150}
-            height={150}
-            loading="lazy"
-          />
-        )}
-        <div className="category-title">{collection.title}</div>
-      </Link>
+          alt={collection.image.altText || collection.title}
+          className="menu-item-image"
+          width={150}
+          height={150}
+          loading="lazy"
+        />
+      )}
+      <div className="category-title">{collection.title}</div>
+    </Link>
   );
 };
 
