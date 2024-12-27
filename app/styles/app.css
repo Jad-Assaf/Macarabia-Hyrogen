@@ -96,6 +96,7 @@ body {
 .animated-menu-item, .collection-products-row, .product-card {
   opacity: 0;
   animation: fadeIn 0.5s linear forwards;
+  display: flex;
 }
 
 .menu-slider-container{
