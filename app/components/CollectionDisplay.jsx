@@ -100,19 +100,19 @@ const RightArrowIcon = () => (
   </svg>
 );
 
-export function ProductItem({product, index, handle}) { // Added `handle` as a prop
+export function ProductItem({product, index, handle}) {
   const ref = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(handle === 'new-arrivals'); // Initialize shimmer only for 'new-arrivals'
+  const [isLoading, setIsLoading] = useState(true); // Always start with loading
 
   const slideshowInterval = 3000; // Time for each slide
   const images = product.images?.nodes || [];
 
   // Handle image click to switch images
   const handleImageClick = (e) => {
-    e.preventDefault(); // Prevent the link from being triggered
+    e.preventDefault();
     setCurrentImageIndex((prevIndex) =>
       prevIndex === images.length - 1 ? 0 : prevIndex + 1,
     );
@@ -120,7 +120,9 @@ export function ProductItem({product, index, handle}) { // Added `handle` as a p
 
   // Handle image load event
   const handleImageLoad = () => {
-    setIsLoading(false);
+    if (handle === 'new-arrivals') {
+      setIsLoading(false); // Disable shimmer only for 'new-arrivals'
+    }
   };
 
   useEffect(() => {
@@ -150,11 +152,6 @@ export function ProductItem({product, index, handle}) { // Added `handle` as a p
     };
   }, [isHovered, images.length]);
 
-  useEffect(() => {
-    setProgress(0); // Reset progress when the current image changes
-    setIsLoading(true); // Reset loading state for new image
-  }, [currentImageIndex]);
-
   const selectedVariant =
     product.variants?.nodes?.find((variant) => variant.availableForSale) ||
     product.variants?.nodes?.[0] ||
@@ -175,7 +172,7 @@ export function ProductItem({product, index, handle}) { // Added `handle` as a p
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
             <div className="product-image-wrapper" style={styles.imageWrapper}>
-              {isLoading && handle === 'new-arrivals' && ( // Check the handle before showing shimmer
+              {isLoading && handle === 'new-arrivals' && (
                 <div
                   className="product-shimmer-effect"
                   aria-hidden="true"
@@ -193,14 +190,14 @@ export function ProductItem({product, index, handle}) { // Added `handle` as a p
                 loading="lazy"
                 style={{
                   ...styles.image,
-                  opacity: isLoading ? 0 : 1, // Hide image until loaded
+                  opacity: isLoading ? 0 : 1, // Show shimmer until image loads
                   transition: 'opacity 0.3s ease-in-out',
                 }}
                 className={`product-slideshow-image ${
                   isLoading ? '' : 'image-loaded'
                 }`}
-                onClick={handleImageClick} // Click to switch images
-                onLoad={handleImageLoad} // Image load handler
+                onClick={handleImageClick}
+                onLoad={handleImageLoad} // Triggered when the image successfully loads
               />
             </div>
             <div
@@ -215,7 +212,6 @@ export function ProductItem({product, index, handle}) { // Added `handle` as a p
                 }}
               ></div>
             </div>
-            {/* Indicator Dots */}
             <div
               className="product-slideshow-dots"
               style={styles.dotsContainer}
