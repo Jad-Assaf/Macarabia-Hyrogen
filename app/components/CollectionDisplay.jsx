@@ -228,7 +228,7 @@ export function ProductItem({product, index}) {
       </Link>
 
       {/* Add to Cart Button */}
-      <AddToCartButton
+      {/* <AddToCartButton
         disabled={!selectedVariant || !selectedVariant.availableForSale}
         onClick={() => {
           if (product.variants?.nodes?.length > 1) {
@@ -258,7 +258,7 @@ export function ProductItem({product, index}) {
           : product.variants?.nodes?.length > 1
           ? 'Select Options'
           : 'Add to cart'}
-      </AddToCartButton>
+      </AddToCartButton> */}
     </div>
   );
 }
