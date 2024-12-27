@@ -174,13 +174,13 @@ export async function loader(args) {
   });
 }
 
-async function loadCriticalData({ context }) {
-  const { storefront } = context;
+async function loadCriticalData({context}) {
+  const {storefront} = context;
 
   // Use the hardcoded MANUAL_MENU_HANDLES
   const menuHandles = MANUAL_MENU_HANDLES;
 
-  const { shop } = await storefront.query(
+  const {shop} = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -188,7 +188,7 @@ async function loadCriticalData({ context }) {
           description
         }
       }
-    `
+    `,
   );
 
   const [sliderCollections, menuCollections, newArrivalsCollection] =
@@ -407,7 +407,11 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const { banners, sliderCollections, deferredData } = useLoaderData();
+  const {banners, sliderCollections, deferredData} = useLoaderData();
+
+  const getCollectionsByHandle = (handle) => {
+    return menuCollections.filter((collection) => collection.handle === handle);
+  };
 
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
@@ -419,7 +423,12 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={menuCollections} />
+      {MANUAL_MENU_HANDLES.map((handle) => (
+        <div key={handle}>
+          <h2>{handle}</h2> {/* Optional section header */}
+          <CollectionDisplay menuCollections={getCollectionsByHandle(handle)} />
+        </div>
+      ))}{' '}
       <BrandSection brands={brandsData} />
     </div>
   );
