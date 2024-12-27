@@ -164,6 +164,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
+  border-radius: 10px;
 }
 
 @keyframes product-shimmer {

@@ -101,11 +101,10 @@ const RightArrowIcon = () => (
 );
 
 export function ProductItem({product, index}) {
-  const ref = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Added state
+  const [isLoading, setIsLoading] = useState(true); // Added loading state
   const slideshowInterval = 3000; // Time for each slide
 
   const images = product.images?.nodes || [];
@@ -166,7 +165,6 @@ export function ProductItem({product, index}) {
 
   return (
     <div
-      ref={ref}
       className="product-card"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
