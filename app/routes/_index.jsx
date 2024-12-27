@@ -407,10 +407,15 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData} = useLoaderData();
+  const { banners, sliderCollections, deferredData } = useLoaderData();
 
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
+
+  // Find the specific collection you want to display, e.g., 'apple'
+  const appleCollection = menuCollections.find(
+    (collection) => collection.handle === 'apple'
+  );
 
   return (
     <div className="home">
@@ -419,8 +424,10 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {/* Pass a single collection name as a string */}
-      <CollectionDisplay collectionName="apple" />
+      {/* Pass the single collection object to CollectionDisplay */}
+      {appleCollection && (
+        <CollectionDisplay collection={appleCollection} />
+      )}
       <BrandSection brands={brandsData} />
     </div>
   );
