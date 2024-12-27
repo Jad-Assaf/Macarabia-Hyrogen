@@ -102,10 +102,10 @@ const CollectionItem = ({collection, index}) => {
       <div className="menu-item-image-wrapper">
         {isLoading && <div className="menu-item-shimmer-effect"></div>}
         {collection.image && (
-          <Image
+          <img
             srcSet={`${collection.image.url}?width=300&quality=15 300w,
-                             ${collection.image.url}?width=600&quality=15 600w,
-                             ${collection.image.url}?width=1200&quality=15 1200w`}
+             ${collection.image.url}?width=600&quality=15 600w,
+             ${collection.image.url}?width=1200&quality=15 1200w`}
             alt={collection.image.altText || collection.title}
             className={`menu-item-image ${
               isLoading ? 'menu-item-image-hidden' : ''
