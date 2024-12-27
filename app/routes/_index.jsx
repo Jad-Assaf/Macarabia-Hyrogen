@@ -409,13 +409,13 @@ const brandsData = [
 export default function Homepage() {
   const { banners, sliderCollections, deferredData } = useLoaderData();
 
-  const getCollectionsByHandle = (handle) => {
+  const menuCollections = deferredData?.menuCollections || [];
+  const newArrivalsCollection = deferredData?.newArrivalsCollection;
+
+  const getCollectionsForHandle = (handle) => {
     return menuCollections.filter((collection) => collection.handle === handle);
   };
 
-
-  const menuCollections = deferredData?.menuCollections || [];
-  const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   return (
     <div className="home">
@@ -424,7 +424,14 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={menuCollections} />
+      {MANUAL_MENU_HANDLES.map((handle) => (
+        <div key={handle}>
+          <h2>{handle.toUpperCase()}</h2>
+          <CollectionDisplay
+            menuCollections={getCollectionsForHandle(handle)}
+          />
+        </div>
+      ))}
       <BrandSection brands={brandsData} />
     </div>
   );
