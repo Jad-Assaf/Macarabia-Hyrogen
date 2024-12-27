@@ -419,10 +419,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {/* Render a CollectionDisplay for each item in menuCollections */}
-      {menuCollections.map((item, index) => (
-        <CollectionDisplay key={index} menuCollections={item} />
-      ))}{' '}
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
