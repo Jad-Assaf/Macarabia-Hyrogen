@@ -26,12 +26,15 @@ import {AddToCartButton} from '../components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 import '../styles/CollectionSlider.css';
 
-const truncateText = (text, maxLength) => {
-  if (!text) return '';
-  return text.length > maxLength
-    ? `${text.slice(0, maxLength).trim()}...`
+function truncateText(text, maxWords) {
+  if (!text || typeof text !== 'string') {
+    return ''; // Return an empty string if text is undefined or not a string
+  }
+  const words = text.split(' ');
+  return words.length > maxWords
+    ? words.slice(0, maxWords).join(' ') + '...'
     : text;
-};
+}
 
 /**
  * @type {MetaFunction<typeof loader>}
