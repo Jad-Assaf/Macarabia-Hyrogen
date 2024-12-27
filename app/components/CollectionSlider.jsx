@@ -61,15 +61,10 @@ function CategoryItem({collection, index}) {
   return (
     <div ref={ref} className="category-container">
       <Link to={`/collections/${collection.handle}`}>
-        <div
-          className="category-svg-wrapper"
-          style={{width: '60px', height: '60px'}}
-        >
           <div
             dangerouslySetInnerHTML={{__html: svgs[index % svgs.length]}}
             className="category-svg"
           />
-        </div>
       </Link>
       <div className="category-title">{collection.title}</div>
     </div>
