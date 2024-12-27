@@ -419,7 +419,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={menuCollections} />
+      <CollectionDisplay manualHandles={['apple', 'gaming']} />
       <BrandSection brands={brandsData} />
     </div>
   );
