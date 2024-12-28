@@ -1,15 +1,12 @@
-// TopProductSections.jsx
+// NewArrivals.jsx
 import React from 'react';
-import {Link} from 'react-router-dom';
-import {ProductRow} from './CollectionDisplay';
+import { Link } from 'react-router-dom';
+import { ProductRow } from './CollectionDisplay';
 
-// 1) Import the MenuSlider component
-import {MenuSlider} from './MenuSlider';
-
-export const TopProductSections = ({collection}) => {
+export const TopProductSections = ({ collection }) => {
   if (!collection) return null;
 
-  const {title, handle, products} = collection;
+  const { title, handle, products } = collection;
   const productNodes = products?.nodes || [];
 
   return (
@@ -21,14 +18,8 @@ export const TopProductSections = ({collection}) => {
         </Link>
       </div>
 
-      {/* 
-        Existing product row for this collection.
-        You can keep or remove this depending on whether you want both the row and the slider.
-      */}
+      {/* Render your product row */}
       <ProductRow products={productNodes} />
-
-      {/* 2) Render the MenuSlider, passing in the entire collection */}
-      <MenuSlider collection={collection} />
     </div>
   );
 };
