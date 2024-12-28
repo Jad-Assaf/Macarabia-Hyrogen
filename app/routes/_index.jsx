@@ -8,6 +8,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 // import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
+import { MenuSlider } from '~/components/MenuSlider';
 
 const cache = new Map();
 
@@ -156,6 +157,17 @@ export async function loader(args) {
   // Fetch all the critical data
   const criticalData = await loadCriticalData(args);
 
+  // ────────────────────────────────────────────────────
+  //  Fetch minimal menu data (only id, title, handle, image)
+  // ────────────────────────────────────────────────────
+  const menuCollectionsBasic = await Promise.all(
+    MANUAL_MENU_HANDLES.map((handle) =>
+      fetchCollectionBasic(args.context, handle),
+    ),
+  );
+  // Filter out nulls
+  const menuCollectionsBasicFiltered = menuCollectionsBasic.filter(Boolean);
+
   const newData = {
     banners,
     title: criticalData.title,
@@ -166,6 +178,8 @@ export async function loader(args) {
       menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
+    // Include minimal menu collections in data
+    menuCollectionsBasic: menuCollectionsBasicFiltered,
   };
 
   // Cache the new data
@@ -230,6 +244,14 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
+async function fetchCollectionBasic(context, handle) {
+  const {storefront} = context;
+  const data = await storefront.query(BASIC_COLLECTION_QUERY, {
+    variables: {handle},
+  });
+  return data?.collectionByHandle || null;
+}
+
 // Fetch multiple collections by an array of handles
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
@@ -243,8 +265,6 @@ async function fetchCollectionsByHandles(context, handles) {
   const collections = await Promise.all(collectionPromises);
   return collections.filter(Boolean);
 }
-
-// Removed fetchMenuCollections entirely (no longer needed)
 
 const brandsData = [
   {
@@ -376,7 +396,8 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData} = useLoaderData();
+  const {banners, sliderCollections, deferredData, menuCollectionsBasic} =
+    useLoaderData();
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
@@ -385,12 +406,10 @@ export default function Homepage() {
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
 
-      {/* New Arrivals */}
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
 
-      {/* Replace CollectionDisplay with multiple TopProductSections */}
       {menuCollections && menuCollections.length > 0 && (
         <div>
           {menuCollections.map((collection) =>
@@ -401,10 +420,35 @@ export default function Homepage() {
         </div>
       )}
 
+      {/* ───────────────────────────────────────────────────────────
+          Here is where you use your new MenuSlider component
+          with "minimal" data from menuCollectionsBasic
+         ─────────────────────────────────────────────────────────── */}
+      {menuCollectionsBasic?.length > 0 && (
+        <MenuSlider menuCollection={menuCollectionsBasic} />
+      )}
+
       <BrandSection brands={brandsData} />
     </div>
   );
 }
+
+// queries.js
+
+export const BASIC_COLLECTION_QUERY = `#graphql
+  query getCollectionMinimal($handle: String!) {
+    collectionByHandle(handle: $handle) {
+      id
+      title
+      handle
+      image {
+        url
+        altText
+      }
+    }
+  }
+`;
+
 
 // Keep your queries unchanged
 const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
@@ -440,7 +484,7 @@ const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
               altText
             }
           }
-          variants(first: 5) {
+          variants(first: 1) {
             nodes {
               id
               availableForSale
