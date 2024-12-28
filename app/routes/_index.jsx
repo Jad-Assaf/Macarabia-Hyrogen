@@ -419,7 +419,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={menuCollections[0]} />
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
