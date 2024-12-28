@@ -4,6 +4,7 @@ import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
+import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 
@@ -151,13 +152,6 @@ export async function loader(args) {
 
   const criticalData = await loadCriticalData(args);
 
-  // Fetch additional collections
-  const featuredCollection = await fetchCollectionByHandle(
-    args.context,
-    'featured',
-  );
-  const saleCollection = await fetchCollectionByHandle(args.context, 'sale');
-
   const newData = {
     banners,
     title: criticalData.title,
@@ -165,12 +159,12 @@ export async function loader(args) {
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
+      menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
-      appleCollection, // Add this collection
-      gamingCollection, // Add this collection
     },
   };
 
+  // Cache the new data
   cache.set(cacheKey, {value: newData, expiry: now + cacheTTL});
 
   return defer(newData, {
@@ -180,12 +174,13 @@ export async function loader(args) {
   });
 }
 
-async function loadCriticalData({context}) {
-  const {storefront} = context;
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
 
+  // Use the hardcoded MANUAL_MENU_HANDLES
   const menuHandles = MANUAL_MENU_HANDLES;
 
-  const {shop} = await storefront.query(
+  const { shop } = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -193,16 +188,19 @@ async function loadCriticalData({context}) {
           description
         }
       }
-    `,
+    `
   );
 
-  const [sliderCollections, newArrivalsCollection] = await Promise.all([
-    fetchCollectionsByHandles(context, menuHandles),
-    fetchCollectionByHandle(context, 'new-arrivals'),
-  ]);
+  const [sliderCollections, menuCollections, newArrivalsCollection] =
+    await Promise.all([
+      fetchCollectionsByHandles(context, menuHandles),
+      fetchMenuCollections(context, menuHandles),
+      fetchCollectionByHandle(context, 'new-arrivals'),
+    ]);
 
   return {
     sliderCollections,
+    menuCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -217,6 +215,52 @@ async function fetchCollectionByHandle(context, handle) {
     {variables: {handle}},
   );
   return collectionByHandle || null;
+}
+
+// Fetch menu collections
+async function fetchMenuCollections(context, menuHandles) {
+  const chunkSize = 3;
+
+  // Helper function to chunk an array
+  function chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  const handleChunks = chunkArray(menuHandles, chunkSize);
+
+  const collectionsGrouped = [];
+  for (const chunk of handleChunks) {
+    const chunkPromises = chunk.map(async (handle) => {
+      const { menu } = await context.storefront.query(GET_MENU_QUERY, {
+        variables: { handle },
+      });
+
+      if (!menu || !menu.items || menu.items.length === 0) {
+        return null;
+      }
+
+      const collectionPromises = menu.items.map(async (item) => {
+        const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+        const { collectionByHandle } = await context.storefront.query(
+          GET_COLLECTION_BY_HANDLE_QUERY,
+          { variables: { handle: sanitizedHandle } }
+        );
+        return collectionByHandle || null;
+      });
+
+      const collections = await Promise.all(collectionPromises);
+      return collections.filter(Boolean);
+    });
+
+    const chunkResults = await Promise.all(chunkPromises);
+    collectionsGrouped.push(...chunkResults.filter(Boolean));
+  }
+
+  return collectionsGrouped;
 }
 
 // Fetch collections by handles for sliders
@@ -363,40 +407,19 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData} = useLoaderData();
+  const { banners, sliderCollections, deferredData } = useLoaderData();
 
+  const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
-  const appleCollection = deferredData?.appleCollection; // Example for another collection
-  const gamingCollection = deferredData?.gamingCollection; // Another example
 
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-
-      {/* Reuse TopProductSections */}
       {newArrivalsCollection && (
-        <TopProductSections
-          collection={newArrivalsCollection}
-          title="New Arrivals"
-          link="/collections/new-arrivals"
-        />
+        <TopProductSections collection={newArrivalsCollection} />
       )}
-      {featuredCollection && (
-        <TopProductSections
-          collection={appleCollection}
-          title="Featured Products"
-          link="/collections/featured"
-        />
-      )}
-      {saleCollection && (
-        <TopProductSections
-          collection={gamingCollection}
-          title="On Sale"
-          link="/collections/sale"
-        />
-      )}
-
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
