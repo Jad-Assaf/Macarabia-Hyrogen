@@ -198,6 +198,8 @@ async function loadCriticalData({ context }) {
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
+    console.log('menuCollections:', menuCollections);
+
   return {
     sliderCollections,
     menuCollections,
