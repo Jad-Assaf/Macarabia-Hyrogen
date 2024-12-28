@@ -182,23 +182,42 @@ async function loadCriticalData({context}) {
   // But do them one by one in fetchMenuCollectionsInSequence.
   const allHandles = MANUAL_MENU_HANDLES;
 
+  // Split them into multiple "parts" or groups (example):
+  const group1 = allHandles.slice(0, 4); // e.g. first 4
+  const group2 = allHandles.slice(4, 9); // e.g. next 5
+  const group3 = allHandles.slice(9); // e.g. remaining
+
   // Query shop info
   const {shop} = await storefront.query(SHOP_QUERY);
 
-  // Use sequential approach for menu
-  const [sliderCollections, menuCollections, newArrivalsCollection] =
-    await Promise.all([
-      // If your slider also needs all handles, you can fetch them in sequence,
-      // but typically the slider is just for top-level categories, so you can do parallel or only partial.
-      // We'll just do parallel fetch for the slider:
-      fetchCollectionsByHandles(context, allHandles),
+  // In parallel:
+  const [sliderCollections, newArrivalsCollection] = await Promise.all([
+    // If your slider also needs all handles, fetch them (parallel is okay here):
+    fetchCollectionsByHandles(context, allHandles),
+    fetchCollectionByHandle(context, 'new-arrivals'),
+  ]);
 
-      // The key part: fetch each handle one by one
-      fetchMenuCollectionsInSequence(context, allHandles),
+  // Now fetch each group in sequence—one after the other
+  const group1Collections = await fetchMenuCollectionsInSequence(
+    context,
+    group1,
+  );
+  const group2Collections = await fetchMenuCollectionsInSequence(
+    context,
+    group2,
+  );
+  const group3Collections = await fetchMenuCollectionsInSequence(
+    context,
+    group3,
+  );
 
-      // Single collection fetch
-      fetchCollectionByHandle(context, 'new-arrivals'),
-    ]);
+  // Combine them all so your final menuCollections is still a single array of arrays
+  // (or you can keep them separate if you want to display them in separate places).
+  const menuCollections = [
+    ...group1Collections,
+    ...group2Collections,
+    ...group3Collections,
+  ];
 
   return {
     sliderCollections,
@@ -411,7 +430,7 @@ export default function Homepage() {
         <TopProductSections collection={newArrivalsCollection} />
       )}
 
-      {/* Now we have ALL menuCollections, loaded one by one */}
+      {/* Now we have ALL menuCollections, but we actually fetched them in smaller parts */}
       <CollectionDisplay menuCollections={menuCollections} />
 
       <BrandSection brands={brandsData} />
