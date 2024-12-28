@@ -159,10 +159,9 @@ export async function loader(args) {
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
-      // menuCollections: criticalData.menuCollections,
+      menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
-    apple,
   };
 
   // Cache the new data
@@ -176,12 +175,12 @@ export async function loader(args) {
 }
 
 async function loadCriticalData({ context }) {
-  const {storefront} = context;
+  const { storefront } = context;
 
   // Use the hardcoded MANUAL_MENU_HANDLES
   const menuHandles = MANUAL_MENU_HANDLES;
 
-  const {shop} = await storefront.query(
+  const { shop } = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -189,7 +188,7 @@ async function loadCriticalData({ context }) {
           description
         }
       }
-    `,
+    `
   );
 
   const [sliderCollections, menuCollections, newArrivalsCollection] =
@@ -199,12 +198,9 @@ async function loadCriticalData({ context }) {
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
-  const apple = menuCollections[0];
-
   return {
     sliderCollections,
     menuCollections,
-    apple,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -411,7 +407,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, apple} = useLoaderData();
+  const { banners, sliderCollections, deferredData } = useLoaderData();
 
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
@@ -423,7 +419,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={[apple]} />
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
