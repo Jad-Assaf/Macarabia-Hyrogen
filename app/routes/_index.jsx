@@ -8,7 +8,6 @@ import {TopProductSections} from '~/components/TopProductSections';
 // import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-import { MenuSlider } from '~/components/MenuSlider';
 
 const cache = new Map();
 
@@ -157,17 +156,6 @@ export async function loader(args) {
   // Fetch all the critical data
   const criticalData = await loadCriticalData(args);
 
-  // ────────────────────────────────────────────────────
-  //  Fetch minimal menu data (only id, title, handle, image)
-  // ────────────────────────────────────────────────────
-  const menuCollectionsBasic = await Promise.all(
-    MANUAL_MENU_HANDLES.map((handle) =>
-      fetchCollectionBasic(args.context, handle),
-    ),
-  );
-  // Filter out nulls
-  const menuCollectionsBasicFiltered = menuCollectionsBasic.filter(Boolean);
-
   const newData = {
     banners,
     title: criticalData.title,
@@ -178,8 +166,6 @@ export async function loader(args) {
       menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
-    // Include minimal menu collections in data
-    menuCollectionsBasic: menuCollectionsBasicFiltered,
   };
 
   // Cache the new data
@@ -242,14 +228,6 @@ async function fetchCollectionByHandle(context, handle) {
     {variables: {handle}},
   );
   return collectionByHandle || null;
-}
-
-async function fetchCollectionBasic(context, handle) {
-  const {storefront} = context;
-  const data = await storefront.query(BASIC_COLLECTION_QUERY, {
-    variables: {handle},
-  });
-  return data?.collectionByHandle || null;
 }
 
 // Fetch multiple collections by an array of handles
@@ -396,8 +374,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, menuCollectionsBasic} =
-    useLoaderData();
+  const {banners, sliderCollections, deferredData} = useLoaderData();
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
@@ -406,10 +383,12 @@ export default function Homepage() {
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
 
+      {/* New Arrivals */}
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
 
+      {/* Replace CollectionDisplay with multiple TopProductSections */}
       {menuCollections && menuCollections.length > 0 && (
         <div>
           {menuCollections.map((collection) =>
@@ -418,14 +397,6 @@ export default function Homepage() {
             ) : null,
           )}
         </div>
-      )}
-
-      {/* ───────────────────────────────────────────────────────────
-          Here is where you use your new MenuSlider component
-          with "minimal" data from menuCollectionsBasic
-         ─────────────────────────────────────────────────────────── */}
-      {menuCollectionsBasic?.length > 0 && (
-        <MenuSlider menuCollection={menuCollectionsBasic} />
       )}
 
       <BrandSection brands={brandsData} />
