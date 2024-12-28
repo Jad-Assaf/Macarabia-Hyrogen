@@ -203,7 +203,7 @@ async function loadCriticalData({context}) {
   // or just do the same single handle if that's your design:
   const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([
-      fetchMenuCollections(context, MANUAL_MENU_HANDLES), // or singleHandleNeededForSlider
+      fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES), // or singleHandleNeededForSlider
       fetchMenuCollections(context, menuHandles), // <--- SINGLE handle for menu
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
@@ -232,9 +232,9 @@ async function fetchCollectionByHandle(context, handle) {
  * rather than looping over an entire array.
  */
 async function fetchMenuCollections(context, menuHandles) {
-  // If we expect exactly one handle, let's get it:
   const handle = Array.isArray(menuHandles) ? menuHandles[0] : menuHandles;
 
+  // 1) Fetch the menu for that single handle
   const {menu} = await context.storefront.query(GET_MENU_QUERY, {
     variables: {handle},
   });
@@ -243,21 +243,43 @@ async function fetchMenuCollections(context, menuHandles) {
     return [];
   }
 
-  // Take only the first 2 items, if that's all you need to display:
+  // 2) Separate the first 2 items from the rest
   const firstTwoItems = menu.items.slice(0, 2);
+  const remainingItems = menu.items.slice(2);
 
-  // Then for each of these items, fetch the sub-collection
-  const collectionPromises = firstTwoItems.map(async (item) => {
+  // 3) For the first two items, do a FULL fetch (products, etc.)
+  const fullCollectionPromises = firstTwoItems.map(async (item) => {
     const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
     const {collectionByHandle} = await context.storefront.query(
-      GET_COLLECTION_BY_HANDLE_QUERY,
+      GET_COLLECTION_BY_HANDLE_QUERY, // full query
       {variables: {handle: sanitizedHandle}},
     );
     return collectionByHandle || null;
   });
 
-  const collections = await Promise.all(collectionPromises);
-  return [collections.filter(Boolean)];
+  // 4) For the remaining items, fetch only minimal data (no products)
+  const partialCollectionPromises = remainingItems.map(async (item) => {
+    const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+    const {collectionByHandle} = await context.storefront.query(
+      GET_COLLECTION_BY_HANDLE_PARTIAL_QUERY, // partial query
+      {variables: {handle: sanitizedHandle}},
+    );
+    return collectionByHandle || null;
+  });
+
+  // 5) Wait for all in parallel
+  const [firstTwoCollections, restCollections] = await Promise.all([
+    Promise.all(fullCollectionPromises),
+    Promise.all(partialCollectionPromises),
+  ]);
+
+  // Combine them back to maintain original menu item order
+  const allCollections = [...firstTwoCollections, ...restCollections].filter(
+    Boolean,
+  );
+
+  // Return as an array-of-collections in the shape your code expects
+  return [allCollections];
 }
 
 // Fetch collections by handles for sliders (unchanged)
@@ -484,6 +506,21 @@ const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
     }
   }
 `;
+
+const GET_COLLECTION_BY_HANDLE_PARTIAL_QUERY = `#graphql
+  query GetCollectionByHandlePartial($handle: String!) {
+    collectionByHandle(handle: $handle) {
+      id
+      title
+      handle
+      image {
+        url
+        altText
+      }
+    }
+  }
+`;
+
 
 export const GET_MENU_QUERY = `#graphql
   query GetMenu($handle: String!) {
