@@ -159,7 +159,7 @@ export async function loader(args) {
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
-      menuCollections: criticalData.menuCollections,
+      // menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
   };
@@ -207,7 +207,7 @@ async function loadCriticalData({context}) {
 
   const [
     sliderCollections,
-    menuCollections,
+    // menuCollections,
     newArrivalsCollection,
     additionalCollections,
   ] = await Promise.all([
@@ -219,7 +219,7 @@ async function loadCriticalData({context}) {
 
   return {
     sliderCollections,
-    menuCollections,
+    // menuCollections,
     newArrivalsCollection,
     additionalCollections,
     title: shop.name,
