@@ -198,8 +198,6 @@ async function loadCriticalData({ context }) {
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
-    console.log('menuCollections:', menuCollections);
-
   return {
     sliderCollections,
     menuCollections,
@@ -414,9 +412,6 @@ export default function Homepage() {
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
-  console.log('menuCollections in Homepage:', menuCollections);
-
-
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
@@ -424,7 +419,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={menuCollections} />
+      <CollectionDisplay menuCollections={menuCollections[0]} />
       <BrandSection brands={brandsData} />
     </div>
   );
