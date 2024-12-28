@@ -162,6 +162,7 @@ export async function loader(args) {
     deferredData: {
       appleCollections: criticalData.appleCollections,
       gamingCollections: criticalData.gamingCollections,
+      laptopsCollections: criticalData.laptopsCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
   };
@@ -180,7 +181,7 @@ async function loadCriticalData({context}) {
   const {storefront} = context;
 
   // Our top-level handles for separate sections
-  const handlesForMenus = ['apple', 'gaming'];
+  const handlesForMenus = ['apple', 'gaming', 'laptops'];
 
   const {shop} = await storefront.query(`
     query ShopDetails {
@@ -204,12 +205,13 @@ async function loadCriticalData({context}) {
 
   // multiHandleMenus is an array: [ arrayOfAppleCollections, arrayOfGamingCollections ]
   // each a single array-of-collections if your code lumps them into [allCollections].
-  const [appleCollections, gamingCollections] = multiHandleMenus;
+  const [appleCollections, gamingCollections, laptopsCollections] = multiHandleMenus;
 
   return {
     sliderCollections,
     appleCollections,
     gamingCollections,
+    laptopsCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -429,6 +431,7 @@ export default function Homepage() {
   // We now have appleCollections, gamingCollections separately
   const appleCollections = deferredData?.appleCollections || [];
   const gamingCollections = deferredData?.gamingCollections || [];
+  const laptopsCollections = deferredData?.laptopsCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   return (
@@ -449,6 +452,10 @@ export default function Homepage() {
       {/* --- Section #2: Gaming --- */}
       {gamingCollections.length > 0 && (
         <CollectionDisplay menuCollections={[gamingCollections]} />
+      )}
+
+      {laptopsCollections.length > 0 && (
+        <CollectionDisplay menuCollections={[laptopsCollections]} />
       )}
 
       <BrandSection brands={brandsData} />
