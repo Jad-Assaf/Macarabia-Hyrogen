@@ -4,7 +4,7 @@ import {ProductRow} from './CollectionDisplay';
 import {Image} from '@shopify/hydrogen-react';
 import {useInView} from 'react-intersection-observer';
 
-const CollectionRows = ({menuCollections, singleCollection = null}) => {
+const CollectionRows = ({menuCollections}) => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Check if the screen width is less than 768px
@@ -23,10 +23,8 @@ const CollectionRows = ({menuCollections, singleCollection = null}) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Determine collections to display
-  const displayedCollections = singleCollection
-    ? [singleCollection]
-    : isMobile
+  // Get the collections to display
+  const displayedCollections = isMobile
     ? menuCollections.slice(0, 14)
     : menuCollections;
 
