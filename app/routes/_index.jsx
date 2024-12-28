@@ -159,7 +159,7 @@ export async function loader(args) {
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
-      // menuCollections: criticalData.menuCollections,
+      menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
   };
@@ -174,27 +174,13 @@ export async function loader(args) {
   });
 }
 
-async function loadCriticalData({context}) {
-  const {storefront} = context;
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
 
-  const handles = [
-    'apple',
-    'gaming',
-    'laptops',
-    'desktops',
-    'pc-parts',
-    'networking',
-    'monitors',
-    'mobiles',
-    'tablets',
-    'audio',
-    'accessories',
-    'fitness',
-    'photography',
-    'home-appliances',
-  ];
+  // Use the hardcoded MANUAL_MENU_HANDLES
+  const menuHandles = MANUAL_MENU_HANDLES;
 
-  const {shop} = await storefront.query(
+  const { shop } = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -202,26 +188,20 @@ async function loadCriticalData({context}) {
           description
         }
       }
-    `,
+    `
   );
 
-  const [
-    sliderCollections,
-    // menuCollections,
-    newArrivalsCollection,
-    additionalCollections,
-  ] = await Promise.all([
-    fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES),
-    // fetchMenuCollections(context, MANUAL_MENU_HANDLES),
-    fetchCollectionByHandle(context, 'new-arrivals'),
-    fetchCollectionsByHandles(context, handles),
-  ]);
+  const [sliderCollections, menuCollections, newArrivalsCollection] =
+    await Promise.all([
+      fetchCollectionsByHandles(context, menuHandles),
+      fetchMenuCollections(context, menuHandles),
+      fetchCollectionByHandle(context, 'new-arrivals'),
+    ]);
 
   return {
     sliderCollections,
-    // menuCollections,
+    menuCollections,
     newArrivalsCollection,
-    additionalCollections,
     title: shop.name,
     description: shop.description,
     url: 'https://macarabia.me',
@@ -427,10 +407,9 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, additionalCollections} =
-    useLoaderData();
+  const { banners, sliderCollections, deferredData } = useLoaderData();
 
-  // const menuCollections = deferredData?.menuCollections || [];
+  const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   return (
@@ -440,9 +419,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {additionalCollections.map((collection, index) => (
-        <TopProductSections key={index} collection={collection} />
-      ))}
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
