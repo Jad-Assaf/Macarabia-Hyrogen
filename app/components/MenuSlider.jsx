@@ -1,7 +1,8 @@
 // ~/components/MenuSlider.jsx
 import React from 'react';
 import { useInView } from 'react-intersection-observer';
-import { CollectionItem } from './CollectionItem';
+import { CollectionItem } from './CollectionRows';
+
 
 export function MenuSlider({ menusByHandle = [] }) {
   return (
