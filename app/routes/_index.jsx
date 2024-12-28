@@ -412,8 +412,6 @@ export default function Homepage() {
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
-    const firstMenuCollectionsChunk = menuCollections[0];
-
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
@@ -421,7 +419,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={firstMenuCollectionsChunk} />
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
