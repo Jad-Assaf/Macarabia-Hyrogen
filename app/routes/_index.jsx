@@ -152,6 +152,14 @@ export async function loader(args) {
 
   const criticalData = await loadCriticalData(args);
 
+  const menuCollectionsPromises = {};
+  for (const handle of MANUAL_MENU_HANDLES) {
+    menuCollectionsPromises[handle] = fetchSingleMenuCollection(
+      context,
+      handle,
+    );
+  }
+
   const newData = {
     banners,
     title: criticalData.title,
@@ -215,6 +223,32 @@ async function fetchCollectionByHandle(context, handle) {
     {variables: {handle}},
   );
   return collectionByHandle || null;
+}
+
+async function fetchSingleMenuCollection(context, handle) {
+  const {storefont} = context;
+
+  // 1) Fetch the menu for a single handle
+  const {menu} = await storefont.query(GET_MENU_QUERY, {
+    variables: {handle},
+  });
+
+  if (!menu?.items?.length) {
+    return [];
+  }
+
+  // 2) For each menu item, fetch the actual collection
+  const collectionPromises = menu.items.map(async (item) => {
+    const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+    const {collectionByHandle} = await storefont.query(
+      GET_COLLECTION_BY_HANDLE_QUERY,
+      {variables: {handle: sanitizedHandle}},
+    );
+    return collectionByHandle || null;
+  });
+
+  const collections = await Promise.all(collectionPromises);
+  return collections.filter(Boolean);
 }
 
 // Fetch menu collections
