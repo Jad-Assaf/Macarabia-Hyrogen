@@ -404,23 +404,6 @@ export default function Homepage() {
   );
 }
 
-// queries.js
-
-export const BASIC_COLLECTION_QUERY = `#graphql
-  query getCollectionMinimal($handle: String!) {
-    collectionByHandle(handle: $handle) {
-      id
-      title
-      handle
-      image {
-        url
-        altText
-      }
-    }
-  }
-`;
-
-
 // Keep your queries unchanged
 const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
   query GetCollectionByHandle($handle: String!) {
@@ -455,7 +438,7 @@ const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
               altText
             }
           }
-          variants(first: 1) {
+          variants(first: 5) {
             nodes {
               id
               availableForSale

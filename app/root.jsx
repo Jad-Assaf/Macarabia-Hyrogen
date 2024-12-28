@@ -99,11 +99,8 @@ async function loadCriticalData({ context }) {
       header.menu.items = processMenuItems(header.menu.items);
     }
 
-    console.log('Processed Menu Items:', header.menu.items);
-
     return { header };
   } catch (error) {
-    console.error('Error fetching header data:', error);
     return { header: null }; // Fallback in case of error
   }
 }
