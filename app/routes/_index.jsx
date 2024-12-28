@@ -174,13 +174,17 @@ export async function loader(args) {
   });
 }
 
-async function loadCriticalData({ context }) {
-  const { storefront } = context;
+async function loadCriticalData({context}) {
+  const {storefront} = context;
 
-  // Use the hardcoded MANUAL_MENU_HANDLES
-  const menuHandles = MANUAL_MENU_HANDLES;
+  // Instead of passing all MANUAL_MENU_HANDLES,
+  // pick one handle that the CategorySlider actually needs
+  // For example, let's pick "apple":
+  const singleHandleNeededForSlider = 'apple';
 
-  const { shop } = await storefront.query(
+  // Or maybe you read this handle from somewhere else, e.g. from route params or a config
+
+  const {shop} = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -188,13 +192,19 @@ async function loadCriticalData({ context }) {
           description
         }
       }
-    `
+    `,
   );
 
+  // We STILL might fetch all "sliderCollections" from these handles if you want:
+  // but for "menuCollections," we only fetch the single handle:
+  const menuHandles = [singleHandleNeededForSlider];
+
+  // You can simultaneously fetch the entire "sliderCollections" if needed:
+  // or just do the same single handle if that's your design:
   const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([
-      fetchCollectionsByHandles(context, menuHandles),
-      fetchMenuCollections(context, menuHandles),
+      fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES), // or singleHandleNeededForSlider
+      fetchMenuCollections(context, menuHandles), // <--- SINGLE handle for menu
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
@@ -217,53 +227,38 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-// Fetch menu collections
+/**
+ * Now we only fetch the menu for a SINGLE handle,
+ * rather than looping over an entire array.
+ */
 async function fetchMenuCollections(context, menuHandles) {
-  const chunkSize = 3;
+  // If we expect exactly one handle, let's get it:
+  const handle = Array.isArray(menuHandles) ? menuHandles[0] : menuHandles;
 
-  // Helper function to chunk an array
-  function chunkArray(array, size) {
-    const chunks = [];
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
+  const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+    variables: {handle},
+  });
+
+  if (!menu || !menu.items || menu.items.length === 0) {
+    return [];
   }
 
-  const handleChunks = chunkArray(menuHandles, chunkSize);
+  // For each menu item, fetch the actual collection by sanitized handle
+  const collectionPromises = menu.items.map(async (item) => {
+    const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+    const {collectionByHandle} = await context.storefront.query(
+      GET_COLLECTION_BY_HANDLE_QUERY,
+      {variables: {handle: sanitizedHandle}},
+    );
+    return collectionByHandle || null;
+  });
 
-  const collectionsGrouped = [];
-  for (const chunk of handleChunks) {
-    const chunkPromises = chunk.map(async (handle) => {
-      const { menu } = await context.storefront.query(GET_MENU_QUERY, {
-        variables: { handle },
-      });
-
-      if (!menu || !menu.items || menu.items.length === 0) {
-        return null;
-      }
-
-      const collectionPromises = menu.items.map(async (item) => {
-        const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-        const { collectionByHandle } = await context.storefront.query(
-          GET_COLLECTION_BY_HANDLE_QUERY,
-          { variables: { handle: sanitizedHandle } }
-        );
-        return collectionByHandle || null;
-      });
-
-      const collections = await Promise.all(collectionPromises);
-      return collections.filter(Boolean);
-    });
-
-    const chunkResults = await Promise.all(chunkPromises);
-    collectionsGrouped.push(...chunkResults.filter(Boolean));
-  }
-
-  return collectionsGrouped;
+  const collections = await Promise.all(collectionPromises);
+  // Return just a single array of collections
+  return [collections.filter(Boolean)];
 }
 
-// Fetch collections by handles for sliders
+// Fetch collections by handles for sliders (unchanged)
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
@@ -407,12 +402,14 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const { banners, sliderCollections, deferredData } = useLoaderData();
+  const {banners, sliderCollections, deferredData} = useLoaderData();
 
+  // menuCollections is now just for "apple"
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
-    const firstMenuCollectionsChunk = menuCollections[0];
+  // Pull just the first chunk if you like:
+  const firstMenuCollectionsChunk = menuCollections[0];
 
   return (
     <div className="home">
@@ -421,11 +418,13 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
+      {/* Now show only the single chunk we got */}
       <CollectionDisplay menuCollections={[firstMenuCollectionsChunk]} />
       <BrandSection brands={brandsData} />
     </div>
   );
 }
+
 
 const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
   query GetCollectionByHandle($handle: String!) {
