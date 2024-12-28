@@ -150,7 +150,6 @@ export async function loader(args) {
     },
   ];
 
-  // Fetch data for 2 handles in parallel: 'apple' and 'gaming'
   const criticalData = await loadCriticalData(args);
 
   const newData = {
@@ -160,9 +159,7 @@ export async function loader(args) {
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
-      appleCollections: criticalData.appleCollections,
-      gamingCollections: criticalData.gamingCollections,
-      laptopsCollections: criticalData.laptopsCollections,
+      menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
   };
@@ -177,41 +174,33 @@ export async function loader(args) {
   });
 }
 
-async function loadCriticalData({context}) {
-  const {storefront} = context;
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
 
-  // Our top-level handles for separate sections
-  const handlesForMenus = ['apple', 'gaming', 'laptops'];
+  // Use the hardcoded MANUAL_MENU_HANDLES
+  const menuHandles = MANUAL_MENU_HANDLES;
 
-  const {shop} = await storefront.query(`
-    query ShopDetails {
-      shop {
-        name
-        description
+  const { shop } = await storefront.query(
+    `#graphql
+      query ShopDetails {
+        shop {
+          name
+          description
+        }
       }
-    }
-  `);
+    `
+  );
 
-  // Parallel fetch:
-  // 1) Full slider from MANUAL_MENU_HANDLES,
-  // 2) Each handle in handlesForMenus,
-  // 3) newArrivals
-  const [sliderCollections, multiHandleMenus, newArrivalsCollection] =
+  const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([
-      fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES),
-      fetchMenuCollections(context, handlesForMenus),
+      fetchCollectionsByHandles(context, menuHandles),
+      fetchMenuCollections(context, menuHandles),
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
-  // multiHandleMenus is an array: [ arrayOfAppleCollections, arrayOfGamingCollections ]
-  // each a single array-of-collections if your code lumps them into [allCollections].
-  const [appleCollections, gamingCollections, laptopsCollections] = multiHandleMenus;
-
   return {
     sliderCollections,
-    appleCollections,
-    gamingCollections,
-    laptopsCollections,
+    menuCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -219,61 +208,7 @@ async function loadCriticalData({context}) {
   };
 }
 
-// fetchMenuCollections can handle an array of handles, e.g. ['apple','gaming']
-// We'll do a loop for each handle: partial vs. full fetch.
-async function fetchMenuCollections(context, menuHandles) {
-  const results = [];
-
-  for (const handle of menuHandles) {
-    const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-      variables: {handle},
-    });
-
-    if (!menu || !menu.items?.length) {
-      // Push empty array to keep indexing consistent
-      results.push([]);
-      continue;
-    }
-
-    // The partial vs. full logic:
-    const firstTwoItems = menu.items.slice(0, 2);
-    const remainingItems = menu.items.slice(2);
-
-    const fullCollectionPromises = firstTwoItems.map(async (item) => {
-      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-      const {collectionByHandle} = await context.storefront.query(
-        GET_COLLECTION_BY_HANDLE_QUERY,
-        {variables: {handle: sanitizedHandle}},
-      );
-      return collectionByHandle || null;
-    });
-
-    const partialCollectionPromises = remainingItems.map(async (item) => {
-      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-      const {collectionByHandle} = await context.storefront.query(
-        GET_COLLECTION_BY_HANDLE_PARTIAL_QUERY,
-        {variables: {handle: sanitizedHandle}},
-      );
-      return collectionByHandle || null;
-    });
-
-    const [firstTwoCollections, restCollections] = await Promise.all([
-      Promise.all(fullCollectionPromises),
-      Promise.all(partialCollectionPromises),
-    ]);
-
-    const allCollections = [...firstTwoCollections, ...restCollections].filter(
-      Boolean,
-    );
-
-    // each top-level handle's result is an array of sub-collections
-    results.push(allCollections);
-  }
-
-  // So results = [ [collectionsForApple], [collectionsForGaming], ... ]
-  return results;
-}
-
+// Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
     GET_COLLECTION_BY_HANDLE_QUERY,
@@ -282,7 +217,53 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-// For the slider or other piece, we can still do parallel fetching
+// Fetch menu collections
+async function fetchMenuCollections(context, menuHandles) {
+  const chunkSize = 3;
+
+  // Helper function to chunk an array
+  function chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  const handleChunks = chunkArray(menuHandles, chunkSize);
+
+  const collectionsGrouped = [];
+  for (const chunk of handleChunks) {
+    const chunkPromises = chunk.map(async (handle) => {
+      const { menu } = await context.storefront.query(GET_MENU_QUERY, {
+        variables: { handle },
+      });
+
+      if (!menu || !menu.items || menu.items.length === 0) {
+        return null;
+      }
+
+      const collectionPromises = menu.items.map(async (item) => {
+        const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+        const { collectionByHandle } = await context.storefront.query(
+          GET_COLLECTION_BY_HANDLE_QUERY,
+          { variables: { handle: sanitizedHandle } }
+        );
+        return collectionByHandle || null;
+      });
+
+      const collections = await Promise.all(collectionPromises);
+      return collections.filter(Boolean);
+    });
+
+    const chunkResults = await Promise.all(chunkPromises);
+    collectionsGrouped.push(...chunkResults.filter(Boolean));
+  }
+
+  return collectionsGrouped;
+}
+
+// Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
@@ -426,38 +407,19 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData} = useLoaderData();
+  const { banners, sliderCollections, deferredData } = useLoaderData();
 
-  // We now have appleCollections, gamingCollections separately
-  const appleCollections = deferredData?.appleCollections || [];
-  const gamingCollections = deferredData?.gamingCollections || [];
-  const laptopsCollections = deferredData?.laptopsCollections || [];
+  const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
-
       <CategorySlider sliderCollections={sliderCollections} />
-
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-
-      {/* --- Section #1: Apple --- */}
-      {appleCollections.length > 0 && (
-        <CollectionDisplay menuCollections={[appleCollections]} />
-      )}
-
-      {/* --- Section #2: Gaming --- */}
-      {gamingCollections.length > 0 && (
-        <CollectionDisplay menuCollections={[gamingCollections]} />
-      )}
-
-      {laptopsCollections.length > 0 && (
-        <CollectionDisplay menuCollections={[laptopsCollections]} />
-      )}
-
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
@@ -490,13 +452,13 @@ const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
               currencyCode
             }
           }
-          images(first: 3) {
+          images(first: 4) {
             nodes {
               url
               altText
             }
           }
-          variants(first: 1) {
+          variants(first: 5) {
             nodes {
               id
               availableForSale
@@ -515,20 +477,6 @@ const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
             }
           }
         }
-      }
-    }
-  }
-`;
-
-const GET_COLLECTION_BY_HANDLE_PARTIAL_QUERY = `#graphql
-  query GetCollectionByHandlePartial($handle: String!) {
-    collectionByHandle(handle: $handle) {
-      id
-      title
-      handle
-      image {
-        url
-        altText
       }
     }
   }
