@@ -412,6 +412,8 @@ export default function Homepage() {
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
+  console.log(menuCollections)
+
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
