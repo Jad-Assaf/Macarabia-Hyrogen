@@ -458,7 +458,7 @@ const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
               altText
             }
           }
-          variants(first: 5) {
+          variants(first: 1) {
             nodes {
               id
               availableForSale

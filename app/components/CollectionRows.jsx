@@ -56,7 +56,7 @@ const CollectionRows = ({menuCollections}) => {
             })}
           </div>
 
-          {menuCollection.slice(0, 2).map((collection) => {
+          {menuCollection.slice(0, 4).map((collection) => {
             const [productRowRef, productRowInView] = useInView({
               triggerOnce: true,
             });
