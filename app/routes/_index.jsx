@@ -175,12 +175,12 @@ export async function loader(args) {
 }
 
 async function loadCriticalData({ context }) {
-  const { storefront } = context;
+  const {storefront} = context;
 
   // Use the hardcoded MANUAL_MENU_HANDLES
   const menuHandles = MANUAL_MENU_HANDLES;
 
-  const { shop } = await storefront.query(
+  const {shop} = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -188,7 +188,7 @@ async function loadCriticalData({ context }) {
           description
         }
       }
-    `
+    `,
   );
 
   const [sliderCollections, menuCollections, newArrivalsCollection] =
@@ -198,9 +198,12 @@ async function loadCriticalData({ context }) {
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
+  const apple = menuCollections[0];
+
   return {
     sliderCollections,
     menuCollections,
+    apple,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -419,7 +422,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={menuCollections} />
+      <CollectionDisplay menuCollections={[apple]} />
       <BrandSection brands={brandsData} />
     </div>
   );
