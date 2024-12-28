@@ -419,7 +419,11 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={menuCollections} />
+      {menuCollections.length > 0 ? (
+        <CollectionDisplay menuCollections={menuCollections[0]} />
+      ) : (
+        <p>No collections available to display.</p>
+      )}
       <BrandSection brands={brandsData} />
     </div>
   );
