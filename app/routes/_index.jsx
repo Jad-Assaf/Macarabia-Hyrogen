@@ -1,9 +1,9 @@
-import React from 'react';
+import React, {Suspense, lazy, startTransition} from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
-import {DynamicCollectionDisplay} from '~/components/DynamicCollectionDisplay';
+import {TopProductSections} from '~/components/TopProductSections';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 
@@ -151,10 +151,12 @@ export async function loader(args) {
 
   const criticalData = await loadCriticalData(args);
 
-  const customCollection = await fetchCollectionByHandle(
+  // Fetch additional collections
+  const featuredCollection = await fetchCollectionByHandle(
     args.context,
-    'custom-collection-handle', // Replace with your desired collection handle
+    'featured',
   );
+  const saleCollection = await fetchCollectionByHandle(args.context, 'sale');
 
   const newData = {
     banners,
@@ -164,11 +166,11 @@ export async function loader(args) {
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
       newArrivalsCollection: criticalData.newArrivalsCollection,
-      customCollection, // Add customCollection here
+      appleCollection, // Add this collection
+      gamingCollection, // Add this collection
     },
   };
 
-  // Cache the new data
   cache.set(cacheKey, {value: newData, expiry: now + cacheTTL});
 
   return defer(newData, {
@@ -180,6 +182,8 @@ export async function loader(args) {
 
 async function loadCriticalData({context}) {
   const {storefront} = context;
+
+  const menuHandles = MANUAL_MENU_HANDLES;
 
   const {shop} = await storefront.query(
     `#graphql
@@ -193,7 +197,7 @@ async function loadCriticalData({context}) {
   );
 
   const [sliderCollections, newArrivalsCollection] = await Promise.all([
-    fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES),
+    fetchCollectionsByHandles(context, menuHandles),
     fetchCollectionByHandle(context, 'new-arrivals'),
   ]);
 
@@ -206,6 +210,7 @@ async function loadCriticalData({context}) {
   };
 }
 
+// Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
     GET_COLLECTION_BY_HANDLE_QUERY,
@@ -214,6 +219,7 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
+// Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
@@ -360,31 +366,41 @@ export default function Homepage() {
   const {banners, sliderCollections, deferredData} = useLoaderData();
 
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
-  const customCollection = deferredData?.customCollection;
+  const appleCollection = deferredData?.appleCollection; // Example for another collection
+  const gamingCollection = deferredData?.gamingCollection; // Another example
 
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
+
+      {/* Reuse TopProductSections */}
       {newArrivalsCollection && (
-        <DynamicCollectionDisplay
+        <TopProductSections
           collection={newArrivalsCollection}
-          handle="new-arrivals"
           title="New Arrivals"
+          link="/collections/new-arrivals"
         />
       )}
-      {customCollection && (
-        <DynamicCollectionDisplay
-          collection={customCollection}
-          handle="custom-collection-handle"
-          title="Custom Collection"
+      {featuredCollection && (
+        <TopProductSections
+          collection={appleCollection}
+          title="Featured Products"
+          link="/collections/featured"
         />
       )}
+      {saleCollection && (
+        <TopProductSections
+          collection={gamingCollection}
+          title="On Sale"
+          link="/collections/sale"
+        />
+      )}
+
       <BrandSection brands={brandsData} />
     </div>
   );
 }
-
 
 const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
   query GetCollectionByHandle($handle: String!) {
