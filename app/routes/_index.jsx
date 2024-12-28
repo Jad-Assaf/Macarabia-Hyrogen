@@ -203,7 +203,7 @@ async function loadCriticalData({context}) {
   // or just do the same single handle if that's your design:
   const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([
-      fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES), // or singleHandleNeededForSlider
+      fetchMenuCollections(context, MANUAL_MENU_HANDLES), // or singleHandleNeededForSlider
       fetchMenuCollections(context, menuHandles), // <--- SINGLE handle for menu
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
