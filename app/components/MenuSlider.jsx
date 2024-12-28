@@ -1,22 +1,25 @@
-// ~/components/MenuSlider.jsx
+// app/components/MenuSlider.jsx
+
 import React from 'react';
-import { useInView } from 'react-intersection-observer';
+import {useInView} from 'react-intersection-observer';
 import { CollectionItem } from './CollectionRows';
 
-
-export function MenuSlider({ menusByHandle = [] }) {
+export function MenuSlider({menuCollection = []}) {
   return (
     <div className="menu-slider-container">
-      {menusByHandle.map(({ handle, menu }) => {
-        const [ref, inView] = useInView({ triggerOnce: true });
+      {menuCollection.map((collection, collectionIndex) => {
+        const [collectionRef, collectionInView] = useInView({
+          triggerOnce: true,
+        });
 
         return (
-          <div className="animated-menu-item" ref={ref} key={handle}>
-            {inView && (
-              <CollectionItem 
-                handle={handle} 
-                menuItems={menu.items}
-              />
+          <div
+            className="animated-menu-item"
+            ref={collectionRef}
+            key={collection.id}
+          >
+            {collectionInView && (
+              <CollectionItem collection={collection} index={collectionIndex} />
             )}
           </div>
         );

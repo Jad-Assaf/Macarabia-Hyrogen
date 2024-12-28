@@ -4,19 +4,15 @@ import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
+// Removed the import:
+// import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-
-// This component should display each handle’s menu
-import {MenuSlider} from '~/components/MenuSlider';
+import { MenuSlider } from '~/components/MenuSlider';
 
 const cache = new Map();
 
-/**
- * These handles are used:
- *  1) to fetch minimal collection data (if needed),
- *  2) to fetch each handle's Shopify "Menu".
- */
+// Use these handles for both sliderCollections and menuCollections:
 const MANUAL_MENU_HANDLES = [
   'apple',
   'gaming',
@@ -161,20 +157,16 @@ export async function loader(args) {
   // Fetch all the critical data
   const criticalData = await loadCriticalData(args);
 
-  // ─────────────────────────────────────────────
-  //  Fetch menus for each handle (minimal info)
-  // ─────────────────────────────────────────────
-  const menusByHandle = await Promise.all(
-    MANUAL_MENU_HANDLES.map(async (handle) => {
-      const menu = await fetchMenuForHandle(args.context, handle);
-      return {handle, menu};
-    }),
+  // ────────────────────────────────────────────────────
+  //  Fetch minimal menu data (only id, title, handle, image)
+  // ────────────────────────────────────────────────────
+  const menuCollectionsBasic = await Promise.all(
+    MANUAL_MENU_HANDLES.map((handle) =>
+      fetchCollectionBasic(args.context, handle),
+    ),
   );
-
-  // Filter out any that have no valid menu
-  const validMenus = menusByHandle.filter(
-    (item) => item.menu && item.menu.items && item.menu.items.length > 0
-  );
+  // Filter out nulls
+  const menuCollectionsBasicFiltered = menuCollectionsBasic.filter(Boolean);
 
   const newData = {
     banners,
@@ -183,14 +175,14 @@ export async function loader(args) {
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
+      menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
-
-    // pass menus to the client
-    menusByHandle: validMenus,
+    // Include minimal menu collections in data
+    menuCollectionsBasic: menuCollectionsBasicFiltered,
   };
 
-  // Cache it
+  // Cache the new data
   cache.set(cacheKey, {value: newData, expiry: now + cacheTTL});
 
   return defer(newData, {
@@ -200,12 +192,6 @@ export async function loader(args) {
   });
 }
 
-/**
- * Fetch the "critical" page data:
- *  - slider collections
- *  - new arrivals
- *  (We no longer fetch large "menuCollections" if we only want a single product row)
- */
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
@@ -217,23 +203,31 @@ async function loadCriticalData({context}) {
           description
         }
       }
-    `
+    `,
   );
 
   // 1. Fetch slider collections by handles
   const sliderCollections = await fetchCollectionsByHandles(
     context,
-    MANUAL_MENU_HANDLES
+    MANUAL_MENU_HANDLES,
   );
 
-  // 2. Fetch new arrivals (the single product row)
+  // 2. Fetch menu collections (individually with fetchCollectionByHandle)
+  const menuCollections = await Promise.all(
+    MANUAL_MENU_HANDLES.map((handle) =>
+      fetchCollectionByHandle(context, handle),
+    ),
+  );
+
+  // 3. Fetch new arrivals collection
   const newArrivalsCollection = await fetchCollectionByHandle(
     context,
-    'new-arrivals'
+    'new-arrivals',
   );
 
   return {
     sliderCollections,
+    menuCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -242,17 +236,6 @@ async function loadCriticalData({context}) {
 }
 
 // Fetch a single collection by handle
-async function fetchMenuForHandle(context, handle) {
-  const {storefront} = context;
-  const {menu} = await storefront.query(GET_MENU_QUERY, {
-    variables: {handle},
-  });
-  return menu || null;
-}
-
-// ──────────────────────────────────────────
-//  HELPER: fetch a single collection (full data)
-// ──────────────────────────────────────────
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
     GET_COLLECTION_BY_HANDLE_QUERY,
@@ -261,20 +244,26 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-// ──────────────────────────────────────────
-//  HELPER: fetch multiple collections by handles
-// ──────────────────────────────────────────
+async function fetchCollectionBasic(context, handle) {
+  const {storefront} = context;
+  const data = await storefront.query(BASIC_COLLECTION_QUERY, {
+    variables: {handle},
+  });
+  return data?.collectionByHandle || null;
+}
+
+// Fetch multiple collections by an array of handles
 async function fetchCollectionsByHandles(context, handles) {
-  const results = await Promise.all(
-    handles.map(async (handle) => {
-      const {collectionByHandle} = await context.storefront.query(
-        GET_COLLECTION_BY_HANDLE_QUERY,
-        {variables: {handle}},
-      );
-      return collectionByHandle || null;
-    }),
-  );
-  return results.filter(Boolean);
+  const collectionPromises = handles.map(async (handle) => {
+    const {collectionByHandle} = await context.storefront.query(
+      GET_COLLECTION_BY_HANDLE_QUERY,
+      {variables: {handle}},
+    );
+    return collectionByHandle || null;
+  });
+
+  const collections = await Promise.all(collectionPromises);
+  return collections.filter(Boolean);
 }
 
 const brandsData = [
@@ -407,14 +396,9 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  // Destructure data from the loader
-  const {
-    banners,
-    sliderCollections,
-    deferredData,
-    menusByHandle, // the array of { handle, menu }
-  } = useLoaderData();
-
+  const {banners, sliderCollections, deferredData, menuCollectionsBasic} =
+    useLoaderData();
+  const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   return (
@@ -422,21 +406,32 @@ export default function Homepage() {
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
 
-      {/* ONE product row - "New Arrivals" */}
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
 
-      {/* EXACTLY ONE MenuSlider, passing the array of {handle, menu} */}
-      {menusByHandle?.length > 0 && (
-        <MenuSlider menusByHandle={menusByHandle} />
+      {menuCollections && menuCollections.length > 0 && (
+        <div>
+          {menuCollections.map((collection) =>
+            collection ? (
+              <TopProductSections key={collection.id} collection={collection} />
+            ) : null,
+          )}
+        </div>
+      )}
+
+      {/* ───────────────────────────────────────────────────────────
+          Here is where you use your new MenuSlider component
+          with "minimal" data from menuCollectionsBasic
+         ─────────────────────────────────────────────────────────── */}
+      {menuCollectionsBasic?.length > 0 && (
+        <MenuSlider menuCollection={menuCollectionsBasic} />
       )}
 
       <BrandSection brands={brandsData} />
     </div>
   );
 }
-
 
 // queries.js
 
@@ -453,6 +448,7 @@ export const BASIC_COLLECTION_QUERY = `#graphql
     }
   }
 `;
+
 
 // Keep your queries unchanged
 const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
