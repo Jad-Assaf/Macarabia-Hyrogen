@@ -69,7 +69,7 @@ export const meta = ({data}) => {
 /**
  * @param {LoaderFunctionArgs} args
  */
-export async function loader(args) {
+export async function loader({context}) {
   const cacheKey = 'homepage-data';
   const cacheTTL = 86400 * 1000; // 24 hours in milliseconds
   const now = Date.now();
@@ -150,7 +150,7 @@ export async function loader(args) {
     },
   ];
 
-  const criticalData = await loadCriticalData(args);
+  const criticalData = await loadCriticalData({context});
 
   const menuCollectionsPromises = {};
   for (const handle of MANUAL_MENU_HANDLES) {
@@ -185,7 +185,6 @@ export async function loader(args) {
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
-  // Use the hardcoded MANUAL_MENU_HANDLES
   const menuHandles = MANUAL_MENU_HANDLES;
 
   const {shop} = await storefront.query(
@@ -228,7 +227,6 @@ async function fetchCollectionByHandle(context, handle) {
 async function fetchSingleMenuCollection(context, handle) {
   const {storefront} = context;
 
-  // 1) Fetch the menu for a single handle
   const {menu} = await storefront.query(GET_MENU_QUERY, {
     variables: {handle},
   });
@@ -237,7 +235,6 @@ async function fetchSingleMenuCollection(context, handle) {
     return [];
   }
 
-  // 2) For each menu item, fetch the actual collection
   const collectionPromises = menu.items.map(async (item) => {
     const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
     const {collectionByHandle} = await storefront.query(
@@ -255,7 +252,6 @@ async function fetchSingleMenuCollection(context, handle) {
 async function fetchMenuCollections(context, menuHandles) {
   const chunkSize = 3;
 
-  // Helper function to chunk an array
   function chunkArray(array, size) {
     const chunks = [];
     for (let i = 0; i < array.length; i += size) {
@@ -457,7 +453,6 @@ export default function Homepage() {
         <TopProductSections collection={newArrivalsCollection} />
       )}
 
-      {/* For each handle, render a separate <Await> */}
       {Object.entries(menuCollectionsByHandle).map(([handle, promise]) => (
         <Suspense key={handle} fallback={<p>Loading {handle} collection...</p>}>
           <Await
