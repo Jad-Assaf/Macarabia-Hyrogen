@@ -8,10 +8,8 @@ import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 
-// Simple in-memory cache (unchanged)
 const cache = new Map();
 
-// All possible handles
 const MANUAL_MENU_HANDLES = [
   'apple',
   'gaming',
@@ -77,7 +75,7 @@ export async function loader(args) {
   const cacheTTL = 86400 * 1000; // 24 hours
   const now = Date.now();
 
-  // Check the cache
+  // Check cache
   const cachedData = cache.get(cacheKey);
   if (cachedData && cachedData.expiry > now) {
     return defer(cachedData.value, {
@@ -87,7 +85,6 @@ export async function loader(args) {
     });
   }
 
-  // Basic banners (unchanged)
   const banners = [
     {
       desktopImageUrl:
@@ -154,7 +151,7 @@ export async function loader(args) {
     },
   ];
 
-  // Fetch only minimal data in loadCriticalData
+  // Now we fetch all menu handles but in a sequential manner
   const criticalData = await loadCriticalData(args);
 
   const newData = {
@@ -181,28 +178,25 @@ export async function loader(args) {
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
-  // Choose how many handles you actually need for the first chunk
-  const NEEDED_HANDLES = MANUAL_MENU_HANDLES.slice(0, 3);
+  // We want to fetch all handles (no slicing).
+  // But do them one by one in fetchMenuCollectionsInSequence.
+  const allHandles = MANUAL_MENU_HANDLES;
 
-  // Query the shop info
-  const {shop} = await storefront.query(
-    `#graphql
-      query ShopDetails {
-        shop {
-          name
-          description
-        }
-      }
-    `,
-  );
+  // Query shop info
+  const {shop} = await storefront.query(SHOP_QUERY);
 
-  // Here we only fetch data for those 3 handles
+  // Use sequential approach for menu
   const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([
-      // If you want fewer collections for the slider as well, slice that too.
-      // Otherwise, you can still pass all if you want full slider coverage.
-      fetchCollectionsByHandles(context, NEEDED_HANDLES),
-      fetchMenuCollections(context, NEEDED_HANDLES),
+      // If your slider also needs all handles, you can fetch them in sequence,
+      // but typically the slider is just for top-level categories, so you can do parallel or only partial.
+      // We'll just do parallel fetch for the slider:
+      fetchCollectionsByHandles(context, allHandles),
+
+      // The key part: fetch each handle one by one
+      fetchMenuCollectionsInSequence(context, allHandles),
+
+      // Single collection fetch
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
@@ -216,7 +210,6 @@ async function loadCriticalData({context}) {
   };
 }
 
-// Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
     GET_COLLECTION_BY_HANDLE_QUERY,
@@ -225,45 +218,41 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-/**
- * Fetch menu collections for exactly the handles you pass in.
- * We remove the extra chunking here, since you already slice
- * the handles to the size you want in loadCriticalData().
- */
-async function fetchMenuCollections(context, handles) {
-  if (!handles || handles.length === 0) return [];
+// This is the new sequential approach to fetch the "menu -> collection" data for each handle
+async function fetchMenuCollectionsInSequence(context, handles) {
+  const results = [];
 
-  // For each handle, fetch the menu, then fetch each collection from the menu items
-  const results = await Promise.all(
-    handles.map(async (handle) => {
-      const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-        variables: {handle},
-      });
+  for (const handle of handles) {
+    const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+      variables: {handle},
+    });
 
-      if (!menu || !menu.items?.length) {
-        return null;
+    if (!menu || !menu.items?.length) {
+      // If no menu or items, push null or an empty array
+      results.push([]);
+      continue;
+    }
+
+    // Now fetch each item’s collection, also sequentially (to truly do one at a time):
+    const collectionsForThisHandle = [];
+    for (const item of menu.items) {
+      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+      const {collectionByHandle} = await context.storefront.query(
+        GET_COLLECTION_BY_HANDLE_QUERY,
+        {variables: {handle: sanitizedHandle}},
+      );
+      if (collectionByHandle) {
+        collectionsForThisHandle.push(collectionByHandle);
       }
+    }
 
-      // For each menu item, we fetch a collection
-      const collectionPromises = menu.items.map(async (item) => {
-        const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-        const {collectionByHandle} = await context.storefront.query(
-          GET_COLLECTION_BY_HANDLE_QUERY,
-          {variables: {handle: sanitizedHandle}},
-        );
-        return collectionByHandle || null;
-      });
+    results.push(collectionsForThisHandle);
+  }
 
-      const collections = await Promise.all(collectionPromises);
-      return collections.filter(Boolean);
-    }),
-  );
-
-  // Filter out any null results
-  return results.filter(Boolean);
+  return results;
 }
 
-// Fetch multiple collections by handle (for slider, if needed)
+// For the slider or other piece, we can still do parallel fetching
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
@@ -410,7 +399,6 @@ const brandsData = [
 export default function Homepage() {
   const {banners, sliderCollections, deferredData} = useLoaderData();
 
-  // menuCollections is now only for the first 3 handles you sliced
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
@@ -418,10 +406,14 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
+
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
+
+      {/* Now we have ALL menuCollections, loaded one by one */}
       <CollectionDisplay menuCollections={menuCollections} />
+
       <BrandSection brands={brandsData} />
     </div>
   );
