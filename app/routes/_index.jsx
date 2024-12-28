@@ -150,6 +150,7 @@ export async function loader(args) {
     },
   ];
 
+  // Fetch data for 2 handles in parallel: 'apple' and 'gaming'
   const criticalData = await loadCriticalData(args);
 
   const newData = {
@@ -159,7 +160,8 @@ export async function loader(args) {
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
-      menuCollections: criticalData.menuCollections,
+      appleCollections: criticalData.appleCollections,
+      gamingCollections: criticalData.gamingCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
   };
@@ -177,40 +179,37 @@ export async function loader(args) {
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
-  // Instead of passing all MANUAL_MENU_HANDLES,
-  // pick one handle that the CategorySlider actually needs
-  // For example, let's pick "apple":
-  const singleHandleNeededForSlider = 'apple';
+  // Our top-level handles for separate sections
+  const handlesForMenus = ['apple', 'gaming'];
 
-  // Or maybe you read this handle from somewhere else, e.g. from route params or a config
-
-  const {shop} = await storefront.query(
-    `#graphql
-      query ShopDetails {
-        shop {
-          name
-          description
-        }
+  const {shop} = await storefront.query(`
+    query ShopDetails {
+      shop {
+        name
+        description
       }
-    `,
-  );
+    }
+  `);
 
-  // We STILL might fetch all "sliderCollections" from these handles if you want:
-  // but for "menuCollections," we only fetch the single handle:
-  const menuHandles = [singleHandleNeededForSlider];
-
-  // You can simultaneously fetch the entire "sliderCollections" if needed:
-  // or just do the same single handle if that's your design:
-  const [sliderCollections, menuCollections, newArrivalsCollection] =
+  // Parallel fetch:
+  // 1) Full slider from MANUAL_MENU_HANDLES,
+  // 2) Each handle in handlesForMenus,
+  // 3) newArrivals
+  const [sliderCollections, multiHandleMenus, newArrivalsCollection] =
     await Promise.all([
-      fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES), // or singleHandleNeededForSlider
-      fetchMenuCollections(context, MANUAL_MENU_HANDLES), // <--- SINGLE handle for menu
+      fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES),
+      fetchMenuCollections(context, handlesForMenus),
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
+  // multiHandleMenus is an array: [ arrayOfAppleCollections, arrayOfGamingCollections ]
+  // each a single array-of-collections if your code lumps them into [allCollections].
+  const [appleCollections, gamingCollections] = multiHandleMenus;
+
   return {
     sliderCollections,
-    menuCollections,
+    appleCollections,
+    gamingCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -218,7 +217,61 @@ async function loadCriticalData({context}) {
   };
 }
 
-// Fetch a single collection by handle
+// fetchMenuCollections can handle an array of handles, e.g. ['apple','gaming']
+// We'll do a loop for each handle: partial vs. full fetch.
+async function fetchMenuCollections(context, menuHandles) {
+  const results = [];
+
+  for (const handle of menuHandles) {
+    const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+      variables: {handle},
+    });
+
+    if (!menu || !menu.items?.length) {
+      // Push empty array to keep indexing consistent
+      results.push([]);
+      continue;
+    }
+
+    // The partial vs. full logic:
+    const firstTwoItems = menu.items.slice(0, 2);
+    const remainingItems = menu.items.slice(2);
+
+    const fullCollectionPromises = firstTwoItems.map(async (item) => {
+      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+      const {collectionByHandle} = await context.storefront.query(
+        GET_COLLECTION_BY_HANDLE_QUERY,
+        {variables: {handle: sanitizedHandle}},
+      );
+      return collectionByHandle || null;
+    });
+
+    const partialCollectionPromises = remainingItems.map(async (item) => {
+      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+      const {collectionByHandle} = await context.storefront.query(
+        GET_COLLECTION_BY_HANDLE_PARTIAL_QUERY,
+        {variables: {handle: sanitizedHandle}},
+      );
+      return collectionByHandle || null;
+    });
+
+    const [firstTwoCollections, restCollections] = await Promise.all([
+      Promise.all(fullCollectionPromises),
+      Promise.all(partialCollectionPromises),
+    ]);
+
+    const allCollections = [...firstTwoCollections, ...restCollections].filter(
+      Boolean,
+    );
+
+    // each top-level handle's result is an array of sub-collections
+    results.push(allCollections);
+  }
+
+  // So results = [ [collectionsForApple], [collectionsForGaming], ... ]
+  return results;
+}
+
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
     GET_COLLECTION_BY_HANDLE_QUERY,
@@ -227,62 +280,7 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-/**
- * Now we only fetch the menu for a SINGLE handle,
- * rather than looping over an entire array.
- */
-async function fetchMenuCollections(context, menuHandles) {
-  const handle = Array.isArray(menuHandles) ? menuHandles[0] : menuHandles;
-
-  // 1) Fetch the menu for that single handle
-  const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-    variables: {handle},
-  });
-
-  if (!menu || !menu.items?.length) {
-    return [];
-  }
-
-  // 2) Separate the first 2 items from the rest
-  const firstTwoItems = menu.items.slice(0, 2);
-  const remainingItems = menu.items.slice(2);
-
-  // 3) For the first two items, do a FULL fetch (products, etc.)
-  const fullCollectionPromises = firstTwoItems.map(async (item) => {
-    const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-    const {collectionByHandle} = await context.storefront.query(
-      GET_COLLECTION_BY_HANDLE_QUERY, // full query
-      {variables: {handle: sanitizedHandle}},
-    );
-    return collectionByHandle || null;
-  });
-
-  // 4) For the remaining items, fetch only minimal data (no products)
-  const partialCollectionPromises = remainingItems.map(async (item) => {
-    const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-    const {collectionByHandle} = await context.storefront.query(
-      GET_COLLECTION_BY_HANDLE_PARTIAL_QUERY, // partial query
-      {variables: {handle: sanitizedHandle}},
-    );
-    return collectionByHandle || null;
-  });
-
-  // 5) Wait for all in parallel
-  const [firstTwoCollections, restCollections] = await Promise.all([
-    Promise.all(fullCollectionPromises),
-    Promise.all(partialCollectionPromises),
-  ]);
-
-  // Combine them back to maintain original menu item order
-  const allCollections = [...firstTwoCollections, ...restCollections].filter(
-    Boolean,
-  );
-
-  // Return as an array-of-collections in the shape your code expects
-  return [allCollections];
-}
-
-// Fetch collections by handles for sliders (unchanged)
+// For the slider or other piece, we can still do parallel fetching
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
@@ -426,29 +424,37 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const { banners, sliderCollections, deferredData } = useLoaderData();
+  const {banners, sliderCollections, deferredData} = useLoaderData();
 
-  // menuCollections is now just for "apple"
-  const menuCollections = deferredData?.menuCollections || [];
+  // We now have appleCollections, gamingCollections separately
+  const appleCollections = deferredData?.appleCollections || [];
+  const gamingCollections = deferredData?.gamingCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
-
-  // Pull just the first chunk if you like:
-  const firstMenuCollectionsChunk = menuCollections[0];
 
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
+
       <CategorySlider sliderCollections={sliderCollections} />
+
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {/* Now show only the single chunk we got */}
-      <CollectionDisplay menuCollections={[firstMenuCollectionsChunk]} />
+
+      {/* --- Section #1: Apple --- */}
+      {appleCollections.length > 0 && (
+        <CollectionDisplay menuCollections={[appleCollections]} />
+      )}
+
+      {/* --- Section #2: Gaming --- */}
+      {gamingCollections.length > 0 && (
+        <CollectionDisplay menuCollections={[gamingCollections]} />
+      )}
+
       <BrandSection brands={brandsData} />
     </div>
   );
 }
-
 
 const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
   query GetCollectionByHandle($handle: String!) {
@@ -520,7 +526,6 @@ const GET_COLLECTION_BY_HANDLE_PARTIAL_QUERY = `#graphql
     }
   }
 `;
-
 
 export const GET_MENU_QUERY = `#graphql
   query GetMenu($handle: String!) {
