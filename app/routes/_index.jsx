@@ -1,10 +1,9 @@
-import React, {Suspense, lazy, startTransition} from 'react';
+import React from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
-import {TopProductSections} from '~/components/TopProductSections';
-import {CollectionDisplay} from '~/components/CollectionDisplay';
+import {DynamicCollectionDisplay} from '~/components/DynamicCollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 
@@ -152,6 +151,11 @@ export async function loader(args) {
 
   const criticalData = await loadCriticalData(args);
 
+  const customCollection = await fetchCollectionByHandle(
+    args.context,
+    'custom-collection-handle', // Replace with your desired collection handle
+  );
+
   const newData = {
     banners,
     title: criticalData.title,
@@ -160,6 +164,7 @@ export async function loader(args) {
     sliderCollections: criticalData.sliderCollections,
     deferredData: {
       newArrivalsCollection: criticalData.newArrivalsCollection,
+      customCollection, // Add customCollection here
     },
   };
 
@@ -176,8 +181,6 @@ export async function loader(args) {
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
-  const menuHandles = MANUAL_MENU_HANDLES;
-
   const {shop} = await storefront.query(
     `#graphql
       query ShopDetails {
@@ -190,7 +193,7 @@ async function loadCriticalData({context}) {
   );
 
   const [sliderCollections, newArrivalsCollection] = await Promise.all([
-    fetchCollectionsByHandles(context, menuHandles),
+    fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES),
     fetchCollectionByHandle(context, 'new-arrivals'),
   ]);
 
@@ -203,7 +206,6 @@ async function loadCriticalData({context}) {
   };
 }
 
-// Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
     GET_COLLECTION_BY_HANDLE_QUERY,
@@ -212,7 +214,6 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-// Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
@@ -359,18 +360,31 @@ export default function Homepage() {
   const {banners, sliderCollections, deferredData} = useLoaderData();
 
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
+  const customCollection = deferredData?.customCollection;
 
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
       {newArrivalsCollection && (
-        <TopProductSections collection={newArrivalsCollection} />
+        <DynamicCollectionDisplay
+          collection={newArrivalsCollection}
+          handle="new-arrivals"
+          title="New Arrivals"
+        />
+      )}
+      {customCollection && (
+        <DynamicCollectionDisplay
+          collection={customCollection}
+          handle="custom-collection-handle"
+          title="Custom Collection"
+        />
       )}
       <BrandSection brands={brandsData} />
     </div>
   );
 }
+
 
 const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
   query GetCollectionByHandle($handle: String!) {
