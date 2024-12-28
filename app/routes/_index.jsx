@@ -239,12 +239,15 @@ async function fetchMenuCollections(context, menuHandles) {
     variables: {handle},
   });
 
-  if (!menu || !menu.items || menu.items.length === 0) {
+  if (!menu || !menu.items?.length) {
     return [];
   }
 
-  // For each menu item, fetch the actual collection by sanitized handle
-  const collectionPromises = menu.items.map(async (item) => {
+  // Take only the first 2 items, if that's all you need to display:
+  const firstTwoItems = menu.items.slice(0, 2);
+
+  // Then for each of these items, fetch the sub-collection
+  const collectionPromises = firstTwoItems.map(async (item) => {
     const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
     const {collectionByHandle} = await context.storefront.query(
       GET_COLLECTION_BY_HANDLE_QUERY,
@@ -254,7 +257,6 @@ async function fetchMenuCollections(context, menuHandles) {
   });
 
   const collections = await Promise.all(collectionPromises);
-  // Return just a single array of collections
   return [collections.filter(Boolean)];
 }
 
@@ -402,7 +404,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData} = useLoaderData();
+  const { banners, sliderCollections, deferredData } = useLoaderData();
 
   // menuCollections is now just for "apple"
   const menuCollections = deferredData?.menuCollections || [];
@@ -453,13 +455,13 @@ const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
               currencyCode
             }
           }
-          images(first: 4) {
+          images(first: 3) {
             nodes {
               url
               altText
             }
           }
-          variants(first: 5) {
+          variants(first: 1) {
             nodes {
               id
               availableForSale

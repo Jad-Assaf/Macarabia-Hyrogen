@@ -86,7 +86,7 @@ const CollectionRows = ({menuCollections}) => {
   );
 };
 
-const CollectionItem = ({collection, index}) => {
+export const CollectionItem = ({collection, index}) => {
   const [isLoading, setIsLoading] = useState(true);
   const ref = useRef(null);
 
