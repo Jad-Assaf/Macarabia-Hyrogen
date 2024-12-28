@@ -175,12 +175,14 @@ export async function loader(args) {
 }
 
 async function loadCriticalData({ context }) {
-  const { storefront } = context;
+  const {storefront} = context;
 
   // Use the hardcoded MANUAL_MENU_HANDLES
-  const menuHandles = MANUAL_MENU_HANDLES;
+  const chunkSize = 3;
+  const handleChunks = chunkArray(MANUAL_MENU_HANDLES, chunkSize);
+  const firstChunkHandles = handleChunks[0] || [];
 
-  const { shop } = await storefront.query(
+  const {shop} = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -188,25 +190,27 @@ async function loadCriticalData({ context }) {
           description
         }
       }
-    `
+    `,
   );
 
-  const [sliderCollections, menuCollections, newArrivalsCollection] =
+  const [sliderCollections, firstChunkMenuCollections, newArrivalsCollection] =
     await Promise.all([
-      fetchCollectionsByHandles(context, menuHandles),
-      fetchMenuCollections(context, menuHandles),
+      fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES), // or also chunk if you only want a subset
+      fetchMenuCollections(context, firstChunkHandles), // <----- passes only 3 handles
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
   return {
     sliderCollections,
-    menuCollections,
+    // Now `menuCollections` is *just* the first chunk
+    menuCollections: firstChunkMenuCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
     url: 'https://macarabia.me',
   };
 }
+
 
 // Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
@@ -412,8 +416,6 @@ export default function Homepage() {
   const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
-    const firstMenuCollectionsChunk = menuCollections[0];
-
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
@@ -421,7 +423,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <CollectionDisplay menuCollections={[firstMenuCollectionsChunk]} />
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
