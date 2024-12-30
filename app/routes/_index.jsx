@@ -7,7 +7,6 @@ import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-import MenuSlider from '~/components/MenuSlider';
 
 const cache = new Map();
 
@@ -85,7 +84,6 @@ export async function loader(args) {
     });
   }
 
-  // Banners Data (Static)
   const banners = [
     {
       desktopImageUrl:
@@ -152,7 +150,6 @@ export async function loader(args) {
     },
   ];
 
-  // Fetch Critical Data
   const criticalData = await loadCriticalData(args);
 
   // Define all collection handles you want to display using TopProductSections
@@ -213,32 +210,18 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  // Fetch Menu Collections for MenuSlider
-  // You can define multiple menu handles here as needed
-  const MENU_HANDLES_FOR_SLIDERS = ['apple', 'gaming', 'laptops', 'desktops']; // Replace with your actual menu handles
-
-  const fetchedMenuCollections = await fetchMenuCollections(
-    args.context,
-    MENU_HANDLES_FOR_SLIDERS,
-  );
-
-  // Organize menu collections into an object with keys corresponding to their handles
-  const menuCollectionsByHandle = {};
-  MENU_HANDLES_FOR_SLIDERS.forEach((handle, index) => {
-    menuCollectionsByHandle[handle] = fetchedMenuCollections[index] || [];
-  });
-
   const newData = {
     banners,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
+    // REMOVED: No longer deferring menuCollections
     deferredData: {
+      // REMOVED: menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
     topProducts: topProductsByHandle, // Add fetched TopProductSections collections here
-    menuCollections: menuCollectionsByHandle, // Add fetched MenuSlider collections here
   };
 
   // Cache the new data
@@ -251,14 +234,10 @@ export async function loader(args) {
   });
 }
 
-/**
- * Fetches critical data required for the homepage.
- * @param {Object} param0
- * @param {Object} param0.context - The Remix context containing the storefront.
- * @returns {Object} - An object containing critical data.
- */
 async function loadCriticalData({context}) {
   const {storefront} = context;
+
+  const menuHandles = MANUAL_MENU_HANDLES;
 
   const {shop} = await storefront.query(
     `#graphql
@@ -271,14 +250,17 @@ async function loadCriticalData({context}) {
     `,
   );
 
+  // REMOVED: fetchMenuCollections, which used GET_MENU_QUERY
   const [sliderCollections /* menuCollections */, newArrivalsCollection] =
     await Promise.all([
-      fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES),
+      fetchCollectionsByHandles(context, menuHandles),
+      // REMOVED: fetchMenuCollections(context, menuHandles),
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
   return {
     sliderCollections,
+    // REMOVED: menuCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -286,35 +268,26 @@ async function loadCriticalData({context}) {
   };
 }
 
-/**
- * Fetches a single collection by its handle using a simplified query.
- * @param {Object} context - The Remix context containing the storefront.
- * @param {string} handle - The handle of the collection to fetch.
- * @returns {Object|null} - The collection data or null if not found.
- */
+// Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
-    GET_SIMPLE_COLLECTION_QUERY,
-    {
-      variables: {handle},
-    },
+    GET_COLLECTION_BY_HANDLE_QUERY,
+    {variables: {handle}},
   );
   return collectionByHandle || null;
 }
 
-/**
- * Fetches multiple collections by their handles for sliders.
- * @param {Object} context - The Remix context containing the storefront.
- * @param {Array<string>} handles - An array of collection handles to fetch.
- * @returns {Array<Object>} - An array of fetched collections.
- */
+// REMOVED: The entire fetchMenuCollections function
+// async function fetchMenuCollections(context, menuHandles) {
+//   ...
+// }
+
+// Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
       GET_SIMPLE_COLLECTION_QUERY,
-      {
-        variables: {handle},
-      },
+      {variables: {handle}},
     );
     return collectionByHandle || null;
   });
@@ -323,47 +296,6 @@ async function fetchCollectionsByHandles(context, handles) {
   return collections.filter(Boolean);
 }
 
-/**
- * Fetches menu collections based on the provided menu handles.
- * Each menu handle corresponds to a separate MenuSlider.
- * @param {Object} context - The Remix context containing the storefront.
- * @param {Array<string>} menuHandles - An array of menu handles to fetch.
- * @returns {Array<Array<Object>>} - An array of collections grouped by menu handle.
- */
-async function fetchMenuCollections(context, menuHandles) {
-  const collectionsGrouped = await Promise.all(
-    menuHandles.map(async (handle) => {
-      const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-        variables: {handle},
-      });
-
-      if (!menu || !menu.items || menu.items.length === 0) {
-        return [];
-      }
-
-      const collections = await Promise.all(
-        menu.items.map(async (item) => {
-          const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-          const {collectionByHandle} = await context.storefront.query(
-            GET_SIMPLE_COLLECTION_QUERY,
-            {
-              variables: {handle: sanitizedHandle},
-            },
-          );
-          return collectionByHandle || null;
-        }),
-      );
-
-      return collections.filter(Boolean);
-    }),
-  );
-
-  return collectionsGrouped;
-}
-
-/**
- * Brands Data (Static)
- */
 const brandsData = [
   {
     name: 'Apple',
@@ -507,10 +439,6 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      <MenuSlider
-        menuHandle="apple"
-        collections={menuCollections['apple'] || []}
-      />
       {/* Add TopProductSections for each specified collection handle */}
       {topProducts['apple-accessories'] && (
         <TopProductSections collection={topProducts['apple-accessories']} />

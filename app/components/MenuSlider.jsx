@@ -4,6 +4,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { CollectionItem } from './CollectionRows';
 
+
 /**
  * MenuSlider Component
  * Renders a slider of collections based on the provided menu handle and its collections.
