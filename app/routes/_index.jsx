@@ -7,6 +7,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
+import { Menu } from '~/components/Menu';
 
 const cache = new Map();
 
@@ -210,18 +211,28 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
+  const fetchedMenus = await Promise.all(
+    MANUAL_MENU_HANDLES.map((handle) =>
+      fetchMenuByHandle(args.context, handle),
+    ),
+  );
+
+  const menusByHandle = {};
+  MANUAL_MENU_HANDLES.forEach((handle, index) => {
+    menusByHandle[handle] = fetchedMenus[index];
+  });
+
   const newData = {
     banners,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
-    // REMOVED: No longer deferring menuCollections
     deferredData: {
-      // REMOVED: menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
     topProducts: topProductsByHandle, // Add fetched TopProductSections collections here
+    menus: menusByHandle, // Add fetched menus here
   };
 
   // Cache the new data
@@ -275,6 +286,13 @@ async function fetchCollectionByHandle(context, handle) {
     {variables: {handle}},
   );
   return collectionByHandle || null;
+}
+
+async function fetchMenuByHandle(context, handle) {
+  const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+    variables: {handle},
+  });
+  return menu || null;
 }
 
 // REMOVED: The entire fetchMenuCollections function
@@ -436,6 +454,9 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
+      {MANUAL_MENU_HANDLES.map((handle) => (
+        <Menu key={handle} handle={handle} menu={menus[handle]} />
+      ))}
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
