@@ -43,7 +43,7 @@ const CollectionRows = ({menuCollections}) => {
             ))}
           </div>
 
-          {menuCollection.slice(0, 4).map((collection) => (
+          {menuCollection.slice(0, 2).map((collection) => (
             <div key={collection.id} className="collection-section">
               <div className="collection-header">
                 <h3>{collection.title}</h3>
