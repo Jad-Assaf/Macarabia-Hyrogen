@@ -492,7 +492,7 @@ export default function Homepage() {
       )}
       {menus && Array.isArray(menus) && menus.length > 0 ? (
         <MenuItemsByHandle
-          menu={menus.find((menu) => menu.handle === 'apple')}
+          menu={menus.find((menu) => menu.handle === 'apple') || {items: []}}
           handle="apple"
         />
       ) : (
@@ -510,7 +510,7 @@ export default function Homepage() {
       )}
       {menus && Array.isArray(menus) && menus.length > 0 ? (
         <MenuItemsByHandle
-          menu={menus.find((menu) => menu.handle === 'gaming')}
+          menu={menus.find((menu) => menu.handle === 'gaming') || {items: []}}
           handle="gaming"
         />
       ) : (
@@ -527,7 +527,7 @@ export default function Homepage() {
       )}
       {menus && Array.isArray(menus) && menus.length > 0 ? (
         <MenuItemsByHandle
-          menu={menus.find((menu) => menu.handle === 'laptops')}
+          menu={menus.find((menu) => menu.handle === 'laptops') || {items: []}}
           handle="laptops"
         />
       ) : (

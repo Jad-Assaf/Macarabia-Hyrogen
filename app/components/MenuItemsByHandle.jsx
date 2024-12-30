@@ -2,8 +2,12 @@ import React from 'react';
 import {Link} from 'react-router-dom'; // Adjust import as needed for routing
 
 export default function MenuItemsByHandle({menu, handle}) {
+  if (!menu || !menu.items || menu.items.length === 0) {
+    return <p>Menu item not found.</p>;
+  }
+
   const menuItem = menu.items.find(
-    (item) => item && item.title.toLowerCase() === handle.toLowerCase()
+    (item) => item && item.title.toLowerCase() === handle.toLowerCase(),
   );
 
   if (!menuItem) {
