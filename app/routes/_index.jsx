@@ -288,17 +288,34 @@ async function loadCriticalData({context}) {
   };
 }
 
-async function fetchMenuByHandle(context, handle) {
-  try {
+async function fetchMenuByHandle(context, menuHandles) {
+  const menusPromises = menuHandles.map(async (handle) => {
     const {menu} = await context.storefront.query(GET_MENU_QUERY, {
       variables: {handle},
     });
-    console.log('Fetched Menu:', menu); // Debugging
-    return menu;
-  } catch (error) {
-    console.error(`Failed to fetch menu for handle: ${handle}`, error);
-    return null;
-  }
+
+    if (!menu || !menu.items || menu.items.length === 0) {
+      return null;
+    }
+
+    const itemPromises = menu.items.map(async (item) => {
+      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+      const {collectionByHandle} = await context.storefront.query(
+        GET_COLLECTION_BY_HANDLE_QUERY,
+        {variables: {handle: sanitizedHandle}},
+      );
+      return collectionByHandle || null;
+    });
+
+    const items = await Promise.all(itemPromises);
+    return {
+      handle,
+      items: items.filter(Boolean),
+    };
+  });
+
+  const menus = await Promise.all(menusPromises);
+  return menus.filter(Boolean);
 }
 
 // Fetch a single collection by handle
