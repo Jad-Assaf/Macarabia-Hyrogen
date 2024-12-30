@@ -1,5 +1,4 @@
-// Homepage.jsx
-import React, {Suspense, lazy, startTransition} from 'react';
+import React from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData, Link} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
@@ -8,7 +7,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-
+import MenuSlider from '~/components/MenuSlider'; // Ensure correct path
 
 const cache = new Map();
 
@@ -338,11 +337,9 @@ async function loadCriticalData({context}) {
     `,
   );
 
-  // REMOVED: fetchMenuCollections, which used GET_MENU_QUERY
   const [sliderCollections /* menuCollections */, newArrivalsCollection] =
     await Promise.all([
       fetchCollectionsByHandles(context, menuHandles),
-      // REMOVED: fetchMenuCollections(context, menuHandles),
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
@@ -508,38 +505,6 @@ const brandsData = [
   },
 ];
 
-/**
- * MenuSlider Component
- * Displays menu items with their image and title based on a passed handle.
- */
-const MenuSlider = ({menuData}) => {
-  if (!menuData) {
-    return null;
-  }
-
-  const {handle, collections} = menuData;
-
-  return (
-    <div className="menu-slider-container">
-      <h2>{handle.charAt(0).toUpperCase() + handle.slice(1)} Menu</h2>
-      <div className="menu-items">
-        {collections.map((collection) => (
-          <div key={collection.id} className="menu-item">
-            {collection.image && (
-              <img
-                src={collection.image.url}
-                alt={collection.image.altText || collection.title}
-              />
-            )}
-            <h3>{collection.title}</h3>
-            <Link to={`/collections/${collection.handle}`}>View All</Link>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 export default function Homepage() {
   const {
     banners,
@@ -559,6 +524,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
+
       {/* Add TopProductSections for each specified collection handle */}
       {topProducts['apple-accessories'] && (
         <TopProductSections collection={topProducts['apple-accessories']} />
@@ -690,83 +656,128 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['lighting']} />
       )}
 
-      {/* Add MenuSlider components manually with specified handles */}
+      {/* Manually Insert MenuSlider Components with Corresponding Handles */}
       {menuCollections.find((menu) => menu.handle === 'apple') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'apple')}
+          handle="apple"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'apple').collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'gaming') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'gaming')}
+          handle="gaming"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'gaming').collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'laptops') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'laptops')}
+          handle="laptops"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'laptops')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'desktops') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'desktops')}
+          handle="desktops"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'desktops')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'pc-parts') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'pc-parts')}
+          handle="pc-parts"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'pc-parts')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'networking') && (
         <MenuSlider
-          menuData={menuCollections.find(
-            (menu) => menu.handle === 'networking',
-          )}
+          handle="networking"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'networking')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'monitors') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'monitors')}
+          handle="monitors"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'monitors')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'mobiles') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'mobiles')}
+          handle="mobiles"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'mobiles')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'tablets') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'tablets')}
+          handle="tablets"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'tablets')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'audio') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'audio')}
+          handle="audio"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'audio').collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'accessories') && (
         <MenuSlider
-          menuData={menuCollections.find(
-            (menu) => menu.handle === 'accessories',
-          )}
+          handle="accessories"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'accessories')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'fitness') && (
         <MenuSlider
-          menuData={menuCollections.find((menu) => menu.handle === 'fitness')}
+          handle="fitness"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'fitness')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'photography') && (
         <MenuSlider
-          menuData={menuCollections.find(
-            (menu) => menu.handle === 'photography',
-          )}
+          handle="photography"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'photography')
+              .collections
+          }
         />
       )}
       {menuCollections.find((menu) => menu.handle === 'home-appliances') && (
         <MenuSlider
-          menuData={menuCollections.find(
-            (menu) => menu.handle === 'home-appliances',
-          )}
+          handle="home-appliances"
+          menuCollection={
+            menuCollections.find((menu) => menu.handle === 'home-appliances')
+              .collections
+          }
         />
       )}
 
