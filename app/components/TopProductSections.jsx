@@ -7,7 +7,7 @@ import {useInView} from 'react-intersection-observer';
 export const TopProductSections = ({collection}) => {
   // Initialize the useInView hook
   const {ref, inView} = useInView({
-    threshold: 0.1, // Trigger when 10% of the component is visible
+    threshold: 0.3, // Trigger when 10% of the component is visible
     triggerOnce: true, // Trigger only once
   });
 
