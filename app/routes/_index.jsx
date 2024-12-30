@@ -7,6 +7,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
+import { CategorySliderWithImages } from '~/components/CategorySliderWithImages';
 
 const cache = new Map();
 
