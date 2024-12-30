@@ -27,6 +27,34 @@ const MANUAL_MENU_HANDLES = [
   'home-appliances',
 ];
 
+export const APPLE_HANDLES = [
+  'apple-accessories',
+  'apple-macbook',
+  'apple-imac',
+  'apple-studio-display',
+  'apple-ipad',
+  'apple-mac-mini',
+  'apple-mac-studio',
+  'apple-watch',
+];
+
+export const GAMING_HANDLES = [
+  'gaming-laptops',
+  'gaming-desktops',
+  'gaming-monitors',
+  'gaming-consoles',
+  'console-games',
+  'gaming-accessories',
+  'ps-accessories',
+];
+
+export const LAPTOP_HANDLES = [
+  'acer-laptops',
+  'microsoft-surface-laptops',
+  'microsoft-surface-accessories',
+  'samsung-laptops',
+];
+
 /**
  * @type {MetaFunction}
  */
@@ -251,16 +279,26 @@ async function loadCriticalData({context}) {
   );
 
   // REMOVED: fetchMenuCollections, which used GET_MENU_QUERY
-  const [sliderCollections /* menuCollections */, newArrivalsCollection] =
-    await Promise.all([
-      fetchCollectionsByHandles(context, menuHandles),
-      // REMOVED: fetchMenuCollections(context, menuHandles),
-      fetchCollectionByHandle(context, 'new-arrivals'),
-    ]);
+  const [
+    appleCollections,
+    gamingCollections,
+    laptopCollections,
+    newArrivalsCollection,
+  ] = await Promise.all([
+    fetchCollectionsByHandles(context, APPLE_HANDLES),
+    fetchCollectionsByHandles(context, GAMING_HANDLES),
+    fetchCollectionsByHandles(context, LAPTOP_HANDLES),
+    fetchCollectionByHandle(context, 'new-arrivals'),
+  ]);
+
 
   return {
     sliderCollections,
-    // REMOVED: menuCollections,
+    categorySliders: {
+      appleCollections,
+      gamingCollections,
+      laptopCollections,
+    },
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -426,10 +464,16 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, topProducts} =
-    useLoaderData();
+  const {
+    banners,
+    sliderCollections,
+    deferredData,
+    topProducts,
+    categorySliders,
+  } = useLoaderData();
 
-  // REMOVED: const menuCollections = deferredData?.menuCollections || [];
+  const {appleCollections, gamingCollections, laptopCollections} =
+    categorySliders || {};
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   console.log('Loaded Menus:', menus); // Debugging
@@ -441,6 +485,12 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
+      {appleCollections && (
+        <CategorySliderWithImages
+          sliderCollections={appleCollections}
+          title="Apple Collections"
+        />
+      )}
       {/* Add TopProductSections for each specified collection handle */}
       {topProducts['apple-accessories'] && (
         <TopProductSections collection={topProducts['apple-accessories']} />
@@ -451,6 +501,12 @@ export default function Homepage() {
       {topProducts['apple-imac'] && (
         <TopProductSections collection={topProducts['apple-imac']} />
       )}
+      {gamingCollections && (
+        <CategorySliderWithImages
+          sliderCollections={gamingCollections}
+          title="Gaming Collections"
+        />
+      )}
       {topProducts['gaming-laptops'] && (
         <TopProductSections collection={topProducts['gaming-laptops']} />
       )}
@@ -459,6 +515,12 @@ export default function Homepage() {
       )}
       {topProducts['console-games'] && (
         <TopProductSections collection={topProducts['console-games']} />
+      )}
+      {laptopCollections && (
+        <CategorySliderWithImages
+          sliderCollections={laptopCollections}
+          title="Laptop Collections"
+        />
       )}
       {topProducts['acer-laptops'] && (
         <TopProductSections collection={topProducts['acer-laptops']} />
