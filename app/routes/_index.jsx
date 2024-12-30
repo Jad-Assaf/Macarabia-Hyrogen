@@ -314,7 +314,7 @@ async function fetchMenuByHandle(context, menuHandles) {
   });
 
   const menus = await Promise.all(menusPromises);
-  return menus.filter(Boolean);
+  return menus.filter(Boolean); // Always return an array
 }
 
 // Fetch a single collection by handle
@@ -490,7 +490,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {menus && menus.length > 0 ? (
+      {menus && Array.isArray(menus) && menus.length > 0 ? (
         <MenuItemsByHandle
           menu={menus.find((menu) => menu.handle === 'apple')}
           handle="apple"
@@ -508,7 +508,7 @@ export default function Homepage() {
       {topProducts['apple-imac'] && (
         <TopProductSections collection={topProducts['apple-imac']} />
       )}
-      {menus && menus.length > 0 ? (
+      {menus && Array.isArray(menus) && menus.length > 0 ? (
         <MenuItemsByHandle
           menu={menus.find((menu) => menu.handle === 'gaming')}
           handle="gaming"
@@ -525,7 +525,7 @@ export default function Homepage() {
       {topProducts['console-games'] && (
         <TopProductSections collection={topProducts['console-games']} />
       )}
-      {menus && menus.length > 0 ? (
+      {menus && Array.isArray(menus) && menus.length > 0 ? (
         <MenuItemsByHandle
           menu={menus.find((menu) => menu.handle === 'laptops')}
           handle="laptops"

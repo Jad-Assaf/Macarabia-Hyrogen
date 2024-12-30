@@ -2,23 +2,23 @@ import React from 'react';
 import {Link} from 'react-router-dom'; // Adjust import as needed for routing
 
 export default function MenuItemsByHandle({menu, handle}) {
-  if (!menu || !menu.items) {
-    return <p>Menu not found or empty.</p>;
-  }
-
   const menuItem = menu.items.find(
-    (item) => item.title.toLowerCase() === handle.toLowerCase(),
+    (item) => item && item.title.toLowerCase() === handle.toLowerCase()
   );
 
-  const menuCollection = menuItem ? [menuItem] : menu.items;
+  if (!menuItem) {
+    return <p>Menu item not found.</p>;
+  }
 
   return (
     <div className="menu-slider-container">
-      {menuCollection.map((collection, index) => (
-        <div className="animated-menu-item" key={collection.id}>
-          <CollectionItem collection={collection} index={index} />
-        </div>
-      ))}
+      {menu.items
+        .filter((item) => item) // Filter out null items
+        .map((collection, index) => (
+          <div className="animated-menu-item" key={collection.id}>
+            <CollectionItem collection={collection} index={index} />
+          </div>
+        ))}
     </div>
   );
 }
