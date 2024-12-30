@@ -7,28 +7,27 @@ export default function MenuItemsByHandle({menu, handle}) {
   }
 
   const menuItem = menu.items.find(
-    (item) => item && item.title.toLowerCase() === handle.toLowerCase(),
+    (item) => item?.title.toLowerCase() === handle.toLowerCase()
   );
 
-  if (!menuItem) {
-    return <p>Menu item not found.</p>;
-  }
+  // If no specific item matches, default to all items
+  const menuCollection = menuItem ? [menuItem] : menu.items;
 
   return (
     <div className="menu-slider-container">
-      {menu.items
-        .filter((item) => item) // Filter out null items
-        .map((collection, index) => (
-          <div className="animated-menu-item" key={collection.id}>
-            <CollectionItem collection={collection} index={index} />
-          </div>
-        ))}
+      {menuCollection.map((collection, index) => (
+        <div className="animated-menu-item" key={collection.id}>
+          <CollectionItem collection={collection} index={index} />
+        </div>
+      ))}
     </div>
   );
 }
 
 // Updated CollectionItem Component
 export const CollectionItem = ({collection}) => {
+  if (!collection) return null;
+
   return (
     <Link to={collection.url} className="menu-item-container">
       <div className="menu-item-image-wrapper">

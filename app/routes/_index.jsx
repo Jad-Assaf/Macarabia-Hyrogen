@@ -490,7 +490,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {menus && Array.isArray(menus) && menus.length > 0 ? (
+      {menus?.length > 0 ? (
         <MenuItemsByHandle
           menu={menus.find((menu) => menu.handle === 'apple') || {items: []}}
           handle="apple"
@@ -508,7 +508,7 @@ export default function Homepage() {
       {topProducts['apple-imac'] && (
         <TopProductSections collection={topProducts['apple-imac']} />
       )}
-      {menus && Array.isArray(menus) && menus.length > 0 ? (
+      {menus?.length > 0 ? (
         <MenuItemsByHandle
           menu={menus.find((menu) => menu.handle === 'gaming') || {items: []}}
           handle="gaming"
@@ -525,7 +525,7 @@ export default function Homepage() {
       {topProducts['console-games'] && (
         <TopProductSections collection={topProducts['console-games']} />
       )}
-      {menus && Array.isArray(menus) && menus.length > 0 ? (
+      {menus?.length > 0 ? (
         <MenuItemsByHandle
           menu={menus.find((menu) => menu.handle === 'laptops') || {items: []}}
           handle="laptops"
