@@ -2,11 +2,14 @@ import React from 'react';
 import {Link} from 'react-router-dom'; // Adjust import as needed for routing
 
 export default function MenuItemsByHandle({menu, handle}) {
+  if (!menu || !menu.items) {
+    return <p>Menu not found or empty.</p>;
+  }
+
   const menuItem = menu.items.find(
     (item) => item.title.toLowerCase() === handle.toLowerCase(),
   );
 
-  // If a specific menu item is not found, render all menu items
   const menuCollection = menuItem ? [menuItem] : menu.items;
 
   return (

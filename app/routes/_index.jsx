@@ -490,8 +490,11 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {menus?.items ? (
-        <MenuItemsByHandle menu={menus} handle="apple" />
+      {menus && menus.length > 0 ? (
+        <MenuItemsByHandle
+          menu={menus.find((menu) => menu.handle === 'apple')}
+          handle="apple"
+        />
       ) : (
         <p>Loading menu...</p>
       )}
@@ -505,8 +508,11 @@ export default function Homepage() {
       {topProducts['apple-imac'] && (
         <TopProductSections collection={topProducts['apple-imac']} />
       )}
-      {menus?.items ? (
-        <MenuItemsByHandle menu={menus} handle="gaming" />
+      {menus && menus.length > 0 ? (
+        <MenuItemsByHandle
+          menu={menus.find((menu) => menu.handle === 'gaming')}
+          handle="gaming"
+        />
       ) : (
         <p>Loading menu...</p>
       )}
@@ -519,8 +525,11 @@ export default function Homepage() {
       {topProducts['console-games'] && (
         <TopProductSections collection={topProducts['console-games']} />
       )}
-      {menus?.items ? (
-        <MenuItemsByHandle menu={menus} handle="laptops" />
+      {menus && menus.length > 0 ? (
+        <MenuItemsByHandle
+          menu={menus.find((menu) => menu.handle === 'laptops')}
+          handle="laptops"
+        />
       ) : (
         <p>Loading menu...</p>
       )}
@@ -536,11 +545,6 @@ export default function Homepage() {
         <TopProductSections
           collection={topProducts['microsoft-surface-accessories']}
         />
-      )}
-      {menus?.items ? (
-        <MenuItemsByHandle menu={menus} handle="pc-parts" />
-      ) : (
-        <p>Loading menu...</p>
       )}
       {topProducts['motherboards'] && (
         <TopProductSections collection={topProducts['motherboards']} />
