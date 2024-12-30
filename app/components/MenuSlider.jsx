@@ -1,37 +1,27 @@
+// MenuSlider.jsx
 import React from 'react';
 import {useInView} from 'react-intersection-observer';
+import { CollectionItem } from './CollectionRows';
 
-/**
- * MenuSlider component
- * Shows a slider of products in the current collection using intersection observer
- */
-export function MenuSlider({collection}) {
-  // If your "collection" doesn’t have products, simply return null
-  if (!collection?.products?.nodes?.length) return null;
-
-  const productNodes = collection.products.nodes;
-
+const MenuSlider = ({menuCollection}) => {
   return (
     <div className="menu-slider-container">
-      {productNodes.map((product, index) => {
-        const [ref, inView] = useInView({triggerOnce: true});
+      {menuCollection.map((collection, collectionIndex) => {
+        const {ref, inView} = useInView({
+          triggerOnce: true,
+          threshold: 0.1, // Trigger when 10% of the component is visible
+        });
 
         return (
-          <div className="animated-menu-item" ref={ref} key={product.id}>
+          <div className="animated-menu-item" ref={ref} key={collection.id}>
             {inView && (
-              <div>
-                {/* 
-                  This is where you render your product data.
-                  You could replace this with any component that displays
-                  the product, e.g. <CollectionItem />, <ProductCard />, etc.
-                */}
-                <h4>{product.title}</h4>
-                {/* Additional product info, price, images, etc. */}
-              </div>
+              <CollectionItem collection={collection} index={collectionIndex} />
             )}
           </div>
         );
       })}
     </div>
   );
-}
+};
+
+export default MenuSlider;
