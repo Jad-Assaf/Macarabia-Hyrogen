@@ -1,17 +1,12 @@
 export default function MenuItemsByHandle({menu, handle}) {
-  console.log('Menu Data:', menu); // Debugging
-  console.log('Handle:', handle); // Debugging
 
   const menuItem = menu.items.find(
     (item) => item.title.toLowerCase() === handle.toLowerCase(),
   );
 
   if (!menuItem) {
-    console.warn(`No menu item found for handle: ${handle}`);
-    // Display all items for debugging
     return (
       <div>
-        <p>No menu items found for "{handle}". Showing all items:</p>
         <ul>
           {menu.items.map((item) => (
             <li key={item.id}>

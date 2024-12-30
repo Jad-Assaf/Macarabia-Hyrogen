@@ -211,7 +211,23 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  const menus = await fetchMenuByHandle(args.context, 'apple');
+  const menus = await fetchMenuByHandle(
+    args.context,
+    'apple',
+    'gaming',
+    'laptops',
+    'desktops',
+    'pc-parts',
+    'networking',
+    'monitors',
+    'mobiles',
+    'tablets',
+    'audio',
+    'accessories',
+    'fitness',
+    'photography',
+    'home-appliances',
+  );
 
   const newData = {
     banners,
@@ -457,13 +473,13 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
+      {newArrivalsCollection && (
+        <TopProductSections collection={newArrivalsCollection} />
+      )}
       {menus?.items ? (
         <MenuItemsByHandle menu={menus} handle="apple" />
       ) : (
         <p>Loading menu...</p>
-      )}
-      {newArrivalsCollection && (
-        <TopProductSections collection={newArrivalsCollection} />
       )}
       {/* Add TopProductSections for each specified collection handle */}
       {topProducts['apple-accessories'] && (
@@ -475,6 +491,11 @@ export default function Homepage() {
       {topProducts['apple-imac'] && (
         <TopProductSections collection={topProducts['apple-imac']} />
       )}
+      {menus?.items ? (
+        <MenuItemsByHandle menu={menus} handle="gaming" />
+      ) : (
+        <p>Loading menu...</p>
+      )}
       {topProducts['gaming-laptops'] && (
         <TopProductSections collection={topProducts['gaming-laptops']} />
       )}
@@ -483,6 +504,11 @@ export default function Homepage() {
       )}
       {topProducts['console-games'] && (
         <TopProductSections collection={topProducts['console-games']} />
+      )}
+      {menus?.items ? (
+        <MenuItemsByHandle menu={menus} handle="laptops" />
+      ) : (
+        <p>Loading menu...</p>
       )}
       {topProducts['acer-laptops'] && (
         <TopProductSections collection={topProducts['acer-laptops']} />
@@ -496,6 +522,11 @@ export default function Homepage() {
         <TopProductSections
           collection={topProducts['microsoft-surface-accessories']}
         />
+      )}
+      {menus?.items ? (
+        <MenuItemsByHandle menu={menus} handle="pc-parts" />
+      ) : (
+        <p>Loading menu...</p>
       )}
       {topProducts['motherboards'] && (
         <TopProductSections collection={topProducts['motherboards']} />
