@@ -211,8 +211,7 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  const menus = await fetchMenuByHandle(
-    args.context,
+  const menus = await fetchMenuByHandle(args.context, [
     'apple',
     'gaming',
     'laptops',
@@ -227,7 +226,7 @@ export async function loader(args) {
     'fitness',
     'photography',
     'home-appliances',
-  );
+  ]);
 
   const newData = {
     banners,
@@ -483,8 +482,6 @@ export default function Homepage() {
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   console.log('Loaded Menus:', menus); // Debugging
-
-  const menu = menus?.menu;
 
   return (
     <div className="home">
