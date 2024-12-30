@@ -1,12 +1,12 @@
-import React from 'react';
+import React, {Suspense, lazy, startTransition} from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
+// REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-import {Menu} from '~/components/Menu'; // Import the separate Menu component
 
 const cache = new Map();
 
@@ -67,8 +67,6 @@ export const meta = ({data}) => {
 };
 
 /**
- * Loader Function to Fetch Data
- *
  * @param {LoaderFunctionArgs} args
  */
 export async function loader(args) {
@@ -212,29 +210,18 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  // Fetch all menus based on MANUAL_MENU_HANDLES
-  const fetchedMenus = await Promise.all(
-    MANUAL_MENU_HANDLES.map((handle) =>
-      fetchMenuByHandle(args.context, handle),
-    ),
-  );
-
-  const menusByHandle = {};
-  MANUAL_MENU_HANDLES.forEach((handle, index) => {
-    menusByHandle[handle] = fetchedMenus[index];
-  });
-
   const newData = {
     banners,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
+    // REMOVED: No longer deferring menuCollections
     deferredData: {
+      // REMOVED: menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
     topProducts: topProductsByHandle, // Add fetched TopProductSections collections here
-    menus: menusByHandle, // Add fetched menus here
   };
 
   // Cache the new data
@@ -250,6 +237,8 @@ export async function loader(args) {
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
+  const menuHandles = MANUAL_MENU_HANDLES;
+
   const {shop} = await storefront.query(
     `#graphql
       query ShopDetails {
@@ -261,13 +250,17 @@ async function loadCriticalData({context}) {
     `,
   );
 
-  const [sliderCollections, newArrivalsCollection] = await Promise.all([
-    fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES),
-    fetchCollectionByHandle(context, 'new-arrivals'),
-  ]);
+  // REMOVED: fetchMenuCollections, which used GET_MENU_QUERY
+  const [sliderCollections /* menuCollections */, newArrivalsCollection] =
+    await Promise.all([
+      fetchCollectionsByHandles(context, menuHandles),
+      // REMOVED: fetchMenuCollections(context, menuHandles),
+      fetchCollectionByHandle(context, 'new-arrivals'),
+    ]);
 
   return {
     sliderCollections,
+    // REMOVED: menuCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -284,13 +277,10 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-// Fetch a single menu by handle
-async function fetchMenuByHandle(context, handle) {
-  const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-    variables: {handle},
-  });
-  return menu || null;
-}
+// REMOVED: The entire fetchMenuCollections function
+// async function fetchMenuCollections(context, menuHandles) {
+//   ...
+// }
 
 // Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
@@ -446,9 +436,6 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      {MANUAL_MENU_HANDLES.map((handle) => (
-        <Menu key={handle} handle={handle} menu={menus[handle]} />
-      ))}
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
