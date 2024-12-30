@@ -1,26 +1,35 @@
-import React from 'react';
-
 export default function MenuItemsByHandle({menu, handle}) {
-  console.log('Menu Items:', menu.items); // Debugging
+  console.log('Menu Data:', menu.items); // Debugging
+  console.log('Handle:', handle); // Debugging
 
   const menuItem = menu.items.find(
-    (item) => item.title.toLowerCase() === handle,
+    (item) => item.title.toLowerCase() === handle.toLowerCase(),
   );
 
   if (!menuItem) {
     console.warn(`No menu item found for handle: ${handle}`);
-    return null; // No matching menu item
+    // Display all items for debugging
+    return (
+      <div>
+        <p>No menu items found for "{handle}". Showing all items:</p>
+        <ul>
+          {menu.items.map((item) => (
+            <li key={item.id}>
+              <a href={item.url}>{item.title}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
   }
 
   return (
     <div className="menu-items">
       <h2>{menuItem.title}</h2>
       <ul>
-        {menuItem.items?.map((subItem) => (
-          <li key={subItem.id}>
-            <a href={subItem.url}>{subItem.title}</a>
-          </li>
-        ))}
+        <li key={menuItem.id}>
+          <a href={menuItem.url}>{menuItem.title}</a>
+        </li>
       </ul>
     </div>
   );
