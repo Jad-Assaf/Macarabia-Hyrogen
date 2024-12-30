@@ -4,7 +4,7 @@ import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
-// REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
+import {CollectionDisplay} from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 
@@ -152,76 +152,16 @@ export async function loader(args) {
 
   const criticalData = await loadCriticalData(args);
 
-  // Define all collection handles you want to display using TopProductSections
-  const TOP_PRODUCT_HANDLES = [
-    'apple-accessories',
-    'apple-macbook',
-    'apple-imac',
-    'gaming-laptops',
-    'gaming-desktops',
-    'console-games',
-    'acer-laptops',
-    'microsoft-surface-laptops',
-    'microsoft-surface-accessories',
-    'motherboards',
-    'cpus',
-    'cpu-coolers',
-    'gpu',
-    'wifi-routers',
-    'wifi-range-extenders',
-    'switches',
-    'apple-studio-display',
-    'aoc-monitors',
-    'asus-monitors',
-    'mobile-accessories',
-    'apple-iphone',
-    'samsung-mobile-phones',
-    'tablet-accessories',
-    'digital-text',
-    'samsung-tablets',
-    'earbuds',
-    'headphones',
-    'speakers',
-    'computer-accessories',
-    'electric-screwdrivers',
-    'car-accessories',
-    'fitness-bands',
-    'samsung-watches',
-    'amazfit-watches',
-    'action-cameras',
-    'action-cameras-accessories',
-    'cameras',
-    'drones',
-    'kitchen-appliances',
-    'cleaning-devices',
-    'lighting',
-  ];
-
-  // Fetch all TopProductSections collections based on TOP_PRODUCT_HANDLES
-  const fetchedTopProducts = await Promise.all(
-    TOP_PRODUCT_HANDLES.map((handle) =>
-      fetchCollectionByHandle(args.context, handle),
-    ),
-  );
-
-  // Organize TopProductSections collections into an object with keys corresponding to their handles
-  const topProductsByHandle = {};
-  TOP_PRODUCT_HANDLES.forEach((handle, index) => {
-    topProductsByHandle[handle] = fetchedTopProducts[index];
-  });
-
   const newData = {
     banners,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
-    // REMOVED: No longer deferring menuCollections
     deferredData: {
-      // REMOVED: menuCollections: criticalData.menuCollections,
+      menuCollections: criticalData.menuCollections,
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
-    topProducts: topProductsByHandle, // Add fetched TopProductSections collections here
   };
 
   // Cache the new data
@@ -234,12 +174,13 @@ export async function loader(args) {
   });
 }
 
-async function loadCriticalData({context}) {
-  const {storefront} = context;
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
 
+  // Use the hardcoded MANUAL_MENU_HANDLES
   const menuHandles = MANUAL_MENU_HANDLES;
 
-  const {shop} = await storefront.query(
+  const { shop } = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -247,20 +188,19 @@ async function loadCriticalData({context}) {
           description
         }
       }
-    `,
+    `
   );
 
-  // REMOVED: fetchMenuCollections, which used GET_MENU_QUERY
-  const [sliderCollections /* menuCollections */, newArrivalsCollection] =
+  const [sliderCollections, menuCollections, newArrivalsCollection] =
     await Promise.all([
       fetchCollectionsByHandles(context, menuHandles),
-      // REMOVED: fetchMenuCollections(context, menuHandles),
+      fetchMenuCollections(context, menuHandles),
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
   return {
     sliderCollections,
-    // REMOVED: menuCollections,
+    menuCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -277,10 +217,33 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-// REMOVED: The entire fetchMenuCollections function
-// async function fetchMenuCollections(context, menuHandles) {
-//   ...
-// }
+// Fetch menu collections
+async function fetchMenuCollections(context, menuHandles) {
+  const collectionsPromises = menuHandles.map(async (handle) => {
+    const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+      variables: {handle},
+    });
+
+    if (!menu || !menu.items || menu.items.length === 0) {
+      return null;
+    }
+
+    const collectionPromises = menu.items.map(async (item) => {
+      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
+      const {collectionByHandle} = await context.storefront.query(
+        GET_COLLECTION_BY_HANDLE_QUERY,
+        {variables: {handle: sanitizedHandle}},
+      );
+      return collectionByHandle || null;
+    });
+
+    const collections = await Promise.all(collectionPromises);
+    return collections.filter(Boolean);
+  });
+
+  const collectionsGrouped = await Promise.all(collectionsPromises);
+  return collectionsGrouped.filter(Boolean);
+}
 
 // Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
@@ -426,10 +389,9 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, topProducts} =
-    useLoaderData();
+  const { banners, sliderCollections, deferredData } = useLoaderData();
 
-  // REMOVED: const menuCollections = deferredData?.menuCollections || [];
+  const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   return (
@@ -439,137 +401,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {/* Add TopProductSections for each specified collection handle */}
-      {topProducts['apple-accessories'] && (
-        <TopProductSections collection={topProducts['apple-accessories']} />
-      )}
-      {topProducts['apple-macbook'] && (
-        <TopProductSections collection={topProducts['apple-macbook']} />
-      )}
-      {topProducts['apple-imac'] && (
-        <TopProductSections collection={topProducts['apple-imac']} />
-      )}
-      {topProducts['gaming-laptops'] && (
-        <TopProductSections collection={topProducts['gaming-laptops']} />
-      )}
-      {topProducts['gaming-desktops'] && (
-        <TopProductSections collection={topProducts['gaming-desktops']} />
-      )}
-      {topProducts['console-games'] && (
-        <TopProductSections collection={topProducts['console-games']} />
-      )}
-      {topProducts['acer-laptops'] && (
-        <TopProductSections collection={topProducts['acer-laptops']} />
-      )}
-      {topProducts['microsoft-surface-laptops'] && (
-        <TopProductSections
-          collection={topProducts['microsoft-surface-laptops']}
-        />
-      )}
-      {topProducts['microsoft-surface-accessories'] && (
-        <TopProductSections
-          collection={topProducts['microsoft-surface-accessories']}
-        />
-      )}
-      {topProducts['motherboards'] && (
-        <TopProductSections collection={topProducts['motherboards']} />
-      )}
-      {topProducts['cpus'] && (
-        <TopProductSections collection={topProducts['cpus']} />
-      )}
-      {topProducts['cpu-coolers'] && (
-        <TopProductSections collection={topProducts['cpu-coolers']} />
-      )}
-      {topProducts['gpu'] && (
-        <TopProductSections collection={topProducts['gpu']} />
-      )}
-      {topProducts['wifi-routers'] && (
-        <TopProductSections collection={topProducts['wifi-routers']} />
-      )}
-      {topProducts['wifi-range-extenders'] && (
-        <TopProductSections collection={topProducts['wifi-range-extenders']} />
-      )}
-      {topProducts['switches'] && (
-        <TopProductSections collection={topProducts['switches']} />
-      )}
-      {topProducts['apple-studio-display'] && (
-        <TopProductSections collection={topProducts['apple-studio-display']} />
-      )}
-      {topProducts['aoc-monitors'] && (
-        <TopProductSections collection={topProducts['aoc-monitors']} />
-      )}
-      {topProducts['asus-monitors'] && (
-        <TopProductSections collection={topProducts['asus-monitors']} />
-      )}
-      {topProducts['mobile-accessories'] && (
-        <TopProductSections collection={topProducts['mobile-accessories']} />
-      )}
-      {topProducts['apple-iphone'] && (
-        <TopProductSections collection={topProducts['apple-iphone']} />
-      )}
-      {topProducts['samsung-mobile-phones'] && (
-        <TopProductSections collection={topProducts['samsung-mobile-phones']} />
-      )}
-      {topProducts['tablet-accessories'] && (
-        <TopProductSections collection={topProducts['tablet-accessories']} />
-      )}
-      {topProducts['digital-text'] && (
-        <TopProductSections collection={topProducts['digital-text']} />
-      )}
-      {topProducts['samsung-tablets'] && (
-        <TopProductSections collection={topProducts['samsung-tablets']} />
-      )}
-      {topProducts['earbuds'] && (
-        <TopProductSections collection={topProducts['earbuds']} />
-      )}
-      {topProducts['headphones'] && (
-        <TopProductSections collection={topProducts['headphones']} />
-      )}
-      {topProducts['speakers'] && (
-        <TopProductSections collection={topProducts['speakers']} />
-      )}
-      {topProducts['computer-accessories'] && (
-        <TopProductSections collection={topProducts['computer-accessories']} />
-      )}
-      {topProducts['electric-screwdrivers'] && (
-        <TopProductSections collection={topProducts['electric-screwdrivers']} />
-      )}
-      {topProducts['car-accessories'] && (
-        <TopProductSections collection={topProducts['car-accessories']} />
-      )}
-      {topProducts['fitness-bands'] && (
-        <TopProductSections collection={topProducts['fitness-bands']} />
-      )}
-      {topProducts['samsung-watches'] && (
-        <TopProductSections collection={topProducts['samsung-watches']} />
-      )}
-      {topProducts['amazfit-watches'] && (
-        <TopProductSections collection={topProducts['amazfit-watches']} />
-      )}
-      {topProducts['action-cameras'] && (
-        <TopProductSections collection={topProducts['action-cameras']} />
-      )}
-      {topProducts['action-cameras-accessories'] && (
-        <TopProductSections
-          collection={topProducts['action-cameras-accessories']}
-        />
-      )}
-      {topProducts['cameras'] && (
-        <TopProductSections collection={topProducts['cameras']} />
-      )}
-      {topProducts['drones'] && (
-        <TopProductSections collection={topProducts['drones']} />
-      )}
-      {topProducts['kitchen-appliances'] && (
-        <TopProductSections collection={topProducts['kitchen-appliances']} />
-      )}
-      {topProducts['cleaning-devices'] && (
-        <TopProductSections collection={topProducts['cleaning-devices']} />
-      )}
-      {topProducts['lighting'] && (
-        <TopProductSections collection={topProducts['lighting']} />
-      )}
-      {/* REMOVED: <CollectionDisplay menuCollections={menuCollections} /> */}
+      <CollectionDisplay menuCollections={menuCollections} />
       <BrandSection brands={brandsData} />
     </div>
   );
