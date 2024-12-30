@@ -34,16 +34,16 @@ const CollectionRows = ({menuCollections}) => {
           {/* Render the menu slider */}
           <div className="menu-slider-container">
             {menuCollection.map((collection, collectionIndex) => (
-              <FadeInWrapper key={collection.id}>
+              <div className="animated-menu-item" key={collection.id}>
                 <CollectionItem
                   collection={collection}
                   index={collectionIndex}
                 />
-              </FadeInWrapper>
+              </div>
             ))}
           </div>
 
-          {menuCollection.slice(0, 2).map((collection) => (
+          {menuCollection.slice(0, 4).map((collection) => (
             <div key={collection.id} className="collection-section">
               <div className="collection-header">
                 <h3>{collection.title}</h3>
@@ -54,11 +54,9 @@ const CollectionRows = ({menuCollections}) => {
                   View All
                 </Link>
               </div>
-              <FadeInWrapper>
-                <div className="product-row-container">
-                  <ProductRow products={collection.products.nodes} />
-                </div>
-              </FadeInWrapper>
+              <div className="product-row-container">
+                <ProductRow products={collection.products.nodes} />
+              </div>
             </div>
           ))}
         </React.Fragment>
@@ -67,48 +65,9 @@ const CollectionRows = ({menuCollections}) => {
   );
 };
 
-// Fade-in wrapper component
-const FadeInWrapper = ({children}) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      {threshold: 0.1}, // Trigger when 10% of the element is in view
-    );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
-    };
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-        transition: 'opacity 0.6s ease, transform 0.6s ease',
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
 export const CollectionItem = ({collection, index}) => {
   const [isLoading, setIsLoading] = useState(true);
+  const ref = useRef(null);
 
   const handleImageLoad = () => {
     setIsLoading(false);
@@ -127,7 +86,8 @@ export const CollectionItem = ({collection, index}) => {
                      ${collection.image.url}?width=600&quality=15 600w,
                      ${collection.image.url}?width=1200&quality=15 1200w`}
             alt={collection.image.altText || collection.title}
-            className={`menu-item-image`}
+            className={`menu-item-image
+            }`}
             width={150}
             height={150}
             loading="lazy"
