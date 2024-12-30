@@ -286,7 +286,7 @@ async function fetchCollectionByHandle(context, handle) {
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
-      GET_COLLECTION_BY_HANDLE_QUERY_SIMPLE,
+      GET_COLLECTION_BY_HANDLE_QUERY,
       {variables: {handle}},
     );
     return collectionByHandle || null;
@@ -574,20 +574,6 @@ export default function Homepage() {
     </div>
   );
 }
-
-const GET_COLLECTION_BY_HANDLE_QUERY_SIMPLE = `#graphql
-  query GetCollectionByHandle($handle: String!) {
-    collectionByHandle(handle: $handle) {
-      id
-      title
-      handle
-      image {
-        url
-        altText
-      }
-    }
-  }
-`;
 
 const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
   query GetCollectionByHandle($handle: String!) {
