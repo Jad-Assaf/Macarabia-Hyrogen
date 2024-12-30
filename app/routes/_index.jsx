@@ -301,7 +301,7 @@ async function fetchMenuByHandle(context, menuHandles) {
     const itemPromises = menu.items.map(async (item) => {
       const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
       const {collectionByHandle} = await context.storefront.query(
-        GET_COLLECTION_BY_HANDLE_QUERY,
+        GET_SIMPLE_COLLECTION_QUERY,
         {variables: {handle: sanitizedHandle}},
       );
       return collectionByHandle || null;
