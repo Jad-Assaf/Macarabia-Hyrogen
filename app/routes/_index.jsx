@@ -1,13 +1,12 @@
-import React from 'react';
+import React, {Suspense, lazy, startTransition} from 'react';
 import {defer} from '@shopify/remix-oxygen';
-import {useLoaderData, Link} from '@remix-run/react';
+import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-import MenuSlider from '~/components/MenuSlider'; // Ensure correct path
 
 const cache = new Map();
 
@@ -211,90 +210,17 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  // Fetch menuCollections based on MANUAL_MENU_HANDLES
-  const menuCollections = await Promise.all(
-    MANUAL_MENU_HANDLES.map(async (handle) => {
-      // Fetch menu items using GET_MENU_QUERY
-      const GET_MENU_QUERY = `#graphql
-        query GetMenu($handle: String!) {
-          menu(handle: $handle) {
-            items {
-              id
-              title
-              url
-              handle
-            }
-          }
-        }
-      `;
-
-      try {
-        const {menu} = await args.context.storefront.query(GET_MENU_QUERY, {
-          variables: {handle},
-        });
-
-        if (!menu) {
-          console.warn(`No menu found for handle: ${handle}`);
-          return null;
-        }
-
-        // For each menu item, fetch collection data using GET_COLLECTION_BY_HANDLE_QUERY
-        const menuItemsWithCollections = await Promise.all(
-          menu.items.map(async (item) => {
-            const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
-              query GetCollectionByHandle($handle: String!) {
-                collectionByHandle(handle: $handle) {
-                  id
-                  title
-                  handle
-                  image {
-                    url
-                    altText
-                  }
-                }
-              }
-            `;
-
-            const {collectionByHandle} = await args.context.storefront.query(
-              GET_COLLECTION_BY_HANDLE_QUERY,
-              {variables: {handle: item.handle}},
-            );
-
-            if (!collectionByHandle) {
-              console.warn(`No collection found for handle: ${item.handle}`);
-              return null;
-            }
-
-            return {
-              id: collectionByHandle.id,
-              title: collectionByHandle.title,
-              handle: collectionByHandle.handle,
-              image: collectionByHandle.image
-                ? {
-                    url: collectionByHandle.image.url,
-                    altText: collectionByHandle.image.altText,
-                  }
-                : null,
-            };
-          }),
-        );
-
-        // Filter out any null collections
-        const validCollections = menuItemsWithCollections.filter(Boolean);
-
-        return {
-          handle, // The menu handle
-          collections: validCollections, // Array of collection data
-        };
-      } catch (error) {
-        console.error(`Error fetching menu for handle "${handle}":`, error);
-        return null;
-      }
-    }),
-  );
-
-  // Filter out any null menuCollections
-  const validMenuCollections = menuCollections.filter(Boolean);
+  const menus = {};
+  for (const handle of MANUAL_MENU_HANDLES) {
+    const menu = await fetchMenu(args.context, handle);
+    if (menu?.items) {
+      menus[handle] = await Promise.all(
+        menu.items.map((item) =>
+          fetchMenuCollectionByHandle(args.context, item.title),
+        ),
+      );
+    }
+  }
 
   const newData = {
     banners,
@@ -308,7 +234,7 @@ export async function loader(args) {
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
     topProducts: topProductsByHandle, // Add fetched TopProductSections collections here
-    menuCollections: validMenuCollections, // Add fetched MenuSlider collections here
+    menus,
   };
 
   // Cache the new data
@@ -337,9 +263,11 @@ async function loadCriticalData({context}) {
     `,
   );
 
+  // REMOVED: fetchMenuCollections, which used GET_MENU_QUERY
   const [sliderCollections /* menuCollections */, newArrivalsCollection] =
     await Promise.all([
       fetchCollectionsByHandles(context, menuHandles),
+      // REMOVED: fetchMenuCollections(context, menuHandles),
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
@@ -353,6 +281,45 @@ async function loadCriticalData({context}) {
   };
 }
 
+async function fetchMenu(context, handle) {
+  const {menu} = await context.storefront.query(
+    `#graphql
+      query GetMenu($handle: String!) {
+        menu(handle: $handle) {
+          items {
+            id
+            title
+            url
+          }
+        }
+      }
+    `,
+    {variables: {handle}},
+  );
+  return menu || null;
+}
+
+async function fetchMenuCollectionByHandle(context, handle) {
+  const {collectionByHandle} = await context.storefront.query(
+    `#graphql
+      query GetCollectionByHandle($handle: String!) {
+        collectionByHandle(handle: $handle) {
+          id
+          title
+          handle
+          image {
+            url
+            altText
+          }
+        }
+      }
+    `,
+    {variables: {handle}},
+  );
+  return collectionByHandle || null;
+}
+
+
 // Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
@@ -361,6 +328,11 @@ async function fetchCollectionByHandle(context, handle) {
   );
   return collectionByHandle || null;
 }
+
+// REMOVED: The entire fetchMenuCollections function
+// async function fetchMenuCollections(context, menuHandles) {
+//   ...
+// }
 
 // Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
@@ -506,13 +478,8 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {
-    banners,
-    sliderCollections,
-    deferredData,
-    topProducts,
-    menuCollections,
-  } = useLoaderData();
+  const {banners, menus, sliderCollections, deferredData, topProducts} =
+    useLoaderData();
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
@@ -521,10 +488,11 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
+      <MenuSlider handle="apple" menuCollection={menus['apple']} />
+
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-
       {/* Add TopProductSections for each specified collection handle */}
       {topProducts['apple-accessories'] && (
         <TopProductSections collection={topProducts['apple-accessories']} />
@@ -655,132 +623,6 @@ export default function Homepage() {
       {topProducts['lighting'] && (
         <TopProductSections collection={topProducts['lighting']} />
       )}
-
-      {/* Manually Insert MenuSlider Components with Corresponding Handles */}
-      {menuCollections.find((menu) => menu.handle === 'apple') && (
-        <MenuSlider
-          handle="apple"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'apple').collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'gaming') && (
-        <MenuSlider
-          handle="gaming"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'gaming').collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'laptops') && (
-        <MenuSlider
-          handle="laptops"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'laptops')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'desktops') && (
-        <MenuSlider
-          handle="desktops"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'desktops')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'pc-parts') && (
-        <MenuSlider
-          handle="pc-parts"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'pc-parts')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'networking') && (
-        <MenuSlider
-          handle="networking"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'networking')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'monitors') && (
-        <MenuSlider
-          handle="monitors"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'monitors')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'mobiles') && (
-        <MenuSlider
-          handle="mobiles"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'mobiles')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'tablets') && (
-        <MenuSlider
-          handle="tablets"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'tablets')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'audio') && (
-        <MenuSlider
-          handle="audio"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'audio').collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'accessories') && (
-        <MenuSlider
-          handle="accessories"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'accessories')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'fitness') && (
-        <MenuSlider
-          handle="fitness"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'fitness')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'photography') && (
-        <MenuSlider
-          handle="photography"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'photography')
-              .collections
-          }
-        />
-      )}
-      {menuCollections.find((menu) => menu.handle === 'home-appliances') && (
-        <MenuSlider
-          handle="home-appliances"
-          menuCollection={
-            menuCollections.find((menu) => menu.handle === 'home-appliances')
-              .collections
-          }
-        />
-      )}
-
       {/* REMOVED: <CollectionDisplay menuCollections={menuCollections} /> */}
       <BrandSection brands={brandsData} />
     </div>
@@ -844,4 +686,14 @@ const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
   }
 `;
 
-// The GET_MENU_QUERY is defined inside the loader function as shown above
+export const GET_MENU_QUERY = `#graphql
+  query GetMenu($handle: String!) {
+    menu(handle: $handle) {
+      items {
+        id
+        title
+        url
+      }
+    }
+  }
+`;
