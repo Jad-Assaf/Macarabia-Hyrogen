@@ -211,12 +211,16 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  const menuHandle = 'apple'; // You can fetch multiple menus if needed
-  const menu = await fetchMenu(context, menuHandle);
+  const menuHandle = 'apple'; // Replace with your desired menu handle
+
+  // Fetch menu data using the provided query
+  const menuData = await context.storefront.query(GET_MENU_QUERY, {
+    variables: {handle: menuHandle},
+  });
 
   const newData = {
     banners,
-    menu,
+    menu: menuData.menu || null,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,

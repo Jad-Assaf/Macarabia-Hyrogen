@@ -6,14 +6,12 @@ const MenuComponent = ({ menu }) => {
   }
 
   return (
-    <div className="menu-component">
+    <div className="menu-container">
       <h2>Menu</h2>
       <ul className="menu-list">
         {menu.items.map((item) => (
-          <li key={item.id} className="menu-item">
-            <a href={item.url} className="menu-link">
-              {item.title}
-            </a>
+          <li key={item.id}>
+            <a href={item.url}>{item.title}</a>
           </li>
         ))}
       </ul>
