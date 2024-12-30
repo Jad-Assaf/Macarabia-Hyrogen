@@ -212,12 +212,14 @@ export async function loader(args) {
   });
 
   const menus = {};
+
+  // Fetch menus and their collections
   for (const handle of MANUAL_MENU_HANDLES) {
-    const menu = await fetchMenu(args.context, handle);
+    const menu = await fetchMenu(context, handle);
     if (menu?.items) {
       menus[handle] = await Promise.all(
         menu.items.map((item) =>
-          fetchMenuCollectionByHandle(args.context, item.title),
+          fetchMenuCollectionByHandle(context, item.title),
         ),
       );
     }
@@ -225,6 +227,7 @@ export async function loader(args) {
 
   const newData = {
     banners,
+    menus,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
@@ -235,7 +238,6 @@ export async function loader(args) {
       newArrivalsCollection: criticalData.newArrivalsCollection,
     },
     topProducts: topProductsByHandle, // Add fetched TopProductSections collections here
-    menus,
   };
 
   // Cache the new data
@@ -319,7 +321,6 @@ async function fetchMenuCollectionByHandle(context, handle) {
   );
   return collectionByHandle || null;
 }
-
 
 // Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
