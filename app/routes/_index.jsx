@@ -210,8 +210,11 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
+  const menus = await fetchMenuByHandle(args.context, 'main-menu');
+
   const newData = {
     banners,
+    menus,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
@@ -266,6 +269,18 @@ async function loadCriticalData({context}) {
     description: shop.description,
     url: 'https://macarabia.me',
   };
+}
+
+async function fetchMenuByHandle(context, handle) {
+  try {
+    const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+      variables: {handle},
+    });
+    return menu;
+  } catch (error) {
+    console.error(`Failed to fetch menu for handle: ${handle}`, error);
+    return null;
+  }
 }
 
 // Fetch a single collection by handle
@@ -426,16 +441,19 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, topProducts} =
+  const {banners, sliderCollections, deferredData, topProducts, menus} =
     useLoaderData();
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
+  const menu = menus?.menu;
+
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
+      {menu && <MenuItemsByHandle menu={menu} handle="apple" />}
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
@@ -657,4 +675,3 @@ const GET_SIMPLE_COLLECTION_QUERY = `#graphql
     }
   }
 `;
-
