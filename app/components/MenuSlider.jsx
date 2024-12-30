@@ -1,7 +1,7 @@
 // MenuSlider.jsx
 import React, {useEffect, useState} from 'react';
 import {useInView} from 'react-intersection-observer';
-import {CollectionItem} from './CollectionRows'; // Ensure correct path
+import { CollectionItem } from './CollectionRows';
 
 /**
  * MenuSlider Component
