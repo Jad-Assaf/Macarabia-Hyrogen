@@ -7,6 +7,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
+import MenuItemsByHandle from '~/components/MenuItemsByHandle';
 
 const cache = new Map();
 
@@ -431,8 +432,6 @@ export default function Homepage() {
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
-
-  console.log('Loaded Menus:', menus); // Debugging
 
   return (
     <div className="home">
