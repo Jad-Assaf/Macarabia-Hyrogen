@@ -10,7 +10,7 @@ import React from 'react';
  * @param {Object} props.menu - The menu data fetched from Shopify.
  */
 export function Menu({handle, menu}) {
-  if (!menu || !menu.items.length) return null;
+  if (!menu || !menu.items || menu.items.length === 0) return null;
 
   return (
     <nav className="menu-section">

@@ -1,13 +1,12 @@
-import React, {Suspense, lazy, startTransition} from 'react';
+import React from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
-// REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-import { Menu } from '~/components/Menu';
+import {Menu} from '~/components/Menu'; // Import the separate Menu component
 
 const cache = new Map();
 
@@ -68,6 +67,8 @@ export const meta = ({data}) => {
 };
 
 /**
+ * Loader Function to Fetch Data
+ *
  * @param {LoaderFunctionArgs} args
  */
 export async function loader(args) {
@@ -211,6 +212,7 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
+  // Fetch all menus based on MANUAL_MENU_HANDLES
   const fetchedMenus = await Promise.all(
     MANUAL_MENU_HANDLES.map((handle) =>
       fetchMenuByHandle(args.context, handle),
@@ -248,8 +250,6 @@ export async function loader(args) {
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
-  const menuHandles = MANUAL_MENU_HANDLES;
-
   const {shop} = await storefront.query(
     `#graphql
       query ShopDetails {
@@ -261,17 +261,13 @@ async function loadCriticalData({context}) {
     `,
   );
 
-  // REMOVED: fetchMenuCollections, which used GET_MENU_QUERY
-  const [sliderCollections /* menuCollections */, newArrivalsCollection] =
-    await Promise.all([
-      fetchCollectionsByHandles(context, menuHandles),
-      // REMOVED: fetchMenuCollections(context, menuHandles),
-      fetchCollectionByHandle(context, 'new-arrivals'),
-    ]);
+  const [sliderCollections, newArrivalsCollection] = await Promise.all([
+    fetchCollectionsByHandles(context, MANUAL_MENU_HANDLES),
+    fetchCollectionByHandle(context, 'new-arrivals'),
+  ]);
 
   return {
     sliderCollections,
-    // REMOVED: menuCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -288,17 +284,13 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
+// Fetch a single menu by handle
 async function fetchMenuByHandle(context, handle) {
   const {menu} = await context.storefront.query(GET_MENU_QUERY, {
     variables: {handle},
   });
   return menu || null;
 }
-
-// REMOVED: The entire fetchMenuCollections function
-// async function fetchMenuCollections(context, menuHandles) {
-//   ...
-// }
 
 // Fetch collections by handles for sliders
 async function fetchCollectionsByHandles(context, handles) {
