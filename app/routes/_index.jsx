@@ -277,6 +277,7 @@ async function fetchMenuByHandle(context, handle) {
     const {menu} = await context.storefront.query(GET_MENU_QUERY, {
       variables: {handle},
     });
+    console.log('Fetched Menu:', menu);
     return menu;
   } catch (error) {
     console.error(`Failed to fetch menu for handle: ${handle}`, error);
@@ -454,7 +455,11 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      {menu && <MenuItemsByHandle menu={menu} handle="apple" />}
+      {menu ? (
+        <MenuItemsByHandle menu={menu} handle="apple" />
+      ) : (
+        <p>Loading menu...</p>
+      )}{' '}
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}

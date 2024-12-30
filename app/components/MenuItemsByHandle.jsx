@@ -1,11 +1,13 @@
 import React from 'react';
 
 export default function MenuItemsByHandle({menu, handle}) {
-  // Find the menu item by handle
-  const menuItem = menu.items.find((item) => item.url.includes(handle));
+  const menuItem = menu.items.find(
+    (item) => item.title.toLowerCase() === handle,
+  );
 
   if (!menuItem) {
-    return null; // No matching menu item found
+    console.warn(`No menu item found for handle: ${handle}`);
+    return null; // No matching menu item
   }
 
   return (
