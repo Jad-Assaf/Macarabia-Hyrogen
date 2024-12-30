@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 import {useInView} from 'react-intersection-observer';
 
@@ -29,7 +29,8 @@ const MenuSlider = ({handle, menuCollection}) => {
                   className="menu-item-container"
                 >
                   <div className="menu-item-image-wrapper">
-                    <CollectionImage collection={collection} />
+                    {/* Commented out the image rendering */}
+                    {/* <CollectionImage collection={collection} /> */}
                   </div>
                   <div className="category-title">{collection.title}</div>
                 </Link>
@@ -55,7 +56,8 @@ const CollectionImage = ({collection}) => {
 
   return (
     <>
-      {isLoading && <div className="menu-item-shimmer-effect"></div>}
+      {/* Commented out the entire image rendering block */}
+      {/* {isLoading && <div className="menu-item-shimmer-effect"></div>}
       {collection.image && (
         <img
           src={`${collection.image.url}?width=300&quality=15`}
@@ -71,7 +73,7 @@ const CollectionImage = ({collection}) => {
           loading="lazy"
           onLoad={handleImageLoad}
         />
-      )}
+      )} */}
     </>
   );
 };

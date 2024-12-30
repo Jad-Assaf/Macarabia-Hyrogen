@@ -7,7 +7,6 @@ import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-import MenuSlider from '~/components/MenuSlider';
 
 const cache = new Map();
 
@@ -211,23 +210,8 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  const menus = {};
-
-  // Fetch menus and their collections
-  for (const handle of MANUAL_MENU_HANDLES) {
-    const menu = await fetchMenu(context, handle);
-    if (menu?.items) {
-      menus[handle] = await Promise.all(
-        menu.items.map((item) =>
-          fetchMenuCollectionByHandle(context, item.title),
-        ),
-      );
-    }
-  }
-
   const newData = {
     banners,
-    menus,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
@@ -284,44 +268,6 @@ async function loadCriticalData({context}) {
   };
 }
 
-async function fetchMenu(context, handle) {
-  const {menu} = await context.storefront.query(
-    `#graphql
-      query GetMenu($handle: String!) {
-        menu(handle: $handle) {
-          items {
-            id
-            title
-            url
-          }
-        }
-      }
-    `,
-    {variables: {handle}},
-  );
-  return menu || null;
-}
-
-async function fetchMenuCollectionByHandle(context, handle) {
-  const {collectionByHandle} = await context.storefront.query(
-    `#graphql
-      query GetCollectionByHandle($handle: String!) {
-        collectionByHandle(handle: $handle) {
-          id
-          title
-          handle
-          image {
-            url
-            altText
-          }
-        }
-      }
-    `,
-    {variables: {handle}},
-  );
-  return collectionByHandle || null;
-}
-
 // Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
@@ -340,7 +286,7 @@ async function fetchCollectionByHandle(context, handle) {
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
-      GET_COLLECTION_BY_HANDLE_QUERY,
+      GET_COLLECTION_BY_HANDLE_QUERY_SIMPLE,
       {variables: {handle}},
     );
     return collectionByHandle || null;
@@ -480,7 +426,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, menus, sliderCollections, deferredData, topProducts} =
+  const {banners, sliderCollections, deferredData, topProducts} =
     useLoaderData();
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
@@ -490,8 +436,6 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      <MenuSlider handle="apple" menuCollection={menus['apple']} />
-
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
@@ -630,6 +574,20 @@ export default function Homepage() {
     </div>
   );
 }
+
+const GET_COLLECTION_BY_HANDLE_QUERY_SIMPLE = `#graphql
+  query GetCollectionByHandle($handle: String!) {
+    collectionByHandle(handle: $handle) {
+      id
+      title
+      handle
+      image {
+        url
+        altText
+      }
+    }
+  }
+`;
 
 const GET_COLLECTION_BY_HANDLE_QUERY = `#graphql
   query GetCollectionByHandle($handle: String!) {
