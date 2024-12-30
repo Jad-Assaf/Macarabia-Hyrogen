@@ -138,17 +138,14 @@ body {
   }
 }
 
-/* Replace display: none with opacity */
-.menu-item-image {
+/* .menu-item-image {
   transition: opacity 0.3s ease;
   opacity: 0;
-  /* Hidden by default */
 }
 
 .menu-item-image-loaded {
   opacity: 1;
-  /* Visible when loaded */
-}
+} */
 
 /* Shimmer Effect Container */
 .product-shimmer-effect {

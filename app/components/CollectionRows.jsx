@@ -79,7 +79,6 @@ export const CollectionItem = ({collection, index}) => {
       className="menu-item-container"
     >
       <div className="menu-item-image-wrapper">
-        {isLoading && <div className="menu-item-shimmer-effect"></div>}
         {collection.image && (
           <img
             src={`${collection.image.url}?width=300&quality=15`} // Added src
@@ -87,8 +86,7 @@ export const CollectionItem = ({collection, index}) => {
                      ${collection.image.url}?width=600&quality=15 600w,
                      ${collection.image.url}?width=1200&quality=15 1200w`}
             alt={collection.image.altText || collection.title}
-            className={`menu-item-image ${
-              isLoading ? '' : 'menu-item-image-loaded'
+            className={`menu-item-image
             }`}
             width={150}
             height={150}
