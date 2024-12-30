@@ -2,8 +2,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import {CollectionItem} from './CollectionItem'; // Ensure this path is correct
-import './MenuSlider.css'; // Optional: Import CSS for styling
+import { CollectionItem } from './CollectionRows';
 
 /**
  * MenuSlider Component
