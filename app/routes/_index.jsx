@@ -211,7 +211,7 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  const menus = await fetchMenuByHandle(args.context, 'main-menu');
+  const menus = await fetchMenuByHandle(args.context, 'apple');
 
   const newData = {
     banners,
