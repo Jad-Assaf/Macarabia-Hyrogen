@@ -278,6 +278,13 @@ async function loadCriticalData({context}) {
   };
 }
 
+async function fetchMenu(context, handle) {
+  const {menu} = await context.storefront.query(GET_MENU_QUERY, {
+    variables: {handle},
+  });
+  return menu || null;
+}
+
 // Fetch a single collection by handle
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
@@ -448,7 +455,9 @@ export default function Homepage() {
       <CategorySlider sliderCollections={sliderCollections} />
       <MenuSlider
         handle="apple"
-        fetchMenu={(handle) => fetchMenu(handle)} // Pass the fetchMenu function here
+        fetchMenu={(handle) =>
+          fetchMenu({context: useLoaderData().context, handle})
+        }
       />
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
