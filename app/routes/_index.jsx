@@ -28,17 +28,6 @@ const MANUAL_MENU_HANDLES = [
   'home-appliances',
 ];
 
-export const APPLE_HANDLES = [
-  'apple-accessories',
-  'apple-macbook',
-  'apple-imac',
-  'apple-studio-display',
-  'apple-ipad',
-  'apple-mac-mini',
-  'apple-mac-studio',
-  'apple-watch',
-];
-
 /**
  * @type {MetaFunction}
  */
@@ -250,7 +239,6 @@ async function loadCriticalData({context}) {
   const {storefront} = context;
 
   const menuHandles = MANUAL_MENU_HANDLES;
-  const appleHandles = APPLE_HANDLES;
 
   const {shop} = await storefront.query(
     `#graphql
@@ -264,16 +252,15 @@ async function loadCriticalData({context}) {
   );
 
 
-  const [sliderCollections, apple, newArrivalsCollection] =
+  const [sliderCollections, newArrivalsCollection] =
     await Promise.all([
       fetchCollectionsByHandles(context, menuHandles),
-      fetchCollectionsByHandles(context, appleHandles),
       fetchCollectionByHandle(context, 'new-arrivals'),
     ]);
 
   return {
     sliderCollections,
-    apple,
+    // REMOVED: menuCollections,
     newArrivalsCollection,
     title: shop.name,
     description: shop.description,
@@ -439,7 +426,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, apple, deferredData, topProducts} =
+  const {banners, sliderCollections, deferredData, topProducts} =
     useLoaderData();
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
@@ -451,8 +438,7 @@ export default function Homepage() {
       <CategorySlider sliderCollections={sliderCollections} />
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
-        )}
-        <CategorySlider sliderCollections={apple} />
+      )}
       {/* Add TopProductSections for each specified collection handle */}
       {topProducts['apple-accessories'] && (
         <TopProductSections collection={topProducts['apple-accessories']} />
