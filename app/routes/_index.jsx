@@ -7,6 +7,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
+import MenuSlider from '~/components/MenuSlider';
 
 const cache = new Map();
 
@@ -210,8 +211,17 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
+  const menus = {};
+  for (const handle of MANUAL_MENU_HANDLES) {
+    const menu = await fetchMenu(context, handle);
+    if (menu?.items) {
+      menus[handle] = menu.items; // Add the menu items to the menus object
+    }
+  }
+
   const newData = {
     banners,
+    menus,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
@@ -426,7 +436,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, topProducts} =
+  const {banners, menus, sliderCollections, deferredData, topProducts} =
     useLoaderData();
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
@@ -436,6 +446,9 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
+      {menus['apple'] && (
+        <MenuSlider handle="apple" menuCollection={menus['apple']} />
+      )}
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
