@@ -457,8 +457,8 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      {menu ? (
-        <MenuItemsByHandle menu={menu} handle="apple" />
+      {menus?.items ? (
+        <MenuItemsByHandle menu={menus} handle="apple" />
       ) : (
         <p>Loading menu...</p>
       )}

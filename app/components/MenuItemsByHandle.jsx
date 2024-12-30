@@ -1,5 +1,5 @@
 export default function MenuItemsByHandle({menu, handle}) {
-  console.log('Menu Data:', menu.items); // Debugging
+  console.log('Menu Data:', menu); // Debugging
   console.log('Handle:', handle); // Debugging
 
   const menuItem = menu.items.find(
