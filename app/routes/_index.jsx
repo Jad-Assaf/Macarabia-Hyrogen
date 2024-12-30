@@ -7,7 +7,6 @@ import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-import MenuItemsByHandle from '~/components/MenuItemsByHandle';
 
 const cache = new Map();
 
@@ -211,26 +210,8 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  const menus = await fetchMenuByHandle(args.context, [
-    'apple',
-    'gaming',
-    'laptops',
-    'desktops',
-    'pc-parts',
-    'networking',
-    'monitors',
-    'mobiles',
-    'tablets',
-    'audio',
-    'accessories',
-    'fitness',
-    'photography',
-    'home-appliances',
-  ]);
-
   const newData = {
     banners,
-    menus,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
@@ -285,36 +266,6 @@ async function loadCriticalData({context}) {
     description: shop.description,
     url: 'https://macarabia.me',
   };
-}
-
-async function fetchMenuByHandle(context, menuHandles) {
-  const menusPromises = menuHandles.map(async (handle) => {
-    const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-      variables: {handle},
-    });
-
-    if (!menu || !menu.items || menu.items.length === 0) {
-      return null;
-    }
-
-    const itemPromises = menu.items.map(async (item) => {
-      const sanitizedHandle = item.title.toLowerCase().replace(/\s+/g, '-');
-      const {collectionByHandle} = await context.storefront.query(
-        GET_SIMPLE_COLLECTION_QUERY,
-        {variables: {handle: sanitizedHandle}},
-      );
-      return collectionByHandle || null;
-    });
-
-    const items = await Promise.all(itemPromises);
-    return {
-      handle,
-      items: items.filter(Boolean),
-    };
-  });
-
-  const menus = await Promise.all(menusPromises);
-  return menus.filter(Boolean); // Always return an array
 }
 
 // Fetch a single collection by handle
@@ -475,7 +426,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, topProducts, menus} =
+  const {banners, sliderCollections, deferredData, topProducts} =
     useLoaderData();
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
@@ -490,14 +441,6 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {menus?.length > 0 ? (
-        <MenuItemsByHandle
-          menu={menus.find((menu) => menu.handle === 'apple') || {items: []}}
-          handle="apple"
-        />
-      ) : (
-        <p>Loading menu...</p>
-      )}
       {/* Add TopProductSections for each specified collection handle */}
       {topProducts['apple-accessories'] && (
         <TopProductSections collection={topProducts['apple-accessories']} />
@@ -508,14 +451,6 @@ export default function Homepage() {
       {topProducts['apple-imac'] && (
         <TopProductSections collection={topProducts['apple-imac']} />
       )}
-      {menus?.length > 0 ? (
-        <MenuItemsByHandle
-          menu={menus.find((menu) => menu.handle === 'gaming') || {items: []}}
-          handle="gaming"
-        />
-      ) : (
-        <p>Loading menu...</p>
-      )}
       {topProducts['gaming-laptops'] && (
         <TopProductSections collection={topProducts['gaming-laptops']} />
       )}
@@ -524,14 +459,6 @@ export default function Homepage() {
       )}
       {topProducts['console-games'] && (
         <TopProductSections collection={topProducts['console-games']} />
-      )}
-      {menus?.length > 0 ? (
-        <MenuItemsByHandle
-          menu={menus.find((menu) => menu.handle === 'laptops') || {items: []}}
-          handle="laptops"
-        />
-      ) : (
-        <p>Loading menu...</p>
       )}
       {topProducts['acer-laptops'] && (
         <TopProductSections collection={topProducts['acer-laptops']} />
