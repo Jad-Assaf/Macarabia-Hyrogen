@@ -210,8 +210,12 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
+  const menuHandle = 'apple'; // You can fetch multiple menus if needed
+  const menu = await fetchMenu(context, menuHandle);
+
   const newData = {
     banners,
+    menu,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
@@ -433,7 +437,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, topProducts, context} =
+  const {banners, menu, sliderCollections, deferredData, topProducts} =
     useLoaderData();
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
@@ -444,10 +448,7 @@ export default function Homepage() {
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
 
-      <MenuComponent
-        handle="apple"
-        fetchMenu={(handle) => fetchMenu(context, handle)}
-      />
+      <MenuComponent menu={menu} />
 
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
