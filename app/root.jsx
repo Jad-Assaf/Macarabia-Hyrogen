@@ -209,11 +209,11 @@ export default function App() {
  */
 export function ErrorBoundary() {
   const error = useRouteError();
-  let errorMessage = 'Unknown error';
+  let errorMessage = 'Unknown error occurred.';
   let errorStatus = 500;
 
   if (isRouteErrorResponse(error)) {
-    errorMessage = error?.data?.message ?? error.data;
+    errorMessage = error?.data?.message ?? error.data ?? 'Error loading route.';
     errorStatus = error.status;
   } else if (error instanceof Error) {
     errorMessage = error.message;
@@ -228,21 +228,18 @@ export function ErrorBoundary() {
         <Links />
       </head>
       <body>
-        <Layout {...root.data}>
-          <div className="route-error">
-            <h1>Oops</h1>
-            <h2>{errorStatus}</h2>
-            {errorMessage && (
-              <fieldset>
-                <pre>{errorMessage}</pre>
-              </fieldset>
-            )}
-          </div>
-        </Layout>
-        {/** Make sure to remember to pass the nonce to components within the ErrorBoundary **/}
-        <ScrollRestoration nonce={nonce} />
-        <Scripts nonce={nonce} />
-        <LiveReload nonce={nonce} />
+        <div className="error-layout">
+          <header>
+            <h1>Error</h1>
+          </header>
+          <main>
+            <h2>Status: {errorStatus}</h2>
+            <pre>{errorMessage}</pre>
+          </main>
+        </div>
+        <ScrollRestoration />
+        <Scripts />
+        <LiveReload />
       </body>
     </html>
   );
