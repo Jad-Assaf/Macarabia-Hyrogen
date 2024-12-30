@@ -7,7 +7,6 @@ import {TopProductSections} from '~/components/TopProductSections';
 // REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-import MenuComponent from '~/components/MenuComponent';
 
 const cache = new Map();
 
@@ -211,16 +210,8 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
-  const menuHandle = 'apple'; // Replace with your desired menu handle
-
-  // Fetch menu data using the provided query
-  const menuData = await context.storefront.query(GET_MENU_QUERY, {
-    variables: {handle: menuHandle},
-  });
-
   const newData = {
     banners,
-    menu: menuData.menu || null,
     title: criticalData.title,
     description: criticalData.description,
     url: criticalData.url,
@@ -275,13 +266,6 @@ async function loadCriticalData({context}) {
     description: shop.description,
     url: 'https://macarabia.me',
   };
-}
-
-async function fetchMenu(context, handle) {
-  const {menu} = await context.storefront.query(GET_MENU_QUERY, {
-    variables: {handle},
-  });
-  return menu || null;
 }
 
 // Fetch a single collection by handle
@@ -442,7 +426,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, menu, sliderCollections, deferredData, topProducts} =
+  const {banners, sliderCollections, deferredData, topProducts} =
     useLoaderData();
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
@@ -452,9 +436,6 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-
-      <MenuComponent menu={menu} />
-
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
