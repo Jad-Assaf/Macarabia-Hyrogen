@@ -1,6 +1,8 @@
 import React from 'react';
 
 export default function MenuItemsByHandle({menu, handle}) {
+  console.log('Menu Items:', menu.items); // Debugging
+
   const menuItem = menu.items.find(
     (item) => item.title.toLowerCase() === handle,
   );

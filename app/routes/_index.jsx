@@ -277,7 +277,7 @@ async function fetchMenuByHandle(context, handle) {
     const {menu} = await context.storefront.query(GET_MENU_QUERY, {
       variables: {handle},
     });
-    console.log('Fetched Menu:', menu);
+    console.log('Fetched Menu:', menu); // Debugging
     return menu;
   } catch (error) {
     console.error(`Failed to fetch menu for handle: ${handle}`, error);
@@ -449,6 +449,8 @@ export default function Homepage() {
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
+  console.log('Loaded Menus:', menus); // Debugging
+
   const menu = menus?.menu;
 
   return (
@@ -459,7 +461,7 @@ export default function Homepage() {
         <MenuItemsByHandle menu={menu} handle="apple" />
       ) : (
         <p>Loading menu...</p>
-      )}{' '}
+      )}
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
