@@ -446,9 +446,10 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      {menus['apple'] && (
-        <MenuSlider handle="apple" menuCollection={menus['apple']} />
-      )}
+      <MenuSlider
+        handle="apple"
+        fetchMenu={(handle) => fetchMenu(handle)} // Pass the fetchMenu function here
+      />
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}

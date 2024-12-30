@@ -1,13 +1,26 @@
-import React, {useState} from 'react';
-import {Link} from 'react-router-dom';
-import {useInView} from 'react-intersection-observer';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useInView } from 'react-intersection-observer';
 
 /**
  * MenuSlider Component
- * Displays menu items with their image and title based on a passed handle.
+ * Fetches and displays menu items dynamically based on the passed handle.
  */
-const MenuSlider = ({handle, menuCollection}) => {
-  if (!menuCollection || menuCollection.length === 0) {
+const MenuSlider = ({ handle, fetchMenu }) => {
+  const [menuItems, setMenuItems] = useState([]);
+
+  useEffect(() => {
+    if (handle) {
+      // Fetch menu items using the provided handle
+      fetchMenu(handle).then((menu) => {
+        if (menu?.items) {
+          setMenuItems(menu.items);
+        }
+      });
+    }
+  }, [handle, fetchMenu]);
+
+  if (!menuItems || menuItems.length === 0) {
     return null;
   }
 
@@ -15,24 +28,20 @@ const MenuSlider = ({handle, menuCollection}) => {
     <div className="menu-slider-container">
       <h2>{handle.charAt(0).toUpperCase() + handle.slice(1)} Menu</h2>
       <div className="menu-items">
-        {menuCollection.map((collection, collectionIndex) => {
-          const {ref, inView} = useInView({
+        {menuItems.map((item, index) => {
+          const { ref, inView } = useInView({
             triggerOnce: true,
             threshold: 0.1,
           });
 
           return (
-            <div className="animated-menu-item" ref={ref} key={collection.id}>
+            <div className="animated-menu-item" ref={ref} key={item.id}>
               {inView && (
-                <Link
-                  to={`/collections/${collection.handle}`}
-                  className="menu-item-container"
-                >
+                <Link to={item.url} className="menu-item-container">
                   <div className="menu-item-image-wrapper">
-                    {/* Commented out the image rendering */}
-                    {/* <CollectionImage collection={collection} /> */}
+                    {/* Image can be added back here if needed */}
                   </div>
-                  <div className="category-title">{collection.title}</div>
+                  <div className="category-title">{item.title}</div>
                 </Link>
               )}
             </div>
