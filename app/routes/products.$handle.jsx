@@ -31,6 +31,10 @@ export const meta = ({data}) => {
   const truncate = (text, maxLength) =>
     text?.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
 
+  const image =
+    product?.firstImage ||
+    'https://cdn.shopify.com/s/files/1/0858/6821/6639/files/macarabialogo01_303ae373-185d-40f3-8271-df151d977a10.png?v=1706447237';
+
   return getSeoMeta({
     title: truncate(
       product?.seoTitle || product?.title || 'Macarabia Product',
@@ -43,12 +47,8 @@ export const meta = ({data}) => {
       150,
     ),
     url: `https://macarabia.me/products/${encodeURIComponent(product?.handle)}`,
-    'og:image':
-      product?.firstImage ||
-      'https://cdn.shopify.com/s/files/1/0858/6821/6639/files/macarabialogo01_303ae373-185d-40f3-8271-df151d977a10.png?v=1706447237',
-    image:
-      product?.firstImage ||
-      'https://cdn.shopify.com/s/files/1/0858/6821/6639/files/macarabialogo01_303ae373-185d-40f3-8271-df151d977a10.png?v=1706447237',
+    'og:image': image,
+    'twitter:image': image,
     jsonLd: [
       {
         '@context': 'http://schema.org/',
