@@ -84,6 +84,14 @@ body {
   opacity: 1;
 } */
 
+.pb0 {
+  padding: 0;
+}
+
+.border{
+  border: none !important;
+}
+
 .fade-in {
   opacity: 0;
   transition: opacity 0.5s ease;
