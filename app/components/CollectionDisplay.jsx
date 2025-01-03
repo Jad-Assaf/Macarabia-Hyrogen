@@ -164,7 +164,7 @@ export function ProductItem({product, index}) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link to={`/products/${product.handle}`}>
+      <Link to={`/products/${encodeURIComponent(product.handle)}`}>
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
             <img

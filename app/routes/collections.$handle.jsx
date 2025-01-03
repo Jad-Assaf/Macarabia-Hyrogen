@@ -69,7 +69,9 @@ export const meta = ({data}) => {
         hasPart: collection?.products?.nodes?.slice(0, 20).map((product) => ({
           '@type': 'Product',
           name: truncateText(product?.title || 'Product', 140),
-          url: `https://macarabia.me/products/${product?.handle}`,
+          url: `https://macarabia.me/products/${encodeURIComponent(
+            product?.handle,
+          )}`,
           sku: product?.variants?.[0]?.sku || product?.variants?.[0]?.id || '',
           gtin12:
             product?.variants?.[0]?.barcode?.length === 12
@@ -98,7 +100,9 @@ export const meta = ({data}) => {
             availability: product?.availableForSale
               ? 'http://schema.org/InStock'
               : 'http://schema.org/OutOfStock',
-            url: `https://macarabia.me/products/${product?.handle}`,
+            url: `https://macarabia.me/products/${encodeURIComponent(
+              product?.handle,
+            )}`,
             priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
               .toISOString()
               .split('T')[0],
@@ -174,7 +178,7 @@ export const meta = ({data}) => {
           .map((product, index) => ({
             '@type': 'ListItem',
             position: index + 1,
-            url: `https://macarabia.me/products/${product?.handle}`,
+            url: `https://macarabia.me/products/${encodeURIComponent(product?.handle)}`,
             name: truncateText(product?.title || 'Product', 140),
             image: {
               '@type': 'ImageObject',
@@ -1110,7 +1114,7 @@ function ProductForm({product, selectedVariant, setSelectedVariant}) {
         onClick={() => {
           if (hasVariants) {
             // Navigate to product page
-            window.location.href = `/products/${product.handle}`;
+            window.location.href = `/products/${encodeURIComponent(product.handle)}`;
           } else {
             open('cart');
           }

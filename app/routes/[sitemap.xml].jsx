@@ -25,7 +25,7 @@ export async function loader({request, context: {storefront}, params}) {
       return serveStyledSitemap({
         title: 'Products Sitemap',
         items: products.map((p) => ({
-          loc: `${baseUrl}/products/${p.handle}`,
+          loc: `${baseUrl}/products/${encodeURIComponent(p.handle)}`,
           lastMod: p.updatedAt,
         })),
         style: PRODUCTS_STYLE,

@@ -22,6 +22,7 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 
+
 export const meta = ({data}) => {
   const product = data?.product;
   const variants = product?.variants?.nodes || [];
@@ -42,14 +43,16 @@ export const meta = ({data}) => {
         'Discover this product.',
       150,
     ),
-    url: `https://macarabia.me/products/${product?.handle}`,
+    url: `https://macarabia.me/products/${encodeURIComponent(product?.handle)}`,
     image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
     jsonLd: [
       {
         '@context': 'http://schema.org/',
         '@type': 'Product',
         name: truncate(product?.title, 140),
-        url: `https://macarabia.me/products/${product?.handle}`,
+        url: `https://macarabia.me/products/${encodeURIComponent(
+          product?.handle,
+        )}`,
         sku: currentVariant?.sku || product?.id,
         productID: product?.id,
         brand: {
@@ -67,7 +70,9 @@ export const meta = ({data}) => {
           availability: variant?.availableForSale
             ? 'http://schema.org/InStock'
             : 'http://schema.org/OutOfStock',
-          url: `https://macarabia.me/products/${product?.handle}?variant=${variant?.id}`,
+          url: `https://macarabia.me/products/${encodeURIComponent(
+            product?.handle,
+          )}?variant=${variant?.id}`,
           image: variant?.image?.url || product?.firstImage || '',
           name: truncate(`${product?.title} - ${variant?.title || ''}`, 140),
           sku: variant?.sku || variant?.id,
@@ -148,7 +153,7 @@ export const meta = ({data}) => {
             '@type': 'ListItem',
             position: 2,
             name: truncate(product?.title || 'Product', 140),
-            item: `https://macarabia.me/products/${product?.handle}`,
+            item: `https://macarabia.me/products/${encodeURIComponent(product?.handle)}`,
           },
         ],
       },
@@ -241,7 +246,7 @@ function redirectToFirstVariant({product, request}) {
 
   return redirect(
     getVariantUrl({
-      pathname: `/products/${product.handle}`,
+      pathname: `/products/${encodeURIComponent(product.handle)}`,
       handle: product.handle,
       selectedOptions: firstVariant.selectedOptions,
       searchParams: new URLSearchParams(url.search),

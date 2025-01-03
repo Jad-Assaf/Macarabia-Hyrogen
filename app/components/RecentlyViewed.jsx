@@ -180,7 +180,7 @@ function RecentlyViewedProductItem({product, index}) {
           transition: 'filter 0.5s ease, opacity 0.5s ease',
         }}
       >
-        <Link to={`/products/${product.handle}`}>
+        <Link to={`/products/${encodeURIComponent(product.handle)}`}>
           <Image
             data={product.featuredImage}
             aspectRatio="1/1"

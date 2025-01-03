@@ -87,7 +87,7 @@ function RelatedProductItem({product, index}) {
           transition: 'filter 0.5s ease, opacity 0.5s ease',
         }}
       >
-        <Link to={`/products/${product.handle}`}>
+        <Link to={`/products/${encodeURIComponent(product.handle)}`}>
           <Image
             data={product.images.edges[0]?.node}
             aspectRatio="1/1"
