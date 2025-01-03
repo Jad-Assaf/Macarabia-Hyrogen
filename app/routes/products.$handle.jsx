@@ -32,7 +32,8 @@ export const meta = ({data}) => {
     text?.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
 
   const image =
-    product?.firstImage ||
+    currentVariant?.image?.url ||
+    product?.metafields?.customImage ||
     'https://cdn.shopify.com/s/files/1/0858/6821/6639/files/macarabialogo01_303ae373-185d-40f3-8271-df151d977a10.png?v=1706447237';
 
   return getSeoMeta({
