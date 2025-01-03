@@ -184,7 +184,7 @@ async function loadCriticalData({context, params, request}) {
     },
   });
 
-  if (!product?.id) {
+  if (!product) {
     throw new Response('Product not found', {status: 404});
   }
 

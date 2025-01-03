@@ -154,7 +154,7 @@ const MAIN_STYLE = `
 `;
 
 const PRODUCTS_STYLE = `
-  body { background: #e8f5e9; color: #1b5e20; font-family: 'Courier New'; margin: 2rem; }
+  body { background: #e8f5e9; color: #111; font-family: 'Courier New'; margin: 2rem; }
   h1 { color: #388e3c; text-decoration: underline; }
   a { color: #1b5e20; text-transform: uppercase; }
   li { margin-bottom: 8px; }
