@@ -22,7 +22,6 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 
-
 export const meta = ({data}) => {
   const product = data?.product;
   const variants = product?.variants?.nodes || [];
@@ -44,7 +43,9 @@ export const meta = ({data}) => {
       150,
     ),
     url: `https://macarabia.me/products/${encodeURIComponent(product?.handle)}`,
-    image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
+    image:
+      product?.firstImage ||
+      'https://cdn.shopify.com/s/files/1/0858/6821/6639/files/macarabialogo01_303ae373-185d-40f3-8271-df151d977a10.png?v=1706447237',
     jsonLd: [
       {
         '@context': 'http://schema.org/',
@@ -60,7 +61,9 @@ export const meta = ({data}) => {
           name: product?.vendor || 'Macarabia',
         },
         description: truncate(product?.description || '', 150),
-        image: product?.firstImage || 'https://macarabia.me/default-image.jpg',
+        image:
+          product?.firstImage ||
+          'https://cdn.shopify.com/s/files/1/0858/6821/6639/files/macarabialogo01_303ae373-185d-40f3-8271-df151d977a10.png?v=1706447237',
         offers: variants.map((variant) => ({
           '@type': 'Offer',
           priceCurrency:
@@ -153,7 +156,9 @@ export const meta = ({data}) => {
             '@type': 'ListItem',
             position: 2,
             name: truncate(product?.title || 'Product', 140),
-            item: `https://macarabia.me/products/${encodeURIComponent(product?.handle)}`,
+            item: `https://macarabia.me/products/${encodeURIComponent(
+              product?.handle,
+            )}`,
           },
         ],
       },
