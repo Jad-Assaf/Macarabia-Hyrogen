@@ -51,26 +51,31 @@ export function links() {
  * @param {LoaderFunctionArgs} args
  */
 export async function loader(args) {
-  const deferredData = loadDeferredData(args);
-  const criticalData = await loadCriticalData(args);
-  const { storefront, env } = args.context;
+  try {
+    const deferredData = await loadDeferredData(args);
+    const criticalData = await loadCriticalData(args);
+    const { storefront, env } = args.context;
 
-  return defer({
-    ...deferredData,
-    ...criticalData,
-    publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
-    shop: getShopAnalytics({
-      storefront,
-      publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
-    }),
-    consent: {
-      checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
-      storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
-      withPrivacyBanner: true,
-      country: args.context.storefront.i18n.country,
-      language: args.context.storefront.i18n.language,
-    },
-  });
+    return defer({
+      ...deferredData,
+      ...criticalData,
+      publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
+      shop: getShopAnalytics({
+        storefront,
+        publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
+      }),
+      consent: {
+        checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
+        storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
+        withPrivacyBanner: true,
+        country: args.context.storefront.i18n.country,
+        language: args.context.storefront.i18n.language,
+      },
+    });
+  } catch (error) {
+    console.error('Loader error:', error);
+    throw new Response('Failed to load data', { status: 500 });
+  }
 }
 
 /**
@@ -209,15 +214,23 @@ export default function App() {
  */
 export function ErrorBoundary() {
   const error = useRouteError();
-  let errorMessage = 'Unknown error';
+  let errorMessage = 'An unexpected error occurred.';
   let errorStatus = 500;
 
   if (isRouteErrorResponse(error)) {
-    errorMessage = error?.data?.message ?? error.data;
+    errorMessage = error.data?.message || 'Route error occurred.';
     errorStatus = error.status;
   } else if (error instanceof Error) {
     errorMessage = error.message;
+  } else if (error) {
+    errorMessage = String(error);
   }
+
+  console.error('ErrorBoundary caught an error:', {
+    error,
+    errorMessage,
+    errorStatus,
+  });
 
   return (
     <html lang="en">
@@ -228,21 +241,16 @@ export function ErrorBoundary() {
         <Links />
       </head>
       <body>
-        <Layout {...root.data}>
-          <div className="route-error">
-            <h1>Oops</h1>
-            <h2>{errorStatus}</h2>
-            {errorMessage && (
-              <fieldset>
-                <pre>{errorMessage}</pre>
-              </fieldset>
-            )}
+        <Layout>
+          <div className="error-container">
+            <h1>Error</h1>
+            <h2>Status: {errorStatus}</h2>
+            <p>{errorMessage}</p>
           </div>
         </Layout>
-        {/** Make sure to remember to pass the nonce to components within the ErrorBoundary **/}
-        <ScrollRestoration nonce={nonce} />
-        <Scripts nonce={nonce} />
-        <LiveReload nonce={nonce} />
+        <ScrollRestoration />
+        <Scripts />
+        <LiveReload />
       </body>
     </html>
   );
