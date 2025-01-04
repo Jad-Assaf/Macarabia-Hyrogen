@@ -509,7 +509,7 @@ export default function Collection() {
           </div>
         )}
 
-        <div className="flex-1 mt-[116px]">
+        <div className="flex-1 mt-[92px]">
           <hr className="col-hr"></hr>
 
           <div className="view-container">
