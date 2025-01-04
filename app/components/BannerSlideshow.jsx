@@ -104,7 +104,7 @@ export function BannerSlideshow({banners, interval = 10000}) {
             alt={`Banner ${index + 1}`}
             style={styles.bannerImage}
             loading="eager"
-            decoding="async"
+            decoding="sync"
           />
         </a>
       </div>
@@ -145,7 +145,7 @@ export function BannerSlideshow({banners, interval = 10000}) {
             alt={`Banner ${index + 1}`}
             style={styles.bannerImage}
             loading="eager"
-            decoding="async"
+            decoding="sync"
           />
         </a>
       </div>
