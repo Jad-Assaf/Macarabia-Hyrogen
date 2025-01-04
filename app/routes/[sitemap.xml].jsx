@@ -1,102 +1,105 @@
 import {flattenConnection} from '@shopify/hydrogen';
 
-/**
- * the google limit is 50K, however, the storefront API
- * allows querying only 250 resources per pagination page
- */
-const MAX_URLS = 250;
+const MAX_PER_PAGE = 250;
 
 /**
  * @param {LoaderFunctionArgs}
  */
 export async function loader({request, context: {storefront}}) {
-  const data = await storefront.query(SITEMAP_QUERY, {
-    variables: {
-      urlLimits: MAX_URLS,
-      language: storefront.i18n.language,
-    },
+  const products = await fetchAllPages({
+    storefront,
+    query: PAGINATED_SITEMAP_QUERY,
+    variables: {type: 'products'},
   });
 
-  if (!data) {
+  const collections = await fetchAllPages({
+    storefront,
+    query: PAGINATED_SITEMAP_QUERY,
+    variables: {type: 'collections'},
+  });
+
+  const pages = await fetchAllPages({
+    storefront,
+    query: PAGINATED_SITEMAP_QUERY,
+    variables: {type: 'pages'},
+  });
+
+  if (!products.length && !collections.length && !pages.length) {
     throw new Response('No data found', {status: 404});
   }
 
-  const sitemap = generateSitemap({data, baseUrl: new URL(request.url).origin});
+  const sitemap = generateSitemap({
+    data: {products, collections, pages},
+    baseUrl: new URL(request.url).origin,
+  });
 
   return new Response(sitemap, {
     headers: {
       'Content-Type': 'application/xml',
-
       'Cache-Control': `max-age=${60 * 60 * 24}`,
     },
   });
 }
 
 /**
- * @param {string} string
+ * Fetch all pages for a given resource type (products, collections, pages).
  */
-function xmlEncode(string) {
-  return string.replace(/[&<>'"]/g, (char) => `&#${char.charCodeAt(0)};`);
+async function fetchAllPages({storefront, query, variables}) {
+  let hasNextPage = true;
+  let cursor = null;
+  const allItems = [];
+
+  while (hasNextPage) {
+    const data = await storefront.query(query, {
+      variables: {...variables, first: MAX_PER_PAGE, after: cursor},
+    });
+
+    if (!data || !data[variables.type]) {
+      break;
+    }
+
+    const connection = flattenConnection(data[variables.type]);
+    allItems.push(...connection);
+
+    hasNextPage = data[variables.type].pageInfo.hasNextPage;
+    cursor = data[variables.type].pageInfo.endCursor;
+  }
+
+  return allItems;
 }
 
 /**
- * @param {{
- *   data: SitemapQuery;
- *   baseUrl: string;
- * }}
+ * Generate the XML sitemap.
  */
 function generateSitemap({data, baseUrl}) {
-  const products = flattenConnection(data.products)
+  const products = data.products
     .filter((product) => product.onlineStoreUrl)
-    .map((product) => {
-      const url = `${baseUrl}/products/${xmlEncode(product.handle)}`;
+    .map((product) => ({
+      url: `${baseUrl}/products/${xmlEncode(product.handle)}`,
+      lastMod: product.updatedAt,
+      changeFreq: 'daily',
+      image: product.featuredImage && {
+        url: xmlEncode(product.featuredImage.url),
+        title: xmlEncode(product.title || ''),
+        caption: xmlEncode(product.featuredImage.altText || ''),
+      },
+    }));
 
-      const productEntry = {
-        url,
-        lastMod: product.updatedAt,
-        changeFreq: 'daily',
-      };
-
-      if (product.featuredImage?.url) {
-        productEntry.image = {
-          url: xmlEncode(product.featuredImage.url),
-        };
-
-        if (product.title) {
-          productEntry.image.title = xmlEncode(product.title);
-        }
-
-        if (product.featuredImage.altText) {
-          productEntry.image.caption = xmlEncode(product.featuredImage.altText);
-        }
-      }
-
-      return productEntry;
-    });
-
-  const collections = flattenConnection(data.collections)
+  const collections = data.collections
     .filter((collection) => collection.onlineStoreUrl)
-    .map((collection) => {
-      const url = `${baseUrl}/collections/${collection.handle}`;
+    .map((collection) => ({
+      url: `${baseUrl}/collections/${xmlEncode(collection.handle)}`,
+      lastMod: collection.updatedAt,
+      changeFreq: 'daily',
+    }));
 
-      return {
-        url,
-        lastMod: collection.updatedAt,
-        changeFreq: 'daily',
-      };
-    });
-
-  const pages = flattenConnection(data.pages)
+  const pages = data.pages
     .filter((page) => page.onlineStoreUrl)
-    .map((page) => {
-      const url = `${baseUrl}/pages/${page.handle}`;
-
-      return {
-        url,
-        lastMod: page.updatedAt,
-        changeFreq: 'weekly',
-      };
-    });
+    .map((page) => ({
+      url: `${baseUrl}/pages/${xmlEncode(page.handle)}`,
+      lastMod: page.updatedAt,
+      changeFreq: 'weekly',
+    }));
 
   const urls = [...products, ...collections, ...pages];
 
@@ -109,16 +112,17 @@ function generateSitemap({data, baseUrl}) {
     </urlset>`;
 }
 
-/**
- * @param {Entry}
- */
+function xmlEncode(string) {
+  return string.replace(/[&<>'"]/g, (char) => `&#${char.charCodeAt(0)};`);
+}
+
 function renderUrlTag({url, lastMod, changeFreq, image}) {
   const imageTag = image
     ? `<image:image>
         <image:loc>${image.url}</image:loc>
-        <image:title>${image.title ?? ''}</image:title>
-        <image:caption>${image.caption ?? ''}</image:caption>
-      </image:image>`.trim()
+        <image:title>${image.title}</image:title>
+        <image:caption>${image.caption}</image:caption>
+      </image:image>`
     : '';
 
   return `
@@ -127,17 +131,19 @@ function renderUrlTag({url, lastMod, changeFreq, image}) {
       <lastmod>${lastMod}</lastmod>
       <changefreq>${changeFreq}</changefreq>
       ${imageTag}
-    </url>
-  `.trim();
+    </url>`;
 }
 
-const SITEMAP_QUERY = `#graphql
-  query Sitemap($urlLimits: Int, $language: LanguageCode)
-  @inContext(language: $language) {
-    products(
-      first: $urlLimits
+/**
+ * Paginated query to fetch products, collections, or pages.
+ */
+const PAGINATED_SITEMAP_QUERY = `#graphql
+  query Sitemap($type: String!, $first: Int, $after: String) {
+    products: products(
+      first: $first,
+      after: $after,
       query: "published_status:'online_store:visible'"
-    ) {
+    ) @include(if: $type == "products") {
       nodes {
         updatedAt
         handle
@@ -148,26 +154,44 @@ const SITEMAP_QUERY = `#graphql
           altText
         }
       }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
     }
-    collections(
-      first: $urlLimits
+    collections: collections(
+      first: $first,
+      after: $after,
       query: "published_status:'online_store:visible'"
-    ) {
+    ) @include(if: $type == "collections") {
       nodes {
         updatedAt
         handle
         onlineStoreUrl
       }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
     }
-    pages(first: $urlLimits, query: "published_status:'published'") {
+    pages: pages(
+      first: $first,
+      after: $after,
+      query: "published_status:'published'"
+    ) @include(if: $type == "pages") {
       nodes {
         updatedAt
         handle
         onlineStoreUrl
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
       }
     }
   }
 `;
+
 
 /**
  * @typedef {{
