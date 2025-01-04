@@ -608,7 +608,7 @@ export default function Homepage() {
       {topProducts['lighting'] && (
         <TopProductSections collection={topProducts['lighting']} />
       )}
-      {/* REMOVED: <CollectionDisplay menuCollections={menuCollections} /> */}
+      
       <BrandSection brands={brandsData} />
     </div>
   );

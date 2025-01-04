@@ -414,7 +414,7 @@ export const monitorsMenu = [
       altText: 'Acer Monitors',
     },
     title: 'Acer Monitors',
-    url: '/collections/acer-nonitors',
+    url: '/collections/acer-monitors',
   },
   {
     id: 3,
@@ -495,7 +495,7 @@ export const monitorsMenu = [
       altText: 'Philips Monitors',
     },
     title: 'Philips Monitors',
-    url: '/collections/philips-monitors',
+    url: '/collections/philips-monitor',
   },
   {
     id: 12,
