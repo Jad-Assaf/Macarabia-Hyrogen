@@ -1,5 +1,5 @@
+import { Link } from '@remix-run/react';
 import React, {useState} from 'react';
-import {Link} from '@shopify/hydrogen';
 
 // Reusable Component for CollectionItem
 const CollectionItem = ({collection, index}) => {
