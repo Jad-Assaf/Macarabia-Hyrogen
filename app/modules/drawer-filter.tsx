@@ -428,7 +428,7 @@ export default function SortMenu({
 
   return (
     <Menu as="div" className="relative z-10">
-      <MenuButton className="flex items-center gap-1.5 h-10 border px-4 py-2.5 rounded-full">
+      <MenuButton className="flex items-center gap-1.5 h-10 border-gray-300 px-4 py-2.5 rounded-full">
         <span className="font-medium">
           {typeof window !== "undefined" && screenWidth > 550 ? `Sort by: ${activeItem.label}` : "Sort"}
         </span>
