@@ -1,14 +1,9 @@
 // NewArrivals.jsx
-import React, { useEffect } from 'react';
+import React from 'react';
 import {Link} from 'react-router-dom';
 import {ProductRow} from './CollectionDisplay';
 
-export const TopProductSections = ({collection, onload}) => {
-  useEffect(() => {
-    if (onLoad) {
-      onLoad(); // Call the onLoad callback when the component loads
-    }
-  }, [onLoad]);
+export const TopProductSections = ({collection}) => {
   return (
     <div className="collection-section">
       <div className="collection-header">
