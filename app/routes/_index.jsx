@@ -16,6 +16,7 @@ import {
   camerasMenu,
   fitnessMenu,
   gamingMenu,
+  homeAppliancesMenu,
   laptopsMenu,
   mobilesMenu,
   monitorsMenu,
@@ -597,6 +598,7 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['drones']} />
       )}
 
+      <CollectionCircles collections={homeAppliancesMenu} />
       {topProducts['kitchen-appliances'] && (
         <TopProductSections collection={topProducts['kitchen-appliances']} />
       )}

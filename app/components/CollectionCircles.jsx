@@ -994,6 +994,63 @@ export const camerasMenu = [
   },
 ];
 
+export const homeAppliancesMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/kitchen-Appliances.jpg?v=1714657182',
+      altText: 'Kitchen Appliances',
+    },
+    title: 'Kitchen Appliances',
+    url: '/collections/kitchen-appliances',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/cleaning_devices.jpg?v=1714657183',
+      altText: 'Cleaning Devices',
+    },
+    title: 'Cleaning Devices',
+    url: '/collections/cleaning-devices',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Lighting.jpg?v=1714657186',
+      altText: 'Lighting',
+    },
+    title: 'Lighting',
+    url: '/collections/lighting',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/streaming-devices.jpg?v=1714657190',
+      altText: 'Streaming Devices',
+    },
+    title: 'Streaming Devices',
+    url: '/collections/streaming-devices',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/IOT.jpg?v=1714657192',
+      altText: 'Smart Home',
+    },
+    title: 'Smart Home',
+    url: '/collections/iot',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/health_Beauty.jpg?v=1714657193',
+      altText: 'Personal Care',
+    },
+    title: 'Personal Care',
+    url: '/collections/personal-care',
+  },
+];
+
 // Reusable Mapping Function
 export const CollectionCircles = ({collections}) => {
   return (
