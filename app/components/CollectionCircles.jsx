@@ -1,4 +1,4 @@
-import { Link } from '@remix-run/react';
+import {Link} from '@remix-run/react';
 import React, {useState} from 'react';
 
 // Reusable Component for CollectionItem
@@ -82,12 +82,14 @@ export const menuCollectionTwo = [
 // Reusable Mapping Function
 export const CollectionCircles = ({collections}) => {
   return (
-    <div className="animated-menu">
-      {collections.map((collection, collectionIndex) => (
-        <div className="animated-menu-item" key={collection.id}>
-          <CollectionItem collection={collection} index={collectionIndex} />
-        </div>
-      ))}
+    <div className="menu-slider-container">
+      <div className="animated-menu-item">
+        {collections.map((collection, collectionIndex) => (
+          <div className="animated-menu-item" key={collection.id}>
+            <CollectionItem collection={collection} index={collectionIndex} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
