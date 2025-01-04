@@ -1034,7 +1034,7 @@ export const homeAppliancesMenu = [
   {
     id: 5,
     image: {
-      url: 'https://https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/IOT.jpg?v=1714657192',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/IOT.jpg?v=1714657192',
       altText: 'Smart Home',
     },
     title: 'Smart Home',
