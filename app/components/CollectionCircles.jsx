@@ -36,7 +36,7 @@ const CollectionItem = ({collection, index}) => {
 };
 
 // First Collection
-export const menuCollectionOne = [
+export const appleMenu = [
   {
     id: 1,
     image: {
@@ -52,8 +52,53 @@ export const menuCollectionOne = [
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/7c17e4425faa3ae0ea7a8989849774d8.jpg?v=1714656980',
       altText: 'Apple Macbooks',
     },
-    title: 'Apple Macbooks',
+    title: 'Apple Macbook',
     url: '/collections/apple-macbook',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/f7585a000668e51f562541efa35d1178.jpg?v=1714657015',
+      altText: 'Apple iMac',
+    },
+    title: 'Apple iMac',
+    url: '/collections/apple-imac',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/e3a857086e38bb988a5569c2cba8a08c.jpg?v=1714656972',
+      altText: 'Apple iPad',
+    },
+    title: 'Apple iPad',
+    url: '/collections/apple-ipad',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/f74fe97487470214273fc892ff0d9dac.jpg?v=1714657017',
+      altText: 'Apple Mac Mini',
+    },
+    title: 'Apple Mac Mini',
+    url: '/collections/apple-mac-mini',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/MJMV3-4_e0d1f591-fc63-4300-b086-2076a8b708af.jpg?v=1714657136',
+      altText: 'Apple Mac Studio',
+    },
+    title: 'Apple Mac Studio',
+    url: '/collections/apple-mac-studio',
+  },
+  {
+    id: 7,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/0b93f20be8c5baec875c87a48cd5f330.jpg?v=1714657020',
+      altText: 'Apple Watch',
+    },
+    title: 'Apple Watch',
+    url: '/collections/apple-watch',
   },
 ];
 

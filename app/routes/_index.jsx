@@ -8,7 +8,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 import MenuItemsByHandle from '~/components/MenuItemsByHandle';
-import { CollectionCircles, menuCollectionOne } from '~/components/CollectionCircles';
+import { CollectionCircles, appleMenu } from '~/components/CollectionCircles';
 
 const cache = new Map();
 
@@ -441,7 +441,7 @@ export default function Homepage() {
         <TopProductSections collection={newArrivalsCollection} />
       )}
       {/* Add TopProductSections for each specified collection handle */}
-      <CollectionCircles collections={menuCollectionOne} />
+      <CollectionCircles collections={appleMenu} />
       {topProducts['apple-accessories'] && (
         <TopProductSections collection={topProducts['apple-accessories']} />
       )}
