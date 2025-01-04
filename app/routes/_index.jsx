@@ -24,6 +24,7 @@ import {
   partsMenu,
   tabletsMenu,
 } from '~/components/CollectionCircles';
+import '../styles/index.css';
 
 const cache = new Map();
 
