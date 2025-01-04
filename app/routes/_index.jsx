@@ -8,7 +8,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 import MenuItemsByHandle from '~/components/MenuItemsByHandle';
-import { CollectionCircles } from '~/components/CollectionCircles';
+import { CollectionCircles, menuCollectionOne } from '~/components/CollectionCircles';
 
 const cache = new Map();
 
