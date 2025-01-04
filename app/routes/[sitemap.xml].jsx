@@ -6,23 +6,9 @@ const MAX_PER_PAGE = 250;
  * @param {LoaderFunctionArgs}
  */
 export async function loader({request, context: {storefront}}) {
-  const products = await fetchAllPages({
-    storefront,
-    query: PAGINATED_SITEMAP_QUERY,
-    variables: {type: 'products'},
-  });
-
-  const collections = await fetchAllPages({
-    storefront,
-    query: PAGINATED_SITEMAP_QUERY,
-    variables: {type: 'collections'},
-  });
-
-  const pages = await fetchAllPages({
-    storefront,
-    query: PAGINATED_SITEMAP_QUERY,
-    variables: {type: 'pages'},
-  });
+  const products = await fetchAllResources(storefront, 'products');
+  const collections = await fetchAllResources(storefront, 'collections');
+  const pages = await fetchAllResources(storefront, 'pages');
 
   if (!products.length && !collections.length && !pages.length) {
     throw new Response('No data found', {status: 404});
@@ -42,27 +28,27 @@ export async function loader({request, context: {storefront}}) {
 }
 
 /**
- * Fetch all pages for a given resource type (products, collections, pages).
+ * Fetch all resources (products, collections, pages) with pagination.
  */
-async function fetchAllPages({storefront, query, variables}) {
+async function fetchAllResources(storefront, resourceType) {
   let hasNextPage = true;
   let cursor = null;
   const allItems = [];
 
   while (hasNextPage) {
-    const data = await storefront.query(query, {
-      variables: {...variables, first: MAX_PER_PAGE, after: cursor},
+    const data = await storefront.query(PAGINATED_SITEMAP_QUERY, {
+      variables: {resourceType, first: MAX_PER_PAGE, after: cursor},
     });
 
-    if (!data || !data[variables.type]) {
+    if (!data || !data[resourceType]) {
       break;
     }
 
-    const connection = flattenConnection(data[variables.type]);
+    const connection = flattenConnection(data[resourceType].nodes);
     allItems.push(...connection);
 
-    hasNextPage = data[variables.type].pageInfo.hasNextPage;
-    cursor = data[variables.type].pageInfo.endCursor;
+    hasNextPage = data[resourceType].pageInfo.hasNextPage;
+    cursor = data[resourceType].pageInfo.endCursor;
   }
 
   return allItems;
@@ -135,15 +121,15 @@ function renderUrlTag({url, lastMod, changeFreq, image}) {
 }
 
 /**
- * Paginated query to fetch products, collections, or pages.
+ * Paginated query for each resource type.
  */
 const PAGINATED_SITEMAP_QUERY = `#graphql
-  query Sitemap($type: String!, $first: Int, $after: String) {
+  query Sitemap($resourceType: String!, $first: Int, $after: String) {
     products: products(
       first: $first,
       after: $after,
       query: "published_status:'online_store:visible'"
-    ) @include(if: $type == "products") {
+    ) @include(if: $resourceType == "products") {
       nodes {
         updatedAt
         handle
@@ -163,7 +149,7 @@ const PAGINATED_SITEMAP_QUERY = `#graphql
       first: $first,
       after: $after,
       query: "published_status:'online_store:visible'"
-    ) @include(if: $type == "collections") {
+    ) @include(if: $resourceType == "collections") {
       nodes {
         updatedAt
         handle
@@ -178,7 +164,7 @@ const PAGINATED_SITEMAP_QUERY = `#graphql
       first: $first,
       after: $after,
       query: "published_status:'published'"
-    ) @include(if: $type == "pages") {
+    ) @include(if: $resourceType == "pages") {
       nodes {
         updatedAt
         handle
@@ -191,7 +177,6 @@ const PAGINATED_SITEMAP_QUERY = `#graphql
     }
   }
 `;
-
 
 /**
  * @typedef {{
