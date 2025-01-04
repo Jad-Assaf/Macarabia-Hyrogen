@@ -8,7 +8,14 @@ import {TopProductSections} from '~/components/TopProductSections';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 import MenuItemsByHandle from '~/components/MenuItemsByHandle';
-import {CollectionCircles, appleMenu, gamingMenu, laptopsMenu} from '~/components/CollectionCircles';
+import {
+  CollectionCircles,
+  appleMenu,
+  gamingMenu,
+  laptopsMenu,
+  networkingMenu,
+  partsMenu,
+} from '~/components/CollectionCircles';
 
 const cache = new Map();
 
@@ -438,7 +445,7 @@ export default function Homepage() {
       {newArrivalsCollection && (
         <TopProductSections collection={newArrivalsCollection} />
       )}
-      {/* Add TopProductSections for each specified collection handle */}
+
       <CollectionCircles collections={appleMenu} />
       {topProducts['apple-accessories'] && (
         <TopProductSections collection={topProducts['apple-accessories']} />
@@ -449,6 +456,7 @@ export default function Homepage() {
       {topProducts['apple-imac'] && (
         <TopProductSections collection={topProducts['apple-imac']} />
       )}
+
       <CollectionCircles collections={gamingMenu} />
       {topProducts['gaming-laptops'] && (
         <TopProductSections collection={topProducts['gaming-laptops']} />
@@ -459,6 +467,7 @@ export default function Homepage() {
       {topProducts['console-games'] && (
         <TopProductSections collection={topProducts['console-games']} />
       )}
+
       <CollectionCircles collections={laptopsMenu} />
       {topProducts['acer-laptops'] && (
         <TopProductSections collection={topProducts['acer-laptops']} />
@@ -473,6 +482,8 @@ export default function Homepage() {
           collection={topProducts['microsoft-surface-accessories']}
         />
       )}
+
+      <CollectionCircles collections={partsMenu} />
       {topProducts['motherboards'] && (
         <TopProductSections collection={topProducts['motherboards']} />
       )}
@@ -485,6 +496,8 @@ export default function Homepage() {
       {topProducts['gpu'] && (
         <TopProductSections collection={topProducts['gpu']} />
       )}
+
+      <CollectionCircles collections={networkingMenu} />
       {topProducts['wifi-routers'] && (
         <TopProductSections collection={topProducts['wifi-routers']} />
       )}
@@ -494,6 +507,7 @@ export default function Homepage() {
       {topProducts['switches'] && (
         <TopProductSections collection={topProducts['switches']} />
       )}
+
       {topProducts['apple-studio-display'] && (
         <TopProductSections collection={topProducts['apple-studio-display']} />
       )}
@@ -503,6 +517,7 @@ export default function Homepage() {
       {topProducts['asus-monitors'] && (
         <TopProductSections collection={topProducts['asus-monitors']} />
       )}
+
       {topProducts['mobile-accessories'] && (
         <TopProductSections collection={topProducts['mobile-accessories']} />
       )}
@@ -512,6 +527,7 @@ export default function Homepage() {
       {topProducts['samsung-mobile-phones'] && (
         <TopProductSections collection={topProducts['samsung-mobile-phones']} />
       )}
+
       {topProducts['tablet-accessories'] && (
         <TopProductSections collection={topProducts['tablet-accessories']} />
       )}
@@ -521,6 +537,7 @@ export default function Homepage() {
       {topProducts['samsung-tablets'] && (
         <TopProductSections collection={topProducts['samsung-tablets']} />
       )}
+
       {topProducts['earbuds'] && (
         <TopProductSections collection={topProducts['earbuds']} />
       )}
@@ -530,6 +547,7 @@ export default function Homepage() {
       {topProducts['speakers'] && (
         <TopProductSections collection={topProducts['speakers']} />
       )}
+
       {topProducts['computer-accessories'] && (
         <TopProductSections collection={topProducts['computer-accessories']} />
       )}
@@ -539,6 +557,7 @@ export default function Homepage() {
       {topProducts['car-accessories'] && (
         <TopProductSections collection={topProducts['car-accessories']} />
       )}
+
       {topProducts['fitness-bands'] && (
         <TopProductSections collection={topProducts['fitness-bands']} />
       )}
@@ -548,6 +567,7 @@ export default function Homepage() {
       {topProducts['amazfit-watches'] && (
         <TopProductSections collection={topProducts['amazfit-watches']} />
       )}
+
       {topProducts['action-cameras'] && (
         <TopProductSections collection={topProducts['action-cameras']} />
       )}
@@ -562,6 +582,7 @@ export default function Homepage() {
       {topProducts['drones'] && (
         <TopProductSections collection={topProducts['drones']} />
       )}
+
       {topProducts['kitchen-appliances'] && (
         <TopProductSections collection={topProducts['kitchen-appliances']} />
       )}

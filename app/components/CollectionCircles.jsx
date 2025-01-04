@@ -141,7 +141,7 @@ export const gamingMenu = [
     url: '/collections/gaming-consoles',
   },
   {
-    id: 8,
+    id: 5,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Console-Games-Collection.jpg?v=1714657198',
       altText: 'Console Games',
@@ -150,7 +150,7 @@ export const gamingMenu = [
     url: '/collections/console-games',
   },
   {
-    id: 9,
+    id: 6,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Virtual-Reality-Collection.jpg?v=1714657200',
       altText: 'Virutal Reality',
@@ -159,7 +159,7 @@ export const gamingMenu = [
     url: '/collections/virtual-reality',
   },
   {
-    id: 10,
+    id: 7,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/razer-blackwidow-2019-left-side.webp?v=1714657154',
       altText: 'Gaming Accessories',
@@ -168,7 +168,7 @@ export const gamingMenu = [
     url: '/collections/gaming-accessories',
   },
   {
-    id: 11,
+    id: 8,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/dead-skull.webp?v=1714657488',
       altText: 'Playstation Accessories',
@@ -182,6 +182,15 @@ export const laptopsMenu = [
   {
     id: 1,
     image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/be78f4b09d08ca7c9af85a5bda2b2066.jpg?v=1714656985',
+      altText: 'Acer Laptops',
+    },
+    title: 'Acer Laptops',
+    url: '/collections/acer-laptops',
+  },
+  {
+    id: 2,
+    image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/6573823c46feafed973c1af406eff3ac.jpg?v=1714656986',
       altText: 'Asus Laptops',
     },
@@ -189,7 +198,7 @@ export const laptopsMenu = [
     url: '/collections/asus',
   },
   {
-    id: 2,
+    id: 3,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/402c7e42624f70fb506dc8e2ba6ff5d0.jpg?v=1714656983',
       altText: 'Dell Laptops',
@@ -198,7 +207,7 @@ export const laptopsMenu = [
     url: '/collections/dell',
   },
   {
-    id: 3,
+    id: 4,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/c70dff45e570d9e5d8f15ed6553009fb.png?v=1714656977',
       altText: 'HP Laptops',
@@ -207,7 +216,7 @@ export const laptopsMenu = [
     url: '/collections/hp',
   },
   {
-    id: 4,
+    id: 5,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/04dec497761e64442d9c73ebe4c9fd16.png?v=1714656979',
       altText: 'Lenovo Laptops',
@@ -216,7 +225,7 @@ export const laptopsMenu = [
     url: '/collections/lenovo',
   },
   {
-    id: 8,
+    id: 6,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/fb752f20e83a395208643dfa13893f3c.jpg?v=1714657083',
       altText: 'Microsoft Surface Laptops',
@@ -225,13 +234,165 @@ export const laptopsMenu = [
     url: '/collections/microsoft-surface',
   },
   {
-    id: 9,
+    id: 7,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/67c41fb2ae61930080965e2b309a24f2.jpg?v=1714657009',
       altText: 'MSI Laptops',
     },
     title: 'MSI Laptops',
     url: '/collections/msi',
+  },
+];
+
+export const desktopsMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/hp-victus-desktop.jpg?v=1714656988',
+      altText: 'Branded Desktops',
+    },
+    title: 'Branded Desktops',
+    url: '/collections/branded-desktops',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/gaming-desktop-offer-2.jpg?v=1714657143',
+      altText: 'Gaming Desktops',
+    },
+    title: 'Gaming Desktops',
+    url: '/collections/gaming-desktops',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/29fa4b590132cda6ecb3c863dd618c20.jpg?v=1714656982',
+      altText: 'All-in-one Desktops',
+    },
+    title: 'All-in-one Desktops',
+    url: '/collections/all-in-one-desktops',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/POS.jpg?v=1714657052',
+      altText: 'POS',
+    },
+    title: 'POS',
+    url: '/collections/pos',
+  },
+];
+
+export const partsMenu = [
+    {
+        id: 1,
+        image: {
+            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/mother-boards.jpg?v=1714657124',
+            altText: 'Motherboards',
+        },
+        title: 'Branded Motherboards',
+        url: '/collections/motherboards',
+    },
+    {
+        id: 2,
+        image: {
+            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/CPU_s.jpg?v=1714657125',
+            altText: 'CPUs',
+        },
+        title: 'CPUs',
+        url: '/collections/cpus',
+    },
+    {
+        id: 3,
+        image: {
+            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/CPU-Coolers.jpg?v=1714657122',
+            altText: 'CPU Coolers',
+        },
+        title: 'CPU Coolers',
+        url: '/collections/cpu-coolers',
+    },
+    {
+        id: 4,
+        image: {
+            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/GPU.jpg?v=1714657128',
+            altText: 'GPUs',
+        },
+        title: 'GPUs',
+        url: '/collections/GPU',
+    },
+    {
+        id: 5,
+        image: {
+            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/RAMS.jpg?v=1714657127',
+            altText: 'RAM',
+        },
+        title: 'RAM',
+        url: '/collections/ram',
+    },
+    {
+        id: 6,
+        image: {
+            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/ssd.jpg?v=1714657118',
+      altText: 'Storage',
+    },
+    title: 'Storage',
+    url: '/collections/storage',
+},
+{
+    id: 7,
+    image: {
+        url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Power-Supply.jpg?v=1714657005',
+        altText: 'Power Supplies',
+    },
+    title: 'Power Supplies',
+    url: '/collections/power-supplies',
+},
+{
+    id: 8,
+    image: {
+        url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/813d80b0b251c24004edfdc06bd71d99_7dc23fcb-2256-427d-a171-d45e906d9cc7.jpg?v=1714657092',
+        altText: 'Desktop Cases',
+    },
+    title: 'Desktop Cases',
+    url: '/collections/cases',
+},
+];
+export const networkingMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Archer-VR2100.webp?v=1714657489',
+      altText: 'WiFi Routers',
+    },
+    title: 'WiFi Routers',
+    url: '/collections/widi-routers',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Mi-Wi-Fi-Range-Extender-Pro.webp?v=1714657494',
+      altText: 'WiFi Range Extenders',
+    },
+    title: 'WiFi Range Extenders',
+    url: '/collections/widi-range-extenders',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/img_proxy_d8c6be1f-6467-4b6a-b278-93dcc57e76ec.jpg?v=1714657495',
+      altText: 'Antennas',
+    },
+    title: 'Antennas',
+    url: '/collections/outdoor-poe-antennas',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/USW-Pro-48-PoE.webp?v=1714657496',
+      altText: 'Switches',
+    },
+    title: 'Switches',
+    url: '/collections/switches',
   },
 ];
 
