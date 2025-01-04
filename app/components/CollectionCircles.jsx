@@ -103,24 +103,24 @@ export const appleMenu = [
 ];
 
 // Second Collection
-export const menuCollectionTwo = [
+export const gamingMenu = [
   {
-    id: 3,
+    id: 1,
     image: {
-      url: 'https://example.com/image3.jpg',
-      altText: 'Collection 3 Image',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/2481e9abe158cadab142174d138852a2.jpg?v=1714657038',
+      altText: 'Gaming Laptops',
     },
-    title: 'Collection 3',
-    url: '/collections/collection-3',
+    title: 'Gaming Laptops',
+    url: '/collections/gaming-laptops',
   },
   {
-    id: 4,
+    id: 2,
     image: {
-      url: 'https://example.com/image4.jpg',
-      altText: 'Collection 4 Image',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/gaming-desktop-offer-2.jpg?v=1714657143',
+      altText: 'Gaming Desktops',
     },
-    title: 'Collection 4',
-    url: '/collections/collection-4',
+    title: 'Gaming Desktops',
+    url: '/collections/gaming-desktops',
   },
 ];
 

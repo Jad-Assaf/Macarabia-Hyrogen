@@ -8,7 +8,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 import MenuItemsByHandle from '~/components/MenuItemsByHandle';
-import { CollectionCircles, appleMenu } from '~/components/CollectionCircles';
+import {CollectionCircles, appleMenu, gamingMenu} from '~/components/CollectionCircles';
 
 const cache = new Map();
 
@@ -252,12 +252,10 @@ async function loadCriticalData({context}) {
     `,
   );
 
-
-  const [sliderCollections, newArrivalsCollection] =
-    await Promise.all([
-      fetchCollectionsByHandles(context, menuHandles),
-      fetchCollectionByHandle(context, 'new-arrivals'),
-    ]);
+  const [sliderCollections, newArrivalsCollection] = await Promise.all([
+    fetchCollectionsByHandles(context, menuHandles),
+    fetchCollectionByHandle(context, 'new-arrivals'),
+  ]);
 
   return {
     sliderCollections,
@@ -451,6 +449,7 @@ export default function Homepage() {
       {topProducts['apple-imac'] && (
         <TopProductSections collection={topProducts['apple-imac']} />
       )}
+      <CollectionCircles collections={gamingMenu} />
       {topProducts['gaming-laptops'] && (
         <TopProductSections collection={topProducts['gaming-laptops']} />
       )}
