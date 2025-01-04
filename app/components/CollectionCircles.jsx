@@ -122,6 +122,51 @@ export const gamingMenu = [
     title: 'Gaming Desktops',
     url: '/collections/gaming-desktops',
   },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Gaming-Monitors.jpg?v=1714657201',
+      altText: 'Gaming Monitors',
+    },
+    title: 'Gaming Monitors',
+    url: '/collections/gaming-monitors',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/cbd4f23fcac98d9bf7769fa0e8983881.jpg',
+      altText: 'Gaming Consoles',
+    },
+    title: 'Gaming Console',
+    url: '/collections/gaming-consoles',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Virtual-Reality-Collection.jpg?v=1714657200',
+      altText: 'Virutal Reality',
+    },
+    title: 'Virutal Reality',
+    url: '/collections/virtual-reality',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/razer-blackwidow-2019-left-side.webp?v=1714657154',
+      altText: 'Gaming Accessories',
+    },
+    title: 'Gaming Accessories',
+    url: '/collections/gaming-accessories',
+  },
+  {
+    id: 7,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/dead-skull.webp?v=1714657488',
+      altText: 'Playstation Accessories',
+    },
+    title: 'PS Accessories',
+    url: '/collections/ps-accessories',
+  },
 ];
 
 // Reusable Mapping Function
