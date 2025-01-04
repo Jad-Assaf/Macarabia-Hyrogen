@@ -357,6 +357,7 @@ export const partsMenu = [
     url: '/collections/cases',
 },
 ];
+
 export const networkingMenu = [
   {
     id: 1,
@@ -588,6 +589,204 @@ export const mobilesMenu = [
     },
     title: 'Asus Gaming Phones',
     url: '/collections/asus-rog-gaming-mobile-phones',
+  },
+];
+
+export const tabletsMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Tablet-Accessories.jpg?v=1714657283',
+      altText: 'Tablet Accessories',
+    },
+    title: 'Tablet Accessories',
+    url: '/collections/tablet-accessories',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/ede8ec2c515f709ee4f047128d664621.jpg?v=1714657066',
+      altText: 'Graphic Design Tablets',
+    },
+    title: 'Graphic Tablets',
+    url: '/collections/digital-text',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Kindle.jpg?v=1714657088',
+      altText: 'Kindle Tablets',
+    },
+    title: 'Kindle Tablets',
+    url: '/collections/kindle-tablets',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/060ef5a299d547641bd55b509d8ae11c.jpg?v=1714657089',
+      altText: 'Amazon Tabelts',
+    },
+    title: 'Amazon Tabelts',
+    url: '/collections/amazon-tablets',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/59663e172d1f0fa78bcb873332d7e673.jpg?v=1714657091',
+      altText: 'Samsung Tablets',
+    },
+    title: 'Samsung Tablets',
+    url: '/collections/samsung-tablets',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Lenovo-tablets.jpg?v=1714657012',
+      altText: 'Lenovo Tablets',
+    },
+    title: 'Lenovo Tablets',
+    url: '/collections/lenovo-tablets',
+  },
+  {
+    id: 7,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/0b0868e76629ed14354e99d60ee4a0e1.jpg?v=1714657096',
+      altText: 'Xiaomi Tablets',
+    },
+    title: 'Xiaomi Tablets',
+    url: '/collections/xiaomi-tablets',
+  },
+];
+
+export const audioMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Zoom-H8.webp?v=1714657894',
+      altText: 'Audio Recorders',
+    },
+    title: 'Audio Recorders',
+    url: '/collections/audio-recorders',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/earbuds.jpg?v=1714657093',
+      altText: 'Earbuds',
+    },
+    title: 'Earbuds',
+    url: '/collections/earbuds',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/headsets_3ca0e802-135e-4a41-87bd-9aeb574a257e.jpg',
+      altText: 'Headphones',
+    },
+    title: 'Headphones',
+    url: '/collections/headphones',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/speakers_7779c255-7f3b-408c-9e44-726650bda835.jpg',
+      altText: 'Speakers',
+    },
+    title: 'Speakers',
+    url: '/collections/speakers',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Surround-Systems.jpg?v=1714657298',
+      altText: 'Surround Systems',
+    },
+    title: 'Surround Systems',
+    url: '/collections/surround-systems',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/1a1a.jpg?v=1714657064',
+      altText: 'Microphones',
+    },
+    title: 'Microphones',
+    url: '/collections/microphones',
+  },
+  {
+    id: 7,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/audio-_-Visual.jpg?v=1714657133',
+      altText: 'Pioneer Equipment',
+    },
+    title: 'Pioneer Equipment',
+    url: '/collections/pioneer-equipment',
+  },
+];
+
+export const accessoriesMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Zoom-H8.webp?v=1714657894',
+      altText: 'Audio Recorders',
+    },
+    title: 'Audio Recorders',
+    url: '/collections/audio-recorders',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/earbuds.jpg?v=1714657093',
+      altText: 'Earbuds',
+    },
+    title: 'Earbuds',
+    url: '/collections/earbuds',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/headsets_3ca0e802-135e-4a41-87bd-9aeb574a257e.jpg',
+      altText: 'Headphones',
+    },
+    title: 'Headphones',
+    url: '/collections/headphones',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/speakers_7779c255-7f3b-408c-9e44-726650bda835.jpg',
+      altText: 'Speakers',
+    },
+    title: 'Speakers',
+    url: '/collections/speakers',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Surround-Systems.jpg?v=1714657298',
+      altText: 'Surround Systems',
+    },
+    title: 'Surround Systems',
+    url: '/collections/surround-systems',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/1a1a.jpg?v=1714657064',
+      altText: 'Microphones',
+    },
+    title: 'Microphones',
+    url: '/collections/microphones',
+  },
+  {
+    id: 7,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/audio-_-Visual.jpg?v=1714657133',
+      altText: 'Pioneer Equipment',
+    },
+    title: 'Pioneer Equipment',
+    url: '/collections/pioneer-equipment',
   },
 ];
 

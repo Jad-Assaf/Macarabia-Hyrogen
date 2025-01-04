@@ -11,12 +11,14 @@ import MenuItemsByHandle from '~/components/MenuItemsByHandle';
 import {
   CollectionCircles,
   appleMenu,
+  audioMenu,
   gamingMenu,
   laptopsMenu,
   mobilesMenu,
   monitorsMenu,
   networkingMenu,
   partsMenu,
+  tabletsMenu,
 } from '~/components/CollectionCircles';
 
 const cache = new Map();
@@ -532,6 +534,7 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['samsung-mobile-phones']} />
       )}
 
+      <CollectionCircles collections={tabletsMenu} />
       {topProducts['tablet-accessories'] && (
         <TopProductSections collection={topProducts['tablet-accessories']} />
       )}
@@ -542,6 +545,7 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['samsung-tablets']} />
       )}
 
+      <CollectionCircles collections={audioMenu} />
       {topProducts['earbuds'] && (
         <TopProductSections collection={topProducts['earbuds']} />
       )}
