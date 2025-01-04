@@ -13,6 +13,8 @@ import {
   appleMenu,
   gamingMenu,
   laptopsMenu,
+  mobilesMenu,
+  monitorsMenu,
   networkingMenu,
   partsMenu,
 } from '~/components/CollectionCircles';
@@ -508,6 +510,7 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['switches']} />
       )}
 
+      <CollectionCircles collections={monitorsMenu} />
       {topProducts['apple-studio-display'] && (
         <TopProductSections collection={topProducts['apple-studio-display']} />
       )}
@@ -518,6 +521,7 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['asus-monitors']} />
       )}
 
+      <CollectionCircles collections={mobilesMenu} />
       {topProducts['mobile-accessories'] && (
         <TopProductSections collection={topProducts['mobile-accessories']} />
       )}

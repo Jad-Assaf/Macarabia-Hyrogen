@@ -365,7 +365,7 @@ export const networkingMenu = [
       altText: 'WiFi Routers',
     },
     title: 'WiFi Routers',
-    url: '/collections/widi-routers',
+    url: '/collections/wifi-routers',
   },
   {
     id: 2,
@@ -374,7 +374,7 @@ export const networkingMenu = [
       altText: 'WiFi Range Extenders',
     },
     title: 'WiFi Range Extenders',
-    url: '/collections/widi-range-extenders',
+    url: '/collections/wifi-range-extenders',
   },
   {
     id: 3,
@@ -393,6 +393,201 @@ export const networkingMenu = [
     },
     title: 'Switches',
     url: '/collections/switches',
+  },
+];
+
+export const monitorsMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/68a0721e462f8235e2833e6740dbf357.jpg?v=1714657051',
+      altText: 'AOC Monitors',
+    },
+    title: 'AOC Monitors',
+    url: '/collections/aoc-monitors',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/a376e912c280e174549ada1102c67c64.jpg?v=1714657113',
+      altText: 'Acer Monitors',
+    },
+    title: 'Acer Monitors',
+    url: '/collections/acer-nonitors',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/16e2c812a57d53ffd1bb610ef33372c0.jpg?v=1714657109',
+      altText: 'Asus Monitors',
+    },
+    title: 'Asus Monitors',
+    url: '/collections/asus-monitors',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/1f9c9ccf9e0ec5b0376a28ae6f8c7de8.jpg?v=1714657024',
+      altText: 'BenQ Monitors',
+    },
+    title: 'BenQ Monitors',
+    url: '/collections/benq-monitors',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/13c78bd433f2b1d805a0d103db6c7055.jpg?v=1714657110',
+      altText: 'Dell Monitors',
+    },
+    title: 'Dell Monitors',
+    url: '/collections/dell-monitors',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/368f302b50e2de9aec3d17786a68bf4e.jpg?v=1714657115',
+      altText: 'Gigabyte Monitors',
+    },
+    title: 'Gigabyte Monitors',
+    url: '/collections/gigabyte-monitors',
+  },
+  {
+    id: 7,
+    image: {
+      url: 'htthttps://cdn.shopify.com/s/files/1/0858/6821/6639/collections/2ecf13df52e054beba96c36bce764cde.jpg?v=1714657008',
+      altText: 'HP Monitors',
+    },
+    title: 'HP Monitors',
+    url: '/collections/hp-monitors',
+  },
+  {
+    id: 8,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Lenovo-monitors.jpg?v=1714657029',
+      altText: 'Lenovo Monitors',
+    },
+    title: 'Lenovo Monitors',
+    url: '/collections/lenovo-monitors',
+  },
+  {
+    id: 9,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/065951d902c864e1f35d3319e1a74fa4.jpg?v=1714657025',
+      altText: 'LG Monitors',
+    },
+    title: 'LG Monitors',
+    url: '/collections/lg-monitors',
+  },
+  {
+    id: 10,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Msi-Monitors.jpg?v=1714657059',
+      altText: 'MSI Monitors',
+    },
+    title: 'MSI Monitors',
+    url: '/collections/msi-monitors',
+  },
+  {
+    id: 11,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/philips-monitors.jpg?v=1714657006',
+      altText: 'Philips Monitors',
+    },
+    title: 'Philips Monitors',
+    url: '/collections/philips-monitors',
+  },
+  {
+    id: 12,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/ef0a2b514fffc979ba73e8dabc6f5eac.jpg?v=1714657032',
+      altText: 'Samsung Monitors',
+    },
+    title: 'Samsung Monitors',
+    url: '/collections/samsung-monitors',
+  },
+  {
+    id: 13,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/11.jpg?v=1714657134',
+      altText: 'Viewsonic Monitors',
+    },
+    title: 'Viewsonic Monitors',
+    url: '/collections/viewsonic-monitors',
+  },
+  {
+    id: 14,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Samsung-TV_iTunes-Movies-and-TV-shows.jpg?v=1714657137',
+      altText: 'Televisions',
+    },
+    title: 'Televisions',
+    url: '/collections/televisions',
+  },
+];
+
+export const mobilesMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Mobile-accessories.jpg?v=1714656995',
+      altText: 'Mobile Accessories',
+    },
+    title: 'Mobile Accessories',
+    url: '/collections/mobile-accessories',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/b2991d32e4b537945124266af9681644.jpg?v=1714657030',
+      altText: 'Apple iPhone',
+    },
+    title: 'Apple iPhone',
+    url: '/collections/apple-iphone',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/aa7c88badaf598a9b38e30dc825c85de.png?v=1714656974',
+      altText: 'Samsung Mobile Phones',
+    },
+    title: 'Samsung Mobile Phones',
+    url: '/collections/samsung-mobile-phones',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/google.jpg?v=1714657087',
+      altText: 'Google Pixel Phones',
+    },
+    title: 'Google Pixel Phones',
+    url: '/collections/google-pixel-phones',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/f219d124870eb12f1b7415b3c95b0017.jpg?v=1714657055',
+      altText: 'Xiaomi Mobile Phones',
+    },
+    title: 'Xiaomi Mobile Phones',
+    url: '/collections/xiaomi-mobile-phones',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/infinix.jpg?v=1714657080',
+      altText: 'Infinix Mobile Phones',
+    },
+    title: 'Infinix Mobile Phones',
+    url: '/collections/infinix-mobile-phones',
+  },
+  {
+    id: 7,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/dbae80cff5b0c94f558f5b0817c8ab4e.jpg?v=1714657065',
+      altText: 'Asus Gaming Phones',
+    },
+    title: 'Asus Gaming Phones',
+    url: '/collections/asus-rog-gaming-mobile-phones',
   },
 ];
 
