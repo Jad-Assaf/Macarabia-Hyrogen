@@ -8,7 +8,7 @@ import {TopProductSections} from '~/components/TopProductSections';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
 import MenuItemsByHandle from '~/components/MenuItemsByHandle';
-import {CollectionCircles, appleMenu, gamingMenu} from '~/components/CollectionCircles';
+import {CollectionCircles, appleMenu, gamingMenu, laptopsMenu} from '~/components/CollectionCircles';
 
 const cache = new Map();
 
@@ -459,6 +459,7 @@ export default function Homepage() {
       {topProducts['console-games'] && (
         <TopProductSections collection={topProducts['console-games']} />
       )}
+      <CollectionCircles collections={laptopsMenu} />
       {topProducts['acer-laptops'] && (
         <TopProductSections collection={topProducts['acer-laptops']} />
       )}

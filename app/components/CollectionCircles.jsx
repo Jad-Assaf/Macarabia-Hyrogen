@@ -141,7 +141,16 @@ export const gamingMenu = [
     url: '/collections/gaming-consoles',
   },
   {
-    id: 5,
+    id: 8,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Console-Games-Collection.jpg?v=1714657198',
+      altText: 'Console Games',
+    },
+    title: 'Console Games',
+    url: '/collections/console-games',
+  },
+  {
+    id: 9,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Virtual-Reality-Collection.jpg?v=1714657200',
       altText: 'Virutal Reality',
@@ -150,7 +159,7 @@ export const gamingMenu = [
     url: '/collections/virtual-reality',
   },
   {
-    id: 6,
+    id: 10,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/razer-blackwidow-2019-left-side.webp?v=1714657154',
       altText: 'Gaming Accessories',
@@ -159,13 +168,70 @@ export const gamingMenu = [
     url: '/collections/gaming-accessories',
   },
   {
-    id: 7,
+    id: 11,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/dead-skull.webp?v=1714657488',
       altText: 'Playstation Accessories',
     },
     title: 'PS Accessories',
     url: '/collections/ps-accessories',
+  },
+];
+
+export const laptopsMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/6573823c46feafed973c1af406eff3ac.jpg?v=1714656986',
+      altText: 'Asus Laptops',
+    },
+    title: 'Asus Laptops',
+    url: '/collections/asus',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/402c7e42624f70fb506dc8e2ba6ff5d0.jpg?v=1714656983',
+      altText: 'Dell Laptops',
+    },
+    title: 'Dell Laptops',
+    url: '/collections/dell',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/c70dff45e570d9e5d8f15ed6553009fb.png?v=1714656977',
+      altText: 'HP Laptops',
+    },
+    title: 'HP Laptops',
+    url: '/collections/hp',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/04dec497761e64442d9c73ebe4c9fd16.png?v=1714656979',
+      altText: 'Lenovo Laptops',
+    },
+    title: 'Lenovo Laptops',
+    url: '/collections/lenovo',
+  },
+  {
+    id: 8,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/fb752f20e83a395208643dfa13893f3c.jpg?v=1714657083',
+      altText: 'Microsoft Surface Laptops',
+    },
+    title: 'Microsoft Surface Laptops',
+    url: '/collections/microsoft-surface',
+  },
+  {
+    id: 9,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/67c41fb2ae61930080965e2b309a24f2.jpg?v=1714657009',
+      altText: 'MSI Laptops',
+    },
+    title: 'MSI Laptops',
+    url: '/collections/msi',
   },
 ];
 
