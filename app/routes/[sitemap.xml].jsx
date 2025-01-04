@@ -2,13 +2,12 @@ import {flattenConnection} from '@shopify/hydrogen';
 
 const MAX_PER_PAGE = 250;
 
-/**
- * @param {LoaderFunctionArgs}
- */
 export async function loader({request, context: {storefront}}) {
-  const products = await fetchAllResources(storefront, 'products');
-  const collections = await fetchAllResources(storefront, 'collections');
-  const pages = await fetchAllResources(storefront, 'pages');
+  const [products, collections, pages] = await Promise.all([
+    fetchAllResources(storefront, 'products'),
+    fetchAllResources(storefront, 'collections'),
+    fetchAllResources(storefront, 'pages'),
+  ]);
 
   if (!products.length && !collections.length && !pages.length) {
     throw new Response('No data found', {status: 404});
@@ -27,9 +26,6 @@ export async function loader({request, context: {storefront}}) {
   });
 }
 
-/**
- * Fetch all resources (products, collections, pages) with pagination.
- */
 async function fetchAllResources(storefront, resourceType) {
   let hasNextPage = true;
   let cursor = null;
@@ -54,9 +50,6 @@ async function fetchAllResources(storefront, resourceType) {
   return allItems;
 }
 
-/**
- * Generate the XML sitemap.
- */
 function generateSitemap({data, baseUrl}) {
   const products = data.products
     .filter((product) => product.onlineStoreUrl)
@@ -120,9 +113,6 @@ function renderUrlTag({url, lastMod, changeFreq, image}) {
     </url>`;
 }
 
-/**
- * Paginated query for each resource type.
- */
 const PAGINATED_SITEMAP_QUERY = `#graphql
   query Sitemap($resourceType: String!, $first: Int, $after: String) {
     products: products(
