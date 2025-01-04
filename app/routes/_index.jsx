@@ -1,4 +1,4 @@
-import React, {Suspense, lazy, startTransition, useEffect} from 'react';
+import React, {Suspense, lazy, startTransition, useEffect, useState} from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
@@ -442,6 +442,8 @@ const brandsData = [
 export default function Homepage() {
   const {banners, sliderCollections, deferredData, topProducts} =
     useLoaderData();
+
+  const [isNewArrivalsLoaded, setIsNewArrivalsLoaded] = useState(false);
 
   // REMOVED: const menuCollections = deferredData?.menuCollections || [];
   const newArrivalsCollection = deferredData?.newArrivalsCollection;
