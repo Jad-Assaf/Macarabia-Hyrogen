@@ -454,7 +454,7 @@ export const monitorsMenu = [
   {
     id: 7,
     image: {
-      url: 'htthttps://cdn.shopify.com/s/files/1/0858/6821/6639/collections/2ecf13df52e054beba96c36bce764cde.jpg?v=1714657008',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/2ecf13df52e054beba96c36bce764cde.jpg?v=1714657008',
       altText: 'HP Monitors',
     },
     title: 'HP Monitors',
