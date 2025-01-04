@@ -95,7 +95,7 @@ export function BannerSlideshow({banners, interval = 10000}) {
           rel="noopener noreferrer"
           style={styles.link}
         >
-          <Image
+          <img
             src={banner.desktopImageUrl}
             srcSet={`${banner.desktopImageUrl}?width=300&quality=50 300w,
                    ${banner.desktopImageUrl}?width=600&quality=50 600w,
@@ -104,7 +104,7 @@ export function BannerSlideshow({banners, interval = 10000}) {
             alt={`Banner ${index + 1}`}
             style={styles.bannerImage}
             loading="eager"
-            decoding="sync"
+            decoding="async"
           />
         </a>
       </div>
@@ -136,7 +136,7 @@ export function BannerSlideshow({banners, interval = 10000}) {
           rel="noopener noreferrer"
           style={styles.link}
         >
-          <Image
+          <img
             src={banner.mobileImageUrl}
             srcSet={`${banner.mobileImageUrl}?width=300&quality=50 300w,
                    ${banner.mobileImageUrl}?width=600&quality=50 600w,
@@ -145,7 +145,7 @@ export function BannerSlideshow({banners, interval = 10000}) {
             alt={`Banner ${index + 1}`}
             style={styles.bannerImage}
             loading="eager"
-            decoding="sync"
+            decoding="async"
           />
         </a>
       </div>
