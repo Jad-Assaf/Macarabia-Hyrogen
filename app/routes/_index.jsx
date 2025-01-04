@@ -10,8 +10,11 @@ import {getSeoMeta} from '@shopify/hydrogen';
 import MenuItemsByHandle from '~/components/MenuItemsByHandle';
 import {
   CollectionCircles,
+  accessoriesMenu,
   appleMenu,
   audioMenu,
+  camerasMenu,
+  fitnessMenu,
   gamingMenu,
   laptopsMenu,
   mobilesMenu,
@@ -556,6 +559,7 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['speakers']} />
       )}
 
+      <CollectionCircles collections={accessoriesMenu} />
       {topProducts['computer-accessories'] && (
         <TopProductSections collection={topProducts['computer-accessories']} />
       )}
@@ -566,6 +570,7 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['car-accessories']} />
       )}
 
+      <CollectionCircles collections={fitnessMenu} />
       {topProducts['fitness-bands'] && (
         <TopProductSections collection={topProducts['fitness-bands']} />
       )}
@@ -576,6 +581,7 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['amazfit-watches']} />
       )}
 
+      <CollectionCircles collections={camerasMenu} />
       {topProducts['action-cameras'] && (
         <TopProductSections collection={topProducts['action-cameras']} />
       )}

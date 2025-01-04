@@ -728,65 +728,269 @@ export const accessoriesMenu = [
   {
     id: 1,
     image: {
-      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Zoom-H8.webp?v=1714657894',
-      altText: 'Audio Recorders',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/9bd9787c9f7cf3d78706698066fe550b.jpg?v=1714656989',
+      altText: 'Computer Accessories',
     },
-    title: 'Audio Recorders',
-    url: '/collections/audio-recorders',
+    title: 'Computer Accessories',
+    url: '/collections/computer-accessories',
   },
   {
     id: 2,
     image: {
-      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/earbuds.jpg?v=1714657093',
-      altText: 'Earbuds',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/car-accessories_1daafce0-e458-4c00-abd5-4a62fe64abf2.jpg',
+      altText: 'Car Accessories',
     },
-    title: 'Earbuds',
-    url: '/collections/earbuds',
+    title: 'Car Accessories',
+    url: '/collections/car-accessories',
   },
   {
     id: 3,
     image: {
-      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/headsets_3ca0e802-135e-4a41-87bd-9aeb574a257e.jpg',
-      altText: 'Headphones',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Thule-Chasm-BackPack-Black-2.jpg?v=1714657018',
+      altText: 'Backpacks and Bags',
     },
-    title: 'Headphones',
-    url: '/collections/headphones',
+    title: 'Backpacks & Bags',
+    url: '/collections/backpacks-bags',
   },
   {
     id: 4,
     image: {
-      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/speakers_7779c255-7f3b-408c-9e44-726650bda835.jpg',
-      altText: 'Speakers',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/SMART-HOME-DEVICES.jpg?v=1714657099',
+      altText: 'Home Appliances',
     },
-    title: 'Speakers',
-    url: '/collections/speakers',
+    title: 'Home Appliances',
+    url: '/collections/home-appliances',
   },
   {
     id: 5,
     image: {
-      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Surround-Systems.jpg?v=1714657298',
-      altText: 'Surround Systems',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/printers.jpg?v=1714656998',
+      altText: 'Printers',
     },
-    title: 'Surround Systems',
-    url: '/collections/surround-systems',
+    title: 'Printers',
+    url: '/collections/printers',
   },
   {
     id: 6,
     image: {
-      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/1a1a.jpg?v=1714657064',
-      altText: 'Microphones',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/scooters.jpg?v=1714657047',
+      altText: 'Scooters',
     },
-    title: 'Microphones',
-    url: '/collections/microphones',
+    title: 'Scooters',
+    url: '/collections/scooters',
   },
   {
     id: 7,
     image: {
-      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/audio-_-Visual.jpg?v=1714657133',
-      altText: 'Pioneer Equipment',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Projectors.jpg?v=1714657100',
+      altText: 'Projectors',
     },
-    title: 'Pioneer Equipment',
-    url: '/collections/pioneer-equipment',
+    title: 'Projectors',
+    url: '/collections/projectors',
+  },
+];
+
+export const fitnessMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/huawei-band-8-grey-orange-2.jpg?v=1714657604',
+      altText: 'Fitness Bands',
+    },
+    title: 'Fitness Bands',
+    url: '/collections/fitness-bands',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Samsung-Watches.jpg?v=1714657104',
+      altText: 'Samsung Watches',
+    },
+    title: 'Samsung Watches',
+    url: '/collections/samsung-watches',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/img_proxy_1d5f1de1-9b79-49a6-9e74-a8c2869daf98.jpg?v=1714657022',
+      altText: 'Garmin Watches',
+    },
+    title: 'Garmin Watches',
+    url: '/collections/garmin-smart-watch',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/CMF-by-Nothing-Watch-Pro-5.webp?v=1714657901',
+      altText: 'Nothing Watches',
+    },
+    title: 'Nothing Watches',
+    url: '/collections/nothing-watch',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/730fbee436f3094d6f71dc35da69eff7.jpg?v=1714657068',
+      altText: 'Amazfit Watches',
+    },
+    title: 'Amazfit Watches',
+    url: '/collections/amazfit-watches',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/5b1a5ef91f3421e41193daa1fb8675bc.jpg?v=1714657106',
+      altText: 'Xiaomi Watches',
+    },
+    title: 'Xiaomi Watches',
+    url: '/collections/xiaomi-watches',
+  },
+  {
+    id: 7,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Huawei-watches.jpg?v=1714657107',
+      altText: 'Huawei Watches',
+    },
+    title: 'Huawei Watches',
+    url: '/collections/huawei-watches',
+  },
+  {
+    id: 8,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/068958ad9c591e260a1fd7c8aa4055be.jpg',
+      altText: 'Fitbit Watches',
+    },
+    title: 'Fitbit Watches',
+    url: '/collections/fitbit-smartwatch',
+  },
+  {
+    id: 9,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/pd-kdwst-BU.webp?v=1714657902',
+      altText: 'Porodo Watches',
+    },
+    title: 'Porodo Watches',
+    url: '/collections/porodo-watch',
+  },
+  {
+    id: 10,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/green-lion-grand-smart-4.jpg?v=1714657205',
+      altText: 'Green Lion Watches',
+    },
+    title: 'Green Lion Watches',
+    url: '/collections/green-lion-watch',
+  },
+  {
+    id: 11,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Porodo-Lifestyle-Smart-Voice-Jump-Skip-Rope.webp',
+      altText: 'Fitness Equipment',
+    },
+    title: 'Fitness Equipment',
+    url: '/collections/fitness-equipment',
+  },
+  {
+    id: 12,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Porodo-Smart-Wearable-Ring.webp?v=1714657898',
+      altText: 'Fitness Rings',
+    },
+    title: 'Fitness Rings',
+    url: '/collections/fitness-rings',
+  },
+];
+
+export const camerasMenu = [
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Action-Cameras-Collection.jpg?v=1714657202',
+      altText: 'Action Cameras',
+    },
+    title: 'Action Cameras',
+    url: '/collections/action-cameras',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/cameras-accessories.jpg?v=1714657204',
+      altText: 'Action Camera Accessories',
+    },
+    title: 'Action Camera Accessories',
+    url: '/collections/action-cameras-accessories',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/3ce866744a2e083d79cf0545d7b5b5cc.jpg?v=1714657062',
+      altText: 'Drones',
+    },
+    title: 'Drones',
+    url: '/collections/drones',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Insta360-Flow-Smartphone-Gimbal-Stabilizer-4.webp?v=1714657884',
+      altText: 'Gimbal Stabilizer',
+    },
+    title: 'Gimbal Stabilizer',
+    url: '/collections/gimbal-stabilizer',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/771748c78dc8da6e89a773af5e1b1a4b.jpg?v=1714657077',
+      altText: 'Professional Cameras',
+    },
+    title: 'Professional Cameras',
+    url: '/collections/cameras',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/canon-camera-lens.jpg?v=1714657157',
+      altText: 'Camera Lenses',
+    },
+    title: 'Camera Lenses',
+    url: '/collections/camera-lenses',
+  },
+  {
+    id: 7,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Neewer-A111-Bi-Color-Rig-Light-Stabilizer.webp?v=1714657891',
+      altText: 'Camera Accessories',
+    },
+    title: 'Camera Accessories',
+    url: '/collections/camera-accessories',
+  },
+  {
+    id: 8,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Camcorders.jpg?v=1714657342',
+      altText: 'Camcorders',
+    },
+    title: 'Camcorders',
+    url: '/collections/camcorders',
+  },
+  {
+    id: 9,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/razer-webcam.jpg?v=1714657158',
+      altText: 'Webcams',
+    },
+    title: 'Webcams',
+    url: '/collections/webcams',
+  },
+  {
+    id: 10,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/64b7bbdad8239f5eb7e1f2fd9db0f323.jpg?v=1714657078',
+      altText: 'Surveillance Cameras',
+    },
+    title: 'Surveillance Cameras',
+    url: '/collections/surveillance-cameras',
   },
 ];
 
