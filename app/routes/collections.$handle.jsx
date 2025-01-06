@@ -521,7 +521,7 @@ export default function Collection() {
         <div className="flex-1 mt-[94px]">
           <hr className="col-hr"></hr>
 
-          <div className="view-container">
+          {/* <div className="view-container">
             <div className="layout-controls">
               <span className="number-sort">View As:</span>
               {screenWidth >= 300 && (
@@ -954,7 +954,7 @@ export default function Collection() {
               productNumber={collection.products.nodes.length}
               isDesktop={isDesktop}
             />
-          </div>
+          </div> */}
 
           <PaginatedResourceSection
             key={`products-grid-${numberInRow}`} // Forces re-render on change
