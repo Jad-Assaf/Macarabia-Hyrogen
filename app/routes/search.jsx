@@ -40,12 +40,29 @@ export async function loader({request, context}) {
   const currentPage =
     isNaN(pageFromQuery) || pageFromQuery < 1 ? 1 : pageFromQuery;
 
-  // Collect filter query parts
-  const filterQueryParts = [];
+  /* ----------------------------
+     FIXED SECTION FOR MULTIPLE FILTERS
+     (Groups same filter keys with OR)
+  -----------------------------*/
+  const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
       const filterKey = key.replace('filter_', '');
-      filterQueryParts.push(`${filterKey}:${value}`);
+      if (!filterMap.has(filterKey)) {
+        filterMap.set(filterKey, []);
+      }
+      filterMap.get(filterKey).push(value);
+    }
+  }
+
+  const filterQueryParts = [];
+  for (const [filterKey, values] of filterMap.entries()) {
+    if (values.length === 1) {
+      filterQueryParts.push(`${filterKey}:${values[0]}`);
+    } else {
+      // combine multiple values with OR
+      const orGroup = values.map((v) => `${filterKey}:${v}`).join(' OR ');
+      filterQueryParts.push(`(${orGroup})`);
     }
   }
 
@@ -60,6 +77,7 @@ export async function loader({request, context}) {
     filterQueryParts.push(`variants.price:<${maxPrice}`);
   }
 
+  // Join with AND so that different filter keys must all match
   const filterQuery = `${term} ${filterQueryParts.join(' AND ')}`;
 
   // Sorting
@@ -466,8 +484,9 @@ export default function SearchPage() {
                         pageNum === currentPage
                           ? '1px solid #232323'
                           : '1px solid #ccc',
-                          borderRadius: '50%',
-                      fontWeight: pageNum === currentPage ? 'semi-bold' : 'normal',
+                      borderRadius: '50%',
+                      fontWeight:
+                        pageNum === currentPage ? 'semi-bold' : 'normal',
                       cursor: 'pointer',
                     }}
                     aria-current={pageNum === currentPage ? 'page' : undefined}
