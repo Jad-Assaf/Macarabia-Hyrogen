@@ -995,15 +995,20 @@ export default function Collection() {
  * }}
  */
 const ProductItem = React.memo(({product, index, numberInRow}) => {
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const ref = useRef(null);
 
-  const [selectedVariant, setSelectedVariant] = useState(() => {
-    return (
-      product.variants.nodes.find((variant) => variant.availableForSale) ||
-      product.variants.nodes[0]
-    );
-  });
+  // Always the very first variant on SSR + initial client render
+  const [selectedVariant, setSelectedVariant] = useState(
+    product.variants.nodes[0],
+  );
+
+  // In an effect, if you want to prefer an available one:
+  useEffect(() => {
+    const firstAvailable =
+      product.variants.nodes.find((v) => v.availableForSale) ||
+      product.variants.nodes[0];
+    setSelectedVariant(firstAvailable);
+  }, [product.variants.nodes]);
 
   const variantUrl = useVariantUrl(
     product.handle,
