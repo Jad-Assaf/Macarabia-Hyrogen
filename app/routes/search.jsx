@@ -450,11 +450,25 @@ export default function SearchPage() {
           </div>
 
           {/* Prev / Next Buttons */}
-          <div style={{marginTop: '1rem', display: 'flex', gap: '1rem'}}>
+          <div
+            style={{
+              marginTop: '1rem',
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'center',
+              gap: '50px',
+            }}
+          >
             {pageInfo.hasPreviousPage && (
               <button
                 onClick={goPrev}
-                style={{backgroundColor: 'transparent', cursor: 'pointer'}}
+                style={{
+                  backgroundColor: '#fff',
+                  cursor: 'pointer',
+                  padding: '5px 10px',
+                  border: '1px solid #d1d7db',
+                  borderRadius: '30px',
+                }}
               >
                 ← Previous Page
               </button>
@@ -462,7 +476,13 @@ export default function SearchPage() {
             {pageInfo.hasNextPage && (
               <button
                 onClick={goNext}
-                style={{backgroundColor: 'transparent', cursor: 'pointer'}}
+                style={{
+                  backgroundColor: '#fff',
+                  cursor: 'pointer',
+                  padding: '5px 10px',
+                  border: '1px solid #d1d7db',
+                  borderRadius: '30px',
+                }}
               >
                 Next Page →
               </button>
