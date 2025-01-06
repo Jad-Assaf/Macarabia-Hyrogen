@@ -424,6 +424,7 @@ export default function SearchPage() {
                   display: 'flex',
                   gap: '5px',
                   alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 {/* PREVIOUS ARROW */}
