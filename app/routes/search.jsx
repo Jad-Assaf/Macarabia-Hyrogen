@@ -454,7 +454,6 @@ export default function SearchPage() {
             style={{
               marginTop: '1rem',
               display: 'flex',
-              gap: '1rem',
               justifyContent: 'center',
               gap: '50px',
             }}
