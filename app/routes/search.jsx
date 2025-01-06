@@ -40,10 +40,10 @@ export async function loader({request, context}) {
   const currentPage =
     isNaN(pageFromQuery) || pageFromQuery < 1 ? 1 : pageFromQuery;
 
-  /* ----------------------------
-     FIXED SECTION FOR MULTIPLE FILTERS
-     (Groups same filter keys with OR)
-  -----------------------------*/
+  /* ------------------------------------------------------------------
+     1A) Build up filters: group same filter keys with OR, then join
+         different filter keys with AND. Use quotes around values.
+  ------------------------------------------------------------------- */
   const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
@@ -58,14 +58,16 @@ export async function loader({request, context}) {
   const filterQueryParts = [];
   for (const [filterKey, values] of filterMap.entries()) {
     if (values.length === 1) {
-      filterQueryParts.push(`${filterKey}:${values[0]}`);
+      // single value
+      filterQueryParts.push(`${filterKey}:"${values[0]}"`);
     } else {
-      // combine multiple values with OR
-      const orGroup = values.map((v) => `${filterKey}:${v}`).join(' OR ');
+      // multiple values => OR them
+      const orGroup = values.map((v) => `${filterKey}:"${v}"`).join(' OR ');
       filterQueryParts.push(`(${orGroup})`);
     }
   }
 
+  // Build term + price filters
   const term = searchParams.get('q') || '';
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
@@ -78,7 +80,7 @@ export async function loader({request, context}) {
   }
 
   // Join with AND so that different filter keys must all match
-  const filterQuery = `${term} ${filterQueryParts.join(' AND ')}`;
+  const filterQuery = `${term} ${filterQueryParts.join(' AND ')}`.trim();
 
   // Sorting
   const sortKeyMapping = {
@@ -127,10 +129,10 @@ export async function loader({request, context}) {
     });
   }
 
-  // Use the after-cursor for the *start* of the desired page
+  // Use the after-cursor for the start of the desired page
   const afterCursor = pageCursors[safeCurrentPage];
 
-  // Fetch only the 24 items for the current page
+  // Fetch only the items for the current page
   const finalResult = await regularSearch({
     context,
     filterQuery,
@@ -143,23 +145,20 @@ export async function loader({request, context}) {
     return {type: 'regular', term: '', result: null, error: error.message};
   });
 
-  // Gather vendor & productType filters from *this page*
-  const vendors = [
-    ...new Set(
-      finalResult?.result?.products?.edges?.map(({node}) => node.vendor),
-    ),
-  ].sort();
-
-  const productTypes = [
-    ...new Set(
-      finalResult?.result?.products?.edges?.map(({node}) => node.productType),
-    ),
+  /* ------------------------------------------------------------------
+     1B) Gather vendor & productType filters from *all* edges, so that
+         choosing one doesn't remove other options from the sidebar.
+  ------------------------------------------------------------------- */
+  const allVendors = [...new Set(allEdges.map(({node}) => node.vendor))].sort();
+  const allProductTypes = [
+    ...new Set(allEdges.map(({node}) => node.productType)),
   ].sort();
 
   return json({
     ...finalResult,
-    vendors,
-    productTypes,
+    // Overwrite the default vendor & productTypes with the *complete* list
+    vendors: allVendors,
+    productTypes: allProductTypes,
     currentPage: safeCurrentPage,
     totalPages,
   });
@@ -257,7 +256,6 @@ export default function SearchPage() {
 
   /* -----------------------
      PAGE NAVIGATION
-     Display up to 5 page links
   ------------------------*/
   const goToPage = (pageNumber) => {
     const params = new URLSearchParams(searchParams);
@@ -265,9 +263,8 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
-  // We only show the "previous" button if currentPage > 1
+  // Show previous/next page arrows?
   const hasPrev = currentPage > 1;
-  // We only show the "next" button if currentPage < totalPages
   const hasNext = currentPage < totalPages;
 
   // Generate the pages to be displayed (5 max)
@@ -688,7 +685,9 @@ export default function SearchPage() {
 }
 
 /* ------------------------------------------------------------------
-   3) FETCH ALL PRODUCT EDGES (WARNING: not recommended for large sets!)
+   3) FETCH ALL PRODUCT EDGES
+   We add vendor/productType in the minimal query so we can display
+   complete filter lists even after partial filtering.
 ------------------------------------------------------------------- */
 async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
   let allEdges = [];
@@ -719,7 +718,7 @@ async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
 }
 
 /**
- * A minimal query just to retrieve edges + cursors.
+ * Expanded minimal query to also include vendor & productType
  */
 const MINIMAL_FILTER_QUERY = `#graphql
   query AllProductsForCount(
@@ -740,6 +739,8 @@ const MINIMAL_FILTER_QUERY = `#graphql
         cursor
         node {
           id
+          vendor
+          productType
         }
       }
       pageInfo {
@@ -752,8 +753,6 @@ const MINIMAL_FILTER_QUERY = `#graphql
 
 /* ------------------------------------------------------------------
    4) COMPUTE PAGE CURSORS
-   pageCursors[1] = null => no "after" needed for page 1
-   pageCursors[2] = edges[24 - 1].cursor => "after" for page 2, etc.
 ------------------------------------------------------------------- */
 function computePageCursors(allEdges, pageSize) {
   if (!allEdges.length) return [null];
@@ -894,7 +893,7 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
 ------------------------------------------------------------------- */
 function getVisiblePages(currentPage, totalPages, maxCount = 5) {
   if (totalPages <= maxCount) {
-    // If total pages <= 5, show them all
+    // If total pages <= 5, just show them all
     return Array.from({length: totalPages}, (_, i) => i + 1);
   }
 
