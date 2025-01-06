@@ -25,7 +25,9 @@ export async function loader({request, context}) {
   const url = new URL(request.url);
   const searchParams = url.searchParams;
 
+  // -----------------------------------------
   // Check if predictive search
+  // -----------------------------------------
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
     // Immediately do predictive
@@ -42,24 +44,55 @@ export async function loader({request, context}) {
     });
   }
 
+  // -----------------------------------------
   // Parse after/before for cursor-based pagination
+  // -----------------------------------------
   const after = searchParams.get('after') || null;
   const before = searchParams.get('before') || null;
 
-  // Build any filters from `filter_` query params
-  const filterQueryParts = [];
+  // -----------------------------------------
+  // Build filters with OR for multiple values on the same key,
+  // and map `productType` => `product_type`.
+  // -----------------------------------------
+  const shopifyKeyMap = {
+    vendor: 'vendor',
+    productType: 'product_type', // important for Shopify's textual query
+  };
+
+  // Collect all filter values in a map:
+  //   filter_vendor=Nike, filter_vendor=Adidas => [Nike, Adidas]
+  //   filter_productType=Shirt => [Shirt]
+  const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
-      const filterKey = key.replace('filter_', '');
-      // e.g. vendor => vendor:"Nike"
-      // or multiple => (vendor:"Nike" OR vendor:"Adidas")
-      // For simplicity, treat them as vendor:"value"
-      // (or you'd map them more carefully if needed)
-      filterQueryParts.push(`${filterKey}:"${value}"`);
+      const rawKey = key.replace('filter_', ''); // e.g. vendor, productType
+      if (!filterMap.has(rawKey)) {
+        filterMap.set(rawKey, []);
+      }
+      filterMap.get(rawKey).push(value);
     }
   }
 
-  // Price range
+  // Build the OR groups for each filter key
+  const filterQueryParts = [];
+  for (const [rawKey, values] of filterMap.entries()) {
+    // e.g. shopifyKey = product_type or vendor
+    const shopifyKey = shopifyKeyMap[rawKey] || rawKey;
+    if (values.length === 1) {
+      // single value => vendor:"Nike"
+      filterQueryParts.push(`${shopifyKey}:"${values[0]}"`);
+    } else {
+      // multiple => (vendor:"Nike" OR vendor:"Adidas")
+      const orGroup = values
+        .map((v) => `${shopifyKey}:"${v}"`)
+        .join(' OR ');
+      filterQueryParts.push(`(${orGroup})`);
+    }
+  }
+
+  // -----------------------------------------
+  // Price range & text search
+  // -----------------------------------------
   const term = searchParams.get('q') || '';
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
@@ -70,16 +103,20 @@ export async function loader({request, context}) {
     filterQueryParts.push(`variants.price:<${maxPrice}`);
   }
 
-  let filterQuery = term;
-  if (filterQueryParts.length) {
+  // Combine term + filter parts with AND
+  let filterQuery = term.trim();
+  if (filterQueryParts.length > 0) {
     if (filterQuery) {
+      // e.g. "shoes AND (vendor:"Nike" OR vendor:"Adidas")"
       filterQuery += ' AND ' + filterQueryParts.join(' AND ');
     } else {
       filterQuery = filterQueryParts.join(' AND ');
     }
   }
 
+  // -----------------------------------------
   // Sort
+  // -----------------------------------------
   const sortKeyMapping = {
     featured: 'RELEVANCE',
     'price-low-high': 'PRICE',
@@ -93,7 +130,9 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
+  // -----------------------------------------
   // Perform the regular search with cursors
+  // -----------------------------------------
   const result = await regularSearch({
     request,
     context,
@@ -107,7 +146,9 @@ export async function loader({request, context}) {
     return {term: '', result: null, error: error.message};
   });
 
-  // Extract vendor / productType from these results
+  // -----------------------------------------
+  // Extract vendor / productType from *these* results
+  // -----------------------------------------
   const filteredVendors = [
     ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
   ].sort();
@@ -164,7 +205,7 @@ export default function SearchPage() {
     }, 300);
   };
 
-  // Filter changes
+  // Filter changes (already supports multiple filters)
   const handleFilterChange = (filterKey, value, checked) => {
     const params = new URLSearchParams(searchParams);
 
@@ -185,6 +226,7 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
+  // Sorting
   const handleSortChange = (e) => {
     const params = new URLSearchParams(searchParams);
     params.set('sort', e.target.value);
@@ -194,6 +236,7 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
+  // Price filter
   const applyPriceFilter = () => {
     const params = new URLSearchParams(searchParams);
     if (minPrice) {
@@ -671,10 +714,10 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
 `;
 
 /**
- * Regular search fetcher using cursors (no "fetch all"!)
+ * Regular search fetcher using cursors
  * If `after` is present, we use `first=24`.
  * If `before` is present, we use `last=24`.
- * If neither is present, we just do first=24 from the start.
+ * If neither is present, we do first=24 from the start.
  */
 async function regularSearch({
   request,
@@ -687,10 +730,8 @@ async function regularSearch({
 }) {
   const {storefront} = context;
 
-  // Decide if we go forward or backward
   let first = null;
   let last = null;
-
   if (after) {
     first = 24; // going forward
   } else if (before) {
@@ -853,6 +894,11 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
       }
     }
   }
+  ${PREDICTIVE_SEARCH_ARTICLE_FRAGMENT}
+  ${PREDICTIVE_SEARCH_COLLECTION_FRAGMENT}
+  ${PREDICTIVE_SEARCH_PAGE_FRAGMENT}
+  ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
+  ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 async function predictiveSearch({request, context}) {
   const {storefront} = context;
@@ -907,4 +953,4 @@ async function predictiveSearch({request, context}) {
  * @typedef {import('~/lib/search').RegularSearchReturn} RegularSearchReturn
  * @typedef {import('~/lib/search').PredictiveSearchReturn} PredictiveSearchReturn
  * @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData
- */
+*/
