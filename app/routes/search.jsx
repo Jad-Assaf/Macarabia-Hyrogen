@@ -84,12 +84,9 @@ export async function loader({request, context}) {
   const safeCurrentPage = currentPage > totalPages ? totalPages : currentPage;
 
   // Build an array of cursors, one for the start of each page
-  // pageCursors[1] = null  => start of page 1
-  // pageCursors[2] = the cursor for the first product of page 2
-  // etc.
   const pageCursors = computePageCursors(allEdges, pageSize);
 
-  // If totalProducts=0, there's nothing to show
+  // If no products found
   if (totalProducts === 0) {
     return json({
       term: filterQuery,
@@ -104,8 +101,8 @@ export async function loader({request, context}) {
   }
 
   // ---------------------------------------
-  // 3) For the actual products to show on this page,
-  //    we do a "regularSearch" with AFTER = pageCursors[ safeCurrentPage ]
+  // 3) For the actual products on this page,
+  //    we do a "regularSearch" with AFTER = pageCursors[safeCurrentPage]
   // ---------------------------------------
   const afterCursor = pageCursors[safeCurrentPage];
 
@@ -121,7 +118,7 @@ export async function loader({request, context}) {
     return {term: '', result: null, error: error.message};
   });
 
-  // Extract vendors/productTypes from these 24 items
+  // Extract vendors/productTypes from just these 24 items
   const vendors = [
     ...new Set(
       finalResult?.result?.products?.edges?.map(({node}) => node.vendor),
@@ -144,6 +141,9 @@ export async function loader({request, context}) {
   });
 }
 
+/* ------------------------------------------------------------------
+   2) REACT COMPONENT
+------------------------------------------------------------------- */
 export default function SearchPage() {
   const {
     type,
@@ -163,7 +163,7 @@ export default function SearchPage() {
   const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
 
-  // Collapsible states
+  // Collapsible states (desktop)
   const [showVendors, setShowVendors] = useState(false);
   const [showProductTypes, setShowProductTypes] = useState(false);
   const [showPriceRange, setShowPriceRange] = useState(false);
@@ -175,6 +175,7 @@ export default function SearchPage() {
   const [mobileShowPriceRange, setMobileShowPriceRange] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
+  // Close mobile filters
   const closeMobileFilters = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -231,7 +232,9 @@ export default function SearchPage() {
   };
 
   /* -----------------------
-     PAGE-LINK HANDLER
+     PAGINATION HELPERS
+     1) Arrow Buttons (SVG)
+     2) Display ~5 page links
   ------------------------*/
   const goToPage = (pageNumber) => {
     const params = new URLSearchParams(searchParams);
@@ -239,6 +242,17 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
+  // We only show the "previous" button if currentPage > 1
+  const hasPrev = currentPage > 1;
+  // We only show the "next" button if currentPage < totalPages
+  const hasNext = currentPage < totalPages;
+
+  // Generate the pages to be displayed (5 max)
+  const visiblePages = getVisiblePages(currentPage, totalPages, 5);
+
+  /* -----------------------
+     RENDER
+  ------------------------*/
   return (
     <div className="search">
       <h1>Search Results</h1>
@@ -400,29 +414,88 @@ export default function SearchPage() {
               ))}
             </div>
 
-            {/* PAGE LINKS (1, 2, 3, ...) */}
+            {/* PAGINATION: ARROWS + UP TO 5 PAGES */}
             {totalPages > 1 && (
               <div
                 style={{
                   marginTop: '1rem',
                   display: 'flex',
                   gap: '5px',
-                  flexWrap: 'wrap',
+                  alignItems: 'center',
                 }}
               >
-                {Array.from({length: totalPages}, (_, i) => i + 1).map(
-                  (pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => goToPage(pageNum)}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        fontWeight: pageNum === currentPage ? 'bold' : 'normal',
-                      }}
+                {/* PREVIOUS ARROW */}
+                {hasPrev && (
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    aria-label="Previous Page"
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {/* Left Arrow SVG */}
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
-                      {pageNum}
-                    </button>
-                  ),
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* PAGE LINKS */}
+                {visiblePages.map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => goToPage(pageNum)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      border:
+                        pageNum === currentPage
+                          ? '1px solid #000'
+                          : '1px solid #ccc',
+                      fontWeight: pageNum === currentPage ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                    }}
+                    aria-current={pageNum === currentPage ? 'page' : undefined}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
+                {/* NEXT ARROW */}
+                {hasNext && (
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    aria-label="Next Page"
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {/* Right Arrow SVG */}
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
                 )}
               </div>
             )}
@@ -452,8 +525,6 @@ export default function SearchPage() {
                 fill="#000"
                 height="30px"
                 width="30px"
-                version="1.1"
-                xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 460.775 460.775"
               >
                 <g>
@@ -593,7 +664,7 @@ export default function SearchPage() {
 }
 
 /* ------------------------------------------------------------------
-   4) FETCH ALL PRODUCT EDGES (WARNING: not recommended for large sets!)
+   3) FETCH ALL PRODUCT EDGES (WARNING: not recommended for large sets!)
 ------------------------------------------------------------------- */
 async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
   let allEdges = [];
@@ -618,13 +689,6 @@ async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
     allEdges = allEdges.concat(products.edges);
     hasNextPage = products.pageInfo.hasNextPage;
     cursor = products.pageInfo.endCursor;
-
-    // Optional safeguard: break if you expect a small set
-    // to avoid huge load times
-    // if (allEdges.length > 2000) {
-    //   console.warn('fetchAllEdges: too many products, stopping early');
-    //   break;
-    // }
   }
 
   return allEdges;
@@ -664,22 +728,21 @@ const MINIMAL_FILTER_QUERY = `#graphql
 `;
 
 /* ------------------------------------------------------------------
-   5) COMPUTE PAGE CURSORS
-   pageCursors[1] = null    => i.e. "no cursor needed" for page 1
-   pageCursors[2] = edges[24 - 1].cursor => the "after" to jump to page 2
-   ...
+   4) COMPUTE PAGE CURSORS
+   pageCursors[1] = null => no "after" needed for page 1
+   pageCursors[2] = edges[24 - 1].cursor => "after" for page 2, etc.
 ------------------------------------------------------------------- */
 function computePageCursors(allEdges, pageSize) {
-  // If no edges, return an array with page 1 => null
+  // If no edges, just page 1 => null
   if (!allEdges.length) return [null];
 
   const total = allEdges.length;
   const totalPages = Math.ceil(total / pageSize);
 
-  // pageCursors[i] = the "after" cursor for page i
-  // We store them at indices 1..totalPages for convenience
+  // We'll store them in an array so that pageCursors[1] = null,
+  // pageCursors[2] = cursor at the 24th item, etc.
   const pageCursors = [];
-  pageCursors[1] = null; // page 1 is "no after cursor"
+  pageCursors[1] = null; // page 1 has no "after" param
 
   for (let page = 2; page <= totalPages; page++) {
     const edgeIndex = (page - 1) * pageSize - 1;
@@ -687,11 +750,12 @@ function computePageCursors(allEdges, pageSize) {
       pageCursors[page] = allEdges[edgeIndex].cursor;
     }
   }
+
   return pageCursors;
 }
 
 /* ------------------------------------------------------------------
-   6) REGULAR SEARCH for the "current page" subset
+   5) REGULAR SEARCH for the "current page" subset
 ------------------------------------------------------------------- */
 async function regularSearch({
   context,
@@ -725,7 +789,6 @@ async function regularSearch({
 
 /**
  * This query fetches the actual subset for the current page.
- * (We pass `first` and `after` for forward pagination.)
  */
 const FILTERED_PRODUCTS_QUERY = `#graphql
   query FilteredProducts(
@@ -795,6 +858,42 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
     }
   }
 `;
+
+/* ------------------------------------------------------------------
+   6) HELPER: GET VISIBLE PAGES
+   Show up to 'maxCount' pages around the current page.
+   e.g. If currentPage=4, totalPages=10, maxCount=5 => [2,3,4,5,6]
+------------------------------------------------------------------- */
+function getVisiblePages(currentPage, totalPages, maxCount) {
+  if (totalPages <= maxCount) {
+    // If total pages is smaller than or equal to maxCount, just show all
+    return Array.from({length: totalPages}, (_, i) => i + 1);
+  }
+
+  const half = Math.floor(maxCount / 2);
+  let start = currentPage - half;
+  let end = currentPage + half;
+
+  // If maxCount is even, adjust end by 1
+  if (maxCount % 2 === 0) {
+    end -= 1; // so that the "middle" is more balanced
+  }
+
+  if (start < 1) {
+    start = 1;
+    end = maxCount;
+  }
+  if (end > totalPages) {
+    end = totalPages;
+    start = totalPages - maxCount + 1;
+  }
+
+  const pages = [];
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  return pages;
+}
 
 /* ------------------------------------------------------------------
    7) PREDICTIVE SEARCH (unchanged)
