@@ -454,7 +454,7 @@ export default function Collection() {
     <div className="collection">
       <h1>{collection.title}</h1>
 
-      {sliderCollections && sliderCollections.length > 0 && (
+      {/* {sliderCollections && sliderCollections.length > 0 && (
         <div className="slide-con">
           <div className="category-slider">
             {sliderCollections.map(
@@ -489,7 +489,7 @@ export default function Collection() {
             )}
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="flex flex-col lg:flex-row w-[100%]">
         {isDesktop && (
