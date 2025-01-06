@@ -118,8 +118,7 @@ select#sort-select {
     }
 
     .search-results-grid .product-card {
-        width: 30vw !important;
-        min-width: 175px !important;
+        width: 40vw !important;
     }
 }
 
@@ -191,7 +190,7 @@ select#sort-select {
 
 .search-results-grid .product-card {
     width: 42%;
-    max-width: 200px;
+    min-width: unset !important;
 }
 
 @keyframes slideDown {
