@@ -351,6 +351,8 @@ button {
   max-width: 200px;
   margin-left: 5px;
   text-align: center;
+  word-break: break-word;
+  word-wrap: break-word;
 }
 
 .grid-cols-2 .product-card,
