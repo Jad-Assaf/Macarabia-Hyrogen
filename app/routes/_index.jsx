@@ -491,7 +491,7 @@ export default function Homepage() {
         />
       )}
 
-      <CollectionCircles collections={partsMenu} />
+      {/* <CollectionCircles collections={partsMenu} />
       {topProducts['motherboards'] && (
         <TopProductSections collection={topProducts['motherboards']} />
       )}
@@ -503,9 +503,9 @@ export default function Homepage() {
       )}
       {topProducts['gpu'] && (
         <TopProductSections collection={topProducts['gpu']} />
-      )}
+      )} */}
 
-      <CollectionCircles collections={networkingMenu} />
+      {/* <CollectionCircles collections={networkingMenu} />
       {topProducts['wifi-routers'] && (
         <TopProductSections collection={topProducts['wifi-routers']} />
       )}
@@ -514,7 +514,7 @@ export default function Homepage() {
       )}
       {topProducts['switches'] && (
         <TopProductSections collection={topProducts['switches']} />
-      )}
+      )} */}
 
       <CollectionCircles collections={monitorsMenu} />
       {topProducts['apple-studio-display'] && (
@@ -560,7 +560,7 @@ export default function Homepage() {
         <TopProductSections collection={topProducts['speakers']} />
       )}
 
-      <CollectionCircles collections={accessoriesMenu} />
+      {/* <CollectionCircles collections={accessoriesMenu} />
       {topProducts['computer-accessories'] && (
         <TopProductSections collection={topProducts['computer-accessories']} />
       )}
@@ -569,7 +569,7 @@ export default function Homepage() {
       )}
       {topProducts['car-accessories'] && (
         <TopProductSections collection={topProducts['car-accessories']} />
-      )}
+      )} */}
 
       <CollectionCircles collections={fitnessMenu} />
       {topProducts['fitness-bands'] && (
@@ -608,7 +608,7 @@ export default function Homepage() {
       {topProducts['lighting'] && (
         <TopProductSections collection={topProducts['lighting']} />
       )}
-      
+
       <BrandSection brands={brandsData} />
     </div>
   );
