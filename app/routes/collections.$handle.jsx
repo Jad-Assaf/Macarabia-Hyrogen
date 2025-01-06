@@ -345,10 +345,10 @@ export async function loadCriticalData({context, params, request}) {
 function sanitizeHandle(handle) {
   return handle
     .toLowerCase()
-    .replace(/"/g, '') // Remove quotes
-    .replace(/&/g, '')
-    .replace(/\./g, '-')
-    .replace(/\s+/g, '-');
+    .replace(/"/g, '') // Remove all quotes
+    .replace(/&/g, '') // Remove all quotes
+    .replace(/\./g, '-') // Replace periods with hyphens
+    .replace(/\s+/g, '-'); // Replace spaces with hyphens (keeping this from the original code)
 }
 
 /**
@@ -365,19 +365,17 @@ export default function Collection() {
   const {collection, appliedFilters, sliderCollections} = useLoaderData();
   const [userSelectedNumberInRow, setUserSelectedNumberInRow] = useState(null); // Tracks user selection
 
-  // Always return 1 if user hasn't chosen a layout (same as before)
+  // *** CHANGED HERE: always return 1 if the user hasn't manually chosen a layout ***
   const calculateNumberInRow = (width, userSelection) => {
-    if (userSelection !== null) return userSelection;
-    return 1;
+    if (userSelection !== null) return userSelection; // user still can override
+    return 1; // always default to 1
   };
 
   const [screenWidth, setScreenWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth : 0,
   );
   const [numberInRow, setNumberInRow] = useState(
-    typeof window !== 'undefined'
-      ? calculateNumberInRow(window.innerWidth, userSelectedNumberInRow)
-      : 1,
+    typeof window !== 'undefined' ? calculateNumberInRow(window.innerWidth) : 1,
   );
   const isDesktop = useMediaQuery({minWidth: 1024});
   const [searchParams] = useSearchParams();
@@ -391,7 +389,8 @@ export default function Collection() {
       setNumberInRow(calculateNumberInRow(width, userSelectedNumberInRow));
     };
 
-    updateLayout(); // initial
+    updateLayout(); // Set layout on initial render
+
     const debounce = (fn, delay) => {
       let timeoutId;
       return (...args) => {
@@ -401,16 +400,17 @@ export default function Collection() {
     };
 
     const debouncedUpdateLayout = debounce(updateLayout, 100);
+
     window.addEventListener('resize', debouncedUpdateLayout);
 
     return () => {
       window.removeEventListener('resize', debouncedUpdateLayout);
     };
-  }, [userSelectedNumberInRow]);
+  }, [userSelectedNumberInRow]); // Add userSelectedNumberInRow as a dependency
 
   const handleLayoutChange = (number) => {
-    setUserSelectedNumberInRow(number);
-    setNumberInRow(number);
+    setUserSelectedNumberInRow(number); // Save user preference
+    setNumberInRow(number); // Immediately update the layout
   };
 
   const handleFilterRemove = (filter) => {
@@ -418,18 +418,34 @@ export default function Collection() {
     navigate(newUrl);
   };
 
-  /**
-   * 1) REMOVE client-side product sorting in `useMemo`.
-   *    Instead of re-sorting, just use the raw array:
-   */
-  const products = collection?.products?.nodes || [];
+  const sortedProducts = React.useMemo(() => {
+    if (!collection || !collection.products || !collection.products.nodes)
+      return [];
+    const products = [...collection.products.nodes];
+    return products.sort((a, b) => {
+      const aInStock = a.variants.nodes.some(
+        (variant) => variant.availableForSale,
+      );
+      const bInStock = b.variants.nodes.some(
+        (variant) => variant.availableForSale,
+      );
+
+      if (aInStock && !bInStock) return -1;
+      if (!aInStock && bInStock) return 1;
+      return 0;
+    });
+  }, [collection?.products?.nodes]);
 
   useEffect(() => {
-    // Clean up '?direction' if present:
-    const url = new URL(window.location.href);
-    const query = url.search;
+    const url = new URL(window.location.href); // Get the current URL
+    const query = url.search; // Get the query string
+
+    // Check if 'direction' exists in the query string
     if (query.includes('?direction')) {
+      // Retain everything before '?direction'
       const cleanUrl = url.origin + url.pathname;
+
+      // Update the URL without reloading the page
       window.history.replaceState({}, '', cleanUrl);
     }
   }, []);
@@ -438,7 +454,6 @@ export default function Collection() {
     <div className="collection">
       <h1>{collection.title}</h1>
 
-      {/* No change to sliderCollections logic */}
       {sliderCollections && sliderCollections.length > 0 && (
         <div className="slide-con">
           <div className="category-slider">
@@ -477,7 +492,6 @@ export default function Collection() {
       )}
 
       <div className="flex flex-col lg:flex-row w-[100%]">
-        {/* No change to isDesktop, but keep the same conditional layout */}
         {isDesktop && (
           <div className="w-[220px]">
             <FiltersDrawer
@@ -517,15 +531,18 @@ export default function Collection() {
                   }`}
                   onClick={() => handleLayoutChange(1)}
                 >
-                  {/* same SVG */}
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    <g strokeWidth="0"></g>
-                    <g strokeLinecap="round" strokeLinejoin="round"></g>
-                    <g>
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
                       <path
                         d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z"
                         fill="#808080"
@@ -542,27 +559,410 @@ export default function Collection() {
                   </svg>
                 </button>
               )}
-              {/* ... the rest of your layout buttons ... */}
+              {screenWidth >= 300 && (
+                <button
+                  className={`layout-buttons ${
+                    numberInRow === 2 ? 'active' : ''
+                  }`}
+                  onClick={() => handleLayoutChange(2)}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                </button>
+              )}
+              {screenWidth >= 550 && (
+                <button
+                  className={`layout-buttons ${
+                    numberInRow === 3 ? 'active' : ''
+                  }`}
+                  onClick={() => handleLayoutChange(3)}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                </button>
+              )}
+              {screenWidth >= 1200 && (
+                <button
+                  className={`layout-buttons ${
+                    numberInRow === 4 ? 'active' : ''
+                  }`}
+                  onClick={() => handleLayoutChange(4)}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                </button>
+              )}
+              {screenWidth >= 1500 && (
+                <button
+                  className={`layout-buttons ${
+                    numberInRow === 5 ? 'active' : ''
+                  }`}
+                  onClick={() => handleLayoutChange(5)}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="#808080"
+                  >
+                    <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                    <g
+                      id="SVGRepo_tracerCarrier"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    ></g>
+                    <g id="SVGRepo_iconCarrier">
+                      <g id="Interface / Line_L">
+                        <path
+                          id="Vector"
+                          d="M12 19V5"
+                          stroke="#808080"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></path>
+                      </g>
+                    </g>
+                  </svg>
+                </button>
+              )}
             </div>
-
             <DrawerFilter
               filters={collection.products.filters}
               appliedFilters={appliedFilters}
               numberInRow={numberInRow}
               onLayoutChange={handleLayoutChange}
-              productNumber={products.length}
+              productNumber={collection.products.nodes.length}
               isDesktop={isDesktop}
             />
           </div>
 
           <PaginatedResourceSection
-            key={`products-grid-${numberInRow}`}
+            key={`products-grid-${numberInRow}`} // Forces re-render on change
             connection={{
               ...collection.products,
-              // 2) Use 'products' directly (no client re-sort)
-              nodes: products,
+              nodes: sortedProducts,
             }}
-            resourcesClassName={`products-grid grid-cols-${numberInRow}`}
+            resourcesClassName={`products-grid grid-cols-${numberInRow}`} // Dynamic class
           >
             {({node: product, index}) => (
               <ProductItem
@@ -597,13 +997,11 @@ export default function Collection() {
 const ProductItem = React.memo(({product, index, numberInRow}) => {
   const ref = useRef(null);
 
-  /**
-   * 3) Always pick variant[0] so SSR/client never disagree
-   *    Remove dynamic "find((variant) => variant.availableForSale)"
-   */
-  const [selectedVariant, setSelectedVariant] = useState(
-    product.variants.nodes[0],
-  );
+  const [selectedVariant, setSelectedVariant] = useState(() => {
+    return (
+      product.variants.nodes[0]
+    );
+  });
 
   const variantUrl = useVariantUrl(
     product.handle,
@@ -627,7 +1025,6 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
           >
             {product.featuredImage && (
               <div className="collection-product-image">
-                {/* 4) Remove 'onLoad' or 'isImageLoaded' usage. Just a plain <Image>. */}
                 <Image
                   srcSet={`${product.featuredImage.url}?width=300&quality=15 300w,
                            ${product.featuredImage.url}?width=600&quality=15 600w,
