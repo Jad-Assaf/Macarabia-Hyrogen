@@ -1,46 +1,58 @@
 import {json} from '@shopify/remix-oxygen';
-import {useLoaderData, useSearchParams, useNavigate} from '@remix-run/react';
-import {useState} from 'react';
-import {ProductItem} from '~/components/CollectionDisplay';
+import {
+  useLoaderData,
+  useSearchParams,
+  useNavigate,
+  Link,
+} from '@remix-run/react';
+import {
+  getPaginationVariables,
+  Analytics,
+  Money,
+  Image,
+} from '@shopify/hydrogen';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
+import {useRef, useState} from 'react';
 import '../styles/SearchPage.css';
+import {ProductItem} from '~/components/CollectionDisplay';
 
-/* ------------------------------------------------------------------
-   1) MAIN SEARCH ROUTE
-------------------------------------------------------------------- */
+/**
+ * @type {import('@remix-run/react').MetaFunction}
+ */
+export const meta = () => {
+  return [{title: `Hydrogen | Search`}];
+};
+
+/**
+ * @param {import('@shopify/remix-oxygen').LoaderFunctionArgs} args
+ */
 export async function loader({request, context}) {
+  const {storefront} = context;
   const url = new URL(request.url);
   const searchParams = url.searchParams;
 
-  // Check if we want predictive search (used in your search bar)
+  // Check if predictive search is requested
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
-    // Perform predictive search, then return
+    // Return predictive search results immediately (for search bar usage)
     const result = await predictiveSearch({request, context}).catch((error) => {
-      console.error('Predictive Search Error:', error);
-      return {type: 'predictive', term: '', result: null, error: error.message};
+      console.error('Search Error:', error);
+      return {term: '', result: null, error: error.message};
     });
 
+    // Still return some minimal shape so the route doesn't crash
     return json({
       ...result,
-      // Minimal response—predictive search typically doesn't need
-      // the rest of the pagination data
       vendors: [],
       productTypes: [],
-      pageInfo: {},
-      currentPage: 1,
-      totalPages: 1,
     });
   }
 
-  // ------------------------------
-  // Otherwise, do normal page-based search
-  // ------------------------------
-  const pageFromQuery = parseInt(searchParams.get('page') || '1', 10);
-  const currentPage =
-    isNaN(pageFromQuery) || pageFromQuery < 1 ? 1 : pageFromQuery;
+  /* -------------------------------------------
+     Otherwise, do normal (paged) search logic
+  ------------------------------------------- */
 
-  // Collect filter query parts
+  // Gather any filter_x query params
   const filterQueryParts = [];
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
@@ -49,10 +61,10 @@ export async function loader({request, context}) {
     }
   }
 
+  // Price filters
   const term = searchParams.get('q') || '';
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
-
   if (minPrice) {
     filterQueryParts.push(`variants.price:>${minPrice}`);
   }
@@ -73,29 +85,27 @@ export async function loader({request, context}) {
   const reverseMapping = {
     'price-high-low': true,
   };
-
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // Fetch *all* product edges so we can build page count
+  // Decide current page
+  const pageFromQuery = parseInt(searchParams.get('page') || '1', 10);
+  const currentPage =
+    isNaN(pageFromQuery) || pageFromQuery < 1 ? 1 : pageFromQuery;
+
+  // 1) Fetch *all* product edges so we know total pages
   const allEdges = await fetchAllEdges({
-    storefront: context.storefront,
+    storefront,
     filterQuery,
     sortKey,
     reverse,
   });
 
   const totalProducts = allEdges.length;
-  const pageSize = 24; // Show 24 items per page
+  const pageSize = 24; // how many products per page
   const totalPages = Math.ceil(totalProducts / pageSize);
 
-  // Clamp the current page if needed
-  const safeCurrentPage = currentPage > totalPages ? totalPages : currentPage;
-
-  // Build an array of cursors, one for each page
-  const pageCursors = computePageCursors(allEdges, pageSize);
-
-  // If no products found, return an empty result
+  // If no products found, return early
   if (totalProducts === 0) {
     return json({
       type: 'regular',
@@ -103,17 +113,24 @@ export async function loader({request, context}) {
       result: {products: {edges: []}, total: 0},
       vendors: [],
       productTypes: [],
-      pageInfo: {},
-      currentPage: safeCurrentPage,
-      totalPages,
+      error: null,
+      currentPage: 1,
+      totalPages: 1,
     });
   }
 
-  // Use the after-cursor for the *start* of the desired page
+  // Make sure currentPage doesn’t exceed totalPages
+  const safeCurrentPage = currentPage > totalPages ? totalPages : currentPage;
+
+  // 2) Build page-cursors array
+  const pageCursors = computePageCursors(allEdges, pageSize);
+
+  // Cursor to fetch the block of items for this page
   const afterCursor = pageCursors[safeCurrentPage];
 
-  // Fetch only the 24 items for the current page
+  // 3) Actually fetch the subset of products for the current page
   const finalResult = await regularSearch({
+    request,
     context,
     filterQuery,
     sortKey,
@@ -122,34 +139,34 @@ export async function loader({request, context}) {
     first: pageSize,
   }).catch((error) => {
     console.error('Search Error:', error);
-    return {type: 'regular', term: '', result: null, error: error.message};
+    return {term: filterQuery, result: null, error: error.message};
   });
 
-  // Gather vendor & productType filters from *this page*
-  const vendors = [
+  // Derive vendors, productTypes from just this page of items
+  const filteredVendors = [
     ...new Set(
-      finalResult?.result?.products?.edges?.map(({node}) => node.vendor),
+      finalResult?.result?.products?.edges.map(({node}) => node.vendor),
     ),
   ].sort();
 
-  const productTypes = [
+  const filteredProductTypes = [
     ...new Set(
-      finalResult?.result?.products?.edges?.map(({node}) => node.productType),
+      finalResult?.result?.products?.edges.map(({node}) => node.productType),
     ),
   ].sort();
 
   return json({
     ...finalResult,
-    vendors,
-    productTypes,
+    vendors: filteredVendors,
+    productTypes: filteredProductTypes,
     currentPage: safeCurrentPage,
     totalPages,
   });
 }
 
-/* ------------------------------------------------------------------
-   2) REACT COMPONENT
-------------------------------------------------------------------- */
+/* -------------------------------------------
+   DEFAULT EXPORT: React UI
+------------------------------------------- */
 export default function SearchPage() {
   const {
     type,
@@ -165,23 +182,22 @@ export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Price Range States
+  // Price range states
   const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
 
-  // Collapsible states (desktop)
+  // Collapsible filter states
   const [showVendors, setShowVendors] = useState(false);
   const [showProductTypes, setShowProductTypes] = useState(false);
   const [showPriceRange, setShowPriceRange] = useState(false);
 
-  // Mobile filter states
+  // Mobile filters
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [mobileShowVendors, setMobileShowVendors] = useState(false);
   const [mobileShowProductTypes, setMobileShowProductTypes] = useState(false);
   const [mobileShowPriceRange, setMobileShowPriceRange] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  // Close mobile filters
   const closeMobileFilters = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -190,9 +206,9 @@ export default function SearchPage() {
     }, 300);
   };
 
-  /* -----------------------
-     FILTER CHANGE HANDLERS
-  ------------------------*/
+  /* -------------------------------------------
+     FILTER + SORT HANDLERS
+  ------------------------------------------- */
   const handleFilterChange = (filterKey, value, checked) => {
     const params = new URLSearchParams(searchParams);
 
@@ -206,7 +222,8 @@ export default function SearchPage() {
         params.append(`filter_${filterKey}`, item),
       );
     }
-    // Reset page to 1
+
+    // Reset to page 1
     params.delete('page');
     navigate(`/search?${params.toString()}`);
   };
@@ -214,6 +231,7 @@ export default function SearchPage() {
   const handleSortChange = (e) => {
     const params = new URLSearchParams(searchParams);
     params.set('sort', e.target.value);
+
     // Reset page to 1
     params.delete('page');
     navigate(`/search?${params.toString()}`);
@@ -237,30 +255,28 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
-  /* -----------------------
-     PAGE NAVIGATION
-     Display up to 5 page links
-  ------------------------*/
+  /* -------------------------------------------
+     PAGE NAVIGATION: Show up to 5 links
+  ------------------------------------------- */
   const goToPage = (pageNumber) => {
     const params = new URLSearchParams(searchParams);
     params.set('page', String(pageNumber));
     navigate(`/search?${params.toString()}`);
   };
 
-  // We only show the "previous" button if currentPage > 1
   const hasPrev = currentPage > 1;
-  // We only show the "next" button if currentPage < totalPages
   const hasNext = currentPage < totalPages;
-
-  // Generate the pages to be displayed (5 max)
   const visiblePages = getVisiblePages(currentPage, totalPages, 5);
 
+  /* -------------------------------------------
+     RENDER
+  ------------------------------------------- */
   return (
     <div className="search">
       <h1>Search Results</h1>
 
       <div className="search-filters-container" style={{display: 'flex'}}>
-        {/* ------------- SIDEBAR FILTERS ------------- */}
+        {/* FILTER SIDEBAR */}
         <div className="filters">
           <fieldset>
             <button
@@ -390,10 +406,10 @@ export default function SearchPage() {
           </fieldset>
         </div>
 
-        {/* ------------- MAIN SEARCH RESULTS ------------- */}
+        {/* MAIN SEARCH RESULTS */}
         {result?.products?.edges?.length > 0 ? (
           <div className="search-results">
-            {/* Sort UI */}
+            {/* Sort Dropdown */}
             <div>
               <label htmlFor="sort-select">Sort by:</label>
               <select
@@ -409,14 +425,14 @@ export default function SearchPage() {
               </select>
             </div>
 
-            {/* Grid of Products */}
+            {/* Products Grid */}
             <div className="search-results-grid">
               {result.products.edges.map(({node: product}, index) => (
                 <ProductItem product={product} index={index} key={product.id} />
               ))}
             </div>
 
-            {/* PAGINATION: ARROWS + UP TO 5 PAGES */}
+            {/* PAGINATION: up to 5 pages + arrow icons */}
             {totalPages > 1 && (
               <div
                 style={{
@@ -426,18 +442,17 @@ export default function SearchPage() {
                   alignItems: 'center',
                 }}
               >
-                {/* PREVIOUS ARROW */}
+                {/* Left Arrow (Previous) */}
                 {hasPrev && (
                   <button
                     onClick={() => goToPage(currentPage - 1)}
                     aria-label="Previous Page"
                     style={{
-                      backgroundColor: 'transparent',
+                      background: 'transparent',
                       border: 'none',
                       cursor: 'pointer',
                     }}
                   >
-                    {/* Left Arrow SVG */}
                     <svg
                       width="24"
                       height="24"
@@ -453,20 +468,20 @@ export default function SearchPage() {
                   </button>
                 )}
 
-                {/* PAGE LINKS (MAX 5) */}
+                {/* Page Number Buttons */}
                 {visiblePages.map((pageNum) => (
                   <button
                     key={pageNum}
                     onClick={() => goToPage(pageNum)}
                     style={{
-                      border:
-                        pageNum === currentPage
-                          ? '1px solid #000'
-                          : '1px solid #ccc',
-                      borderRadius: '50%',
                       width: '40px',
                       height: '40px',
-                      fontWeight: pageNum === currentPage ? 'bold' : 'normal',
+                      border:
+                        pageNum === currentPage
+                          ? '1px solid #232323'
+                          : '1px solid #ccc',
+                      borderRadius: '50%',
+                      fontWeight: pageNum === currentPage ? 'semi-bold' : 'normal',
                       cursor: 'pointer',
                     }}
                     aria-current={pageNum === currentPage ? 'page' : undefined}
@@ -475,18 +490,17 @@ export default function SearchPage() {
                   </button>
                 ))}
 
-                {/* NEXT ARROW */}
+                {/* Right Arrow (Next) */}
                 {hasNext && (
                   <button
                     onClick={() => goToPage(currentPage + 1)}
                     aria-label="Next Page"
                     style={{
-                      backgroundColor: 'transparent',
+                      background: 'transparent',
                       border: 'none',
                       cursor: 'pointer',
                     }}
                   >
-                    {/* Right Arrow SVG */}
                     <svg
                       width="24"
                       height="24"
@@ -509,7 +523,7 @@ export default function SearchPage() {
         )}
       </div>
 
-      {/* ------------- MOBILE FILTERS ------------- */}
+      {/* MOBILE FILTERS TOGGLE */}
       <button
         className="mobile-filters-toggle"
         onClick={() => setIsMobileFiltersOpen(true)}
@@ -517,6 +531,7 @@ export default function SearchPage() {
         Filter
       </button>
 
+      {/* MOBILE FILTERS PANEL */}
       {isMobileFiltersOpen && (
         <div className="mobile-filters-overlay">
           <div className={`mobile-filters-panel ${isClosing ? 'closing' : ''}`}>
@@ -544,7 +559,6 @@ export default function SearchPage() {
               </svg>
             </button>
 
-            {/* Mobile Vendor Filter */}
             <fieldset>
               <button
                 type="button"
@@ -583,7 +597,6 @@ export default function SearchPage() {
               )}
             </fieldset>
 
-            {/* Mobile Product Type Filter */}
             <fieldset>
               <button
                 type="button"
@@ -624,7 +637,6 @@ export default function SearchPage() {
               )}
             </fieldset>
 
-            {/* Mobile Price Range Filter */}
             <fieldset>
               <button
                 type="button"
@@ -667,16 +679,20 @@ export default function SearchPage() {
   );
 }
 
-/* ------------------------------------------------------------------
-   3) FETCH ALL PRODUCT EDGES (WARNING: not recommended for large sets!)
-------------------------------------------------------------------- */
+/* -------------------------------------------
+   GRAPHQL + HELPER FUNCTIONS
+------------------------------------------- */
+
+/**
+ * Fetch all product edges in batches of 250 to build a full list
+ * (Used to determine totalPages + page-based navigation)
+ */
 async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
   let allEdges = [];
   let hasNextPage = true;
   let cursor = null;
 
   while (hasNextPage) {
-    // Request up to 250 at a time
     const res = await storefront.query(MINIMAL_FILTER_QUERY, {
       variables: {
         filterQuery,
@@ -690,7 +706,7 @@ async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
     const {products} = res;
     if (!products?.edges?.length) break;
 
-    allEdges = allEdges.concat(products.edges);
+    allEdges.push(...products.edges);
     hasNextPage = products.pageInfo.hasNextPage;
     cursor = products.pageInfo.endCursor;
   }
@@ -698,22 +714,20 @@ async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
   return allEdges;
 }
 
-/**
- * A minimal query just to retrieve edges + cursors.
- */
-const MINIMAL_FILTER_QUERY = `#graphql
+// Minimal query to get all edges + cursors
+const MINIMAL_FILTER_QUERY = `
   query AllProductsForCount(
-    $filterQuery: String!
-    $sortKey: ProductSortKeys
-    $reverse: Boolean
-    $first: Int
+    $filterQuery: String!,
+    $sortKey: ProductSortKeys,
+    $reverse: Boolean,
+    $first: Int,
     $after: String
   ) {
     products(
-      query: $filterQuery
-      sortKey: $sortKey
-      reverse: $reverse
-      first: $first
+      query: $filterQuery,
+      sortKey: $sortKey,
+      reverse: $reverse,
+      first: $first,
       after: $after
     ) {
       edges {
@@ -730,18 +744,17 @@ const MINIMAL_FILTER_QUERY = `#graphql
   }
 `;
 
-/* ------------------------------------------------------------------
-   4) COMPUTE PAGE CURSORS
-   pageCursors[1] = null => no "after" needed for page 1
-   pageCursors[2] = edges[24 - 1].cursor => "after" for page 2, etc.
-------------------------------------------------------------------- */
+/**
+ * Build an array of page => afterCursor
+ * pageCursors[1] = null (page 1 has no afterCursor)
+ * pageCursors[2] = edges[24 - 1].cursor => "after" for page 2, etc.
+ */
 function computePageCursors(allEdges, pageSize) {
   if (!allEdges.length) return [null];
 
-  const total = allEdges.length;
-  const totalPages = Math.ceil(total / pageSize);
+  const totalPages = Math.ceil(allEdges.length / pageSize);
   const pageCursors = [];
-  pageCursors[1] = null; // page 1 => no cursor
+  pageCursors[1] = null;
 
   for (let page = 2; page <= totalPages; page++) {
     const edgeIndex = (page - 1) * pageSize - 1;
@@ -753,10 +766,11 @@ function computePageCursors(allEdges, pageSize) {
   return pageCursors;
 }
 
-/* ------------------------------------------------------------------
-   5) REGULAR SEARCH: fetch only this page's subset
-------------------------------------------------------------------- */
+/**
+ * Actual subset fetch for the current page
+ */
 async function regularSearch({
+  request,
   context,
   filterQuery,
   sortKey,
@@ -766,54 +780,43 @@ async function regularSearch({
 }) {
   const {storefront} = context;
   try {
+    const variables = {filterQuery, sortKey, reverse, after, first};
     const {products} = await storefront.query(FILTERED_PRODUCTS_QUERY, {
-      variables: {filterQuery, sortKey, reverse, after, first},
+      variables,
     });
 
     if (!products?.edges) {
-      return {
-        type: 'regular',
-        term: filterQuery,
-        result: {products: {edges: []}, total: 0},
-      };
+      return {term: filterQuery, result: {products: {edges: []}, total: 0}};
     }
 
     return {
-      type: 'regular',
       term: filterQuery,
       result: {
         products,
         total: products.edges.length,
       },
     };
-  } catch (err) {
-    console.error('Error during regular search:', err);
-    return {
-      type: 'regular',
-      term: filterQuery,
-      result: null,
-      error: err.message,
-    };
+  } catch (error) {
+    console.error('Error during regular search:', error);
+    return {term: filterQuery, result: null, error: error.message};
   }
 }
 
-/**
- * Query for the final subset
- */
-const FILTERED_PRODUCTS_QUERY = `#graphql
+// Full query to fetch the page of products
+const FILTERED_PRODUCTS_QUERY = `
   query FilteredProducts(
-    $filterQuery: String!
-    $sortKey: ProductSortKeys
-    $reverse: Boolean
-    $after: String
+    $filterQuery: String!,
+    $sortKey: ProductSortKeys,
+    $reverse: Boolean,
+    $after: String,
     $first: Int
   ) {
     products(
-      query: $filterQuery
-      sortKey: $sortKey
-      reverse: $reverse
+      query: $filterQuery,
+      sortKey: $sortKey,
+      reverse: $reverse,
+      after: $after,
       first: $first
-      after: $after
     ) {
       edges {
         cursor
@@ -869,12 +872,13 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
   }
 `;
 
-/* ------------------------------------------------------------------
-   6) HELPER: GET VISIBLE PAGES (UP TO 5)
-------------------------------------------------------------------- */
+/**
+ * Helper to show up to `maxCount` pages in a sliding window
+ * around `currentPage`.
+ */
 function getVisiblePages(currentPage, totalPages, maxCount = 5) {
   if (totalPages <= maxCount) {
-    // If total pages <= 5, show them all
+    // just show all
     return Array.from({length: totalPages}, (_, i) => i + 1);
   }
 
@@ -882,7 +886,7 @@ function getVisiblePages(currentPage, totalPages, maxCount = 5) {
   let start = currentPage - half;
   let end = currentPage + half;
 
-  // If maxCount is even, nudge end
+  // If maxCount is even, shift end left by 1 for better centering
   if (maxCount % 2 === 0) {
     end -= 1;
   }
@@ -897,15 +901,15 @@ function getVisiblePages(currentPage, totalPages, maxCount = 5) {
   }
 
   const pages = [];
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
+  for (let p = start; p <= end; p++) {
+    pages.push(p);
   }
   return pages;
 }
 
-/* ------------------------------------------------------------------
-   7) PREDICTIVE SEARCH
-------------------------------------------------------------------- */
+/* -------------------------------------------
+   PREDICTIVE SEARCH (unchanged from your code)
+------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
     __typename
@@ -1025,7 +1029,7 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
 `;
 
 /**
- * Used if `?predictive` is present.
+ * Predictive search fetcher, triggered if `?predictive` is present.
  */
 async function predictiveSearch({request, context}) {
   const {storefront} = context;
@@ -1038,11 +1042,13 @@ async function predictiveSearch({request, context}) {
     return {type, term, result: getEmptyPredictiveSearchResult()};
   }
 
-  // Flexible query over SKU, title, description
+  // Break the search term into words
   const terms = term
     .split(/\s+/)
-    .map((word) => word.trim())
+    .map((w) => w.trim())
     .filter(Boolean);
+
+  // Construct a flexible query that matches any word in SKU, title, or description
   const queryTerm = terms
     .map(
       (word) =>
@@ -1063,44 +1069,21 @@ async function predictiveSearch({request, context}) {
 
   if (errors) {
     throw new Error(
-      `Predictive search errors: ${errors
-        .map(({message}) => message)
-        .join(', ')}`,
+      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
     );
   }
   if (!items) {
     throw new Error('No predictive search data returned from Shopify API');
   }
 
-  const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
+  const total = Object.values(items).reduce((sum, arr) => sum + arr.length, 0);
+
   return {type, term, result: {items, total}};
 }
 
-/**
- * @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData
- * @typedef {{
- *   term: string;
- *   result: {
- *     products?: {
- *       edges: any[];
- *       pageInfo?: { hasNextPage: boolean; endCursor: string };
- *     };
- *     total?: number;
- *     items?: any;
- *   } | null;
- *   type?: string;
- *   vendors?: string[];
- *   productTypes?: string[];
- *   error?: string;
- *   pageInfo?: { hasNextPage: boolean; endCursor: string } | null;
- * }} RegularSearchReturn
- *
- * @typedef {{
- *   type: string;
- *   term: string;
- *   result: {
- *     items: any;
- *     total: number;
- *   }
- * }} PredictiveSearchReturn
- */
+/** @typedef {import('@shopify/remix-oxygen').LoaderFunctionArgs} LoaderFunctionArgs */
+/** @typedef {import('@shopify/remix-oxygen').ActionFunctionArgs} ActionFunctionArgs */
+/** @template T @typedef {import('@remix-run/react').MetaFunction<T>} MetaFunction */
+/** @typedef {import('~/lib/search').RegularSearchReturn} RegularSearchReturn */
+/** @typedef {import('~/lib/search').PredictiveSearchReturn} PredictiveSearchReturn */
+/** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */
