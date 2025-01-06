@@ -422,7 +422,7 @@ export default function Collection() {
     navigate(newUrl);
   };
 
-  const sortedProducts = useMemo(() => {
+  const sortedProducts = (() => {
     if (!collection || !collection.products || !collection.products.nodes)
       return [];
     const products = [...collection.products.nodes];
@@ -438,7 +438,7 @@ export default function Collection() {
       if (!aInStock && bInStock) return 1;
       return 0;
     });
-  }, [collection?.products?.nodes]);
+  })();
 
   useEffect(() => {
     const url = new URL(window.location.href); // Get the current URL
