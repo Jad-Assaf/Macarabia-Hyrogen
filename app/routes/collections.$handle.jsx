@@ -1022,7 +1022,7 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
           >
             {product.featuredImage && (
               <div className="collection-product-image">
-                <img
+                <Image
                   srcSet={`${product.featuredImage.url}?width=300&quality=15 300w,
                            ${product.featuredImage.url}?width=600&quality=15 600w,
                            ${product.featuredImage.url}?width=1200&quality=15 1200w`}
@@ -1056,14 +1056,14 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
             <ProductForm
               product={product}
               selectedVariant={selectedVariant}
-              setSelectedVariant={setSelectedVariant}
+
             />
           </div>
         </div>
         <ProductForm
           product={product}
           selectedVariant={selectedVariant}
-          setSelectedVariant={setSelectedVariant}
+
         />
       </div>
     </div>
