@@ -117,6 +117,10 @@ select#sort-select {
         display: none;
     }
 
+    .search-results-grid {
+        justify-content: space-evenly;
+    }
+
     .search-results-grid .product-card {
         width: 40vw !important;
     }
@@ -191,6 +195,7 @@ select#sort-select {
 .search-results-grid .product-card {
     width: 42%;
     min-width: unset !important;
+    max-width: 190px !important;
 }
 
 @keyframes slideDown {
