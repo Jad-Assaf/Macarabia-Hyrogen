@@ -459,12 +459,14 @@ export default function SearchPage() {
                     key={pageNum}
                     onClick={() => goToPage(pageNum)}
                     style={{
-                      padding: '0.5rem 1rem',
+                      width: '40px',
+                      height: '40px',
                       border:
                         pageNum === currentPage
-                          ? '1px solid #000'
+                          ? '1px solid #232323'
                           : '1px solid #ccc',
-                      fontWeight: pageNum === currentPage ? 'bold' : 'normal',
+                          borderRadius: '50%',
+                      fontWeight: pageNum === currentPage ? 'semi-bold' : 'normal',
                       cursor: 'pointer',
                     }}
                     aria-current={pageNum === currentPage ? 'page' : undefined}
