@@ -33,41 +33,50 @@ export async function loader({request, context}) {
     });
   }
 
-  // ------------------------------
-  // Otherwise, do normal page-based search
-  // ------------------------------
   const pageFromQuery = parseInt(searchParams.get('page') || '1', 10);
   const currentPage =
     isNaN(pageFromQuery) || pageFromQuery < 1 ? 1 : pageFromQuery;
 
-  /* ------------------------------------------------------------------
-     1A) Build up filters: group same filter keys with OR, then join
-         different filter keys with AND. Use quotes around values.
-  ------------------------------------------------------------------- */
+  /**
+   * STEP A) Build filters: handle vendor => `vendor:"..."`, productType => `product_type:"..."`.
+   * We'll detect the requested filterKey and map them to Shopify fields accordingly.
+   */
+  const shopifyFilterKeyMap = {
+    vendor: 'vendor',
+    productType: 'product_type',
+    // If you had, for example, 'tag', you'd map to 'tag' or 'tags' as needed
+    // ...
+  };
+
+  // Collect the filter values
   const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
-      const filterKey = key.replace('filter_', '');
-      if (!filterMap.has(filterKey)) {
-        filterMap.set(filterKey, []);
+      const rawKey = key.replace('filter_', '');
+      if (!filterMap.has(rawKey)) {
+        filterMap.set(rawKey, []);
       }
-      filterMap.get(filterKey).push(value);
+      filterMap.get(rawKey).push(value);
     }
   }
 
+  // Prepare the text-based query filter
   const filterQueryParts = [];
-  for (const [filterKey, values] of filterMap.entries()) {
+  for (const [rawKey, values] of filterMap.entries()) {
+    const shopifyKey = shopifyFilterKeyMap[rawKey] || rawKey;
+    // (if rawKey is 'foo', it stays 'foo'—but for vendor/productType, we map it.)
+
     if (values.length === 1) {
-      // single value
-      filterQueryParts.push(`${filterKey}:"${values[0]}"`);
+      // single value => vendor:"Nike"
+      filterQueryParts.push(`${shopifyKey}:"${values[0]}"`);
     } else {
-      // multiple values => OR them
-      const orGroup = values.map((v) => `${filterKey}:"${v}"`).join(' OR ');
+      // multiple => (vendor:"Nike" OR vendor:"Adidas")
+      const orGroup = values.map((v) => `${shopifyKey}:"${v}"`).join(' OR ');
       filterQueryParts.push(`(${orGroup})`);
     }
   }
 
-  // Build term + price filters
+  // Now add optional term, minPrice, maxPrice
   const term = searchParams.get('q') || '';
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
@@ -79,8 +88,18 @@ export async function loader({request, context}) {
     filterQueryParts.push(`variants.price:<${maxPrice}`);
   }
 
-  // Join with AND so that different filter keys must all match
-  const filterQuery = `${term} ${filterQueryParts.join(' AND ')}`.trim();
+  // Combine them all with AND, plus any free-text `term` at the front
+  let filterQuery = term.trim();
+  if (filterQueryParts.length > 0) {
+    // If there's a 'term', we put it at the front, then follow with "AND filterOne AND filterTwo"
+    // If no term, we just join the filter parts.
+    if (filterQuery) {
+      // e.g. "shoes AND vendor:"Nike" AND product_type:"Boots""
+      filterQuery += ' AND ' + filterQueryParts.join(' AND ');
+    } else {
+      filterQuery = filterQueryParts.join(' AND ');
+    }
+  }
 
   // Sorting
   const sortKeyMapping = {
@@ -97,42 +116,72 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // Fetch *all* product edges so we can build page count
-  const allEdges = await fetchAllEdges({
-    storefront: context.storefront,
-    filterQuery,
-    sortKey,
-    reverse,
-  });
+  /**
+   * STEP B) We do 2 fetches:
+   *    1) fetchAllEdges() *without* any filter query for building the full list
+   *       of all possible vendors/productTypes in the store.
+   *    2) fetchAllEdges() *with* the user's filterQuery to get the product list
+   *       for pagination, etc.
+   *
+   * Why? Because if you only fetch from the filtered list, selecting one option
+   * might hide other filter options.
+   *
+   * If your store is huge, you might do a separate approach (like referencing
+   * a known list of vendors/productTypes or a separate resource), but for simplicity
+   * we'll fetch them all here.
+   */
+  const [unfilteredAllEdges, filteredEdges] = await Promise.all([
+    fetchAllEdges({
+      storefront: context.storefront,
+      filterQuery: '', // no filter => entire store
+      sortKey: 'RELEVANCE',
+      reverse: false,
+    }),
+    fetchAllEdges({
+      storefront: context.storefront,
+      filterQuery,
+      sortKey,
+      reverse,
+    }),
+  ]);
 
-  const totalProducts = allEdges.length;
+  // Now we build a complete vendor & productType list from unfilteredAllEdges
+  const allVendors = [
+    ...new Set(unfilteredAllEdges.map(({node}) => node.vendor).filter(Boolean)),
+  ].sort();
+  const allProductTypes = [
+    ...new Set(
+      unfilteredAllEdges.map(({node}) => node.productType).filter(Boolean),
+    ),
+  ].sort();
+
+  const totalProducts = filteredEdges.length;
   const pageSize = 24; // Show 24 items per page
   const totalPages = Math.ceil(totalProducts / pageSize);
 
-  // Clamp the current page if needed
-  const safeCurrentPage = currentPage > totalPages ? totalPages : currentPage;
-
-  // Build an array of cursors, one for each page
-  const pageCursors = computePageCursors(allEdges, pageSize);
-
-  // If no products found, return an empty result
+  // If 0 results, return empty
   if (totalProducts === 0) {
     return json({
       type: 'regular',
       term: filterQuery,
       result: {products: {edges: []}, total: 0},
-      vendors: [],
-      productTypes: [],
+      vendors: allVendors,
+      productTypes: allProductTypes,
       pageInfo: {},
-      currentPage: safeCurrentPage,
-      totalPages,
+      currentPage: 1,
+      totalPages: 1,
     });
   }
 
-  // Use the after-cursor for the start of the desired page
+  // Clamp the current page if needed
+  const safeCurrentPage =
+    currentPage > totalPages ? totalPages : currentPage < 1 ? 1 : currentPage;
+
+  // Build an array of cursors, one for each page, but from the *filteredEdges*
+  const pageCursors = computePageCursors(filteredEdges, pageSize);
   const afterCursor = pageCursors[safeCurrentPage];
 
-  // Fetch only the items for the current page
+  // Now fetch only the subset for this page
   const finalResult = await regularSearch({
     context,
     filterQuery,
@@ -145,20 +194,10 @@ export async function loader({request, context}) {
     return {type: 'regular', term: '', result: null, error: error.message};
   });
 
-  /* ------------------------------------------------------------------
-     1B) Gather vendor & productType filters from *all* edges, so that
-         choosing one doesn't remove other options from the sidebar.
-  ------------------------------------------------------------------- */
-  const allVendors = [...new Set(allEdges.map(({node}) => node.vendor))].sort();
-  const allProductTypes = [
-    ...new Set(allEdges.map(({node}) => node.productType)),
-  ].sort();
-
   return json({
     ...finalResult,
-    // Overwrite the default vendor & productTypes with the *complete* list
-    vendors: allVendors,
-    productTypes: allProductTypes,
+    vendors: allVendors, // keep entire vendor list
+    productTypes: allProductTypes, // keep entire productType list
     currentPage: safeCurrentPage,
     totalPages,
   });
@@ -263,11 +302,9 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
-  // Show previous/next page arrows?
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
 
-  // Generate the pages to be displayed (5 max)
   const visiblePages = getVisiblePages(currentPage, totalPages, 5);
 
   return (
@@ -431,7 +468,7 @@ export default function SearchPage() {
               ))}
             </div>
 
-            {/* PAGINATION: ARROWS + UP TO 5 PAGES */}
+            {/* PAGINATION */}
             {totalPages > 1 && (
               <div
                 style={{
@@ -469,7 +506,7 @@ export default function SearchPage() {
                   </button>
                 )}
 
-                {/* PAGE LINKS (MAX 5) */}
+                {/* PAGE LINKS (up to 5) */}
                 {visiblePages.map((pageNum) => (
                   <button
                     key={pageNum}
@@ -686,8 +723,7 @@ export default function SearchPage() {
 
 /* ------------------------------------------------------------------
    3) FETCH ALL PRODUCT EDGES
-   We add vendor/productType in the minimal query so we can display
-   complete filter lists even after partial filtering.
+   Minimal but includes vendor & productType so we can build filter lists.
 ------------------------------------------------------------------- */
 async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
   let allEdges = [];
@@ -718,11 +754,11 @@ async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
 }
 
 /**
- * Expanded minimal query to also include vendor & productType
+ * Includes vendor & productType so we can build the full filter lists.
  */
 const MINIMAL_FILTER_QUERY = `#graphql
   query AllProductsForCount(
-    $filterQuery: String!
+    $filterQuery: String
     $sortKey: ProductSortKeys
     $reverse: Boolean
     $first: Int
@@ -752,7 +788,7 @@ const MINIMAL_FILTER_QUERY = `#graphql
 `;
 
 /* ------------------------------------------------------------------
-   4) COMPUTE PAGE CURSORS
+   4) COMPUTE PAGE CURSORS (for filteredEdges)
 ------------------------------------------------------------------- */
 function computePageCursors(allEdges, pageSize) {
   if (!allEdges.length) return [null];
@@ -760,9 +796,10 @@ function computePageCursors(allEdges, pageSize) {
   const total = allEdges.length;
   const totalPages = Math.ceil(total / pageSize);
   const pageCursors = [];
-  pageCursors[1] = null; // page 1 => no cursor
+  pageCursors[1] = null; // page 1 => no "after" needed
 
   for (let page = 2; page <= totalPages; page++) {
+    // The last item on the previous page is at index (pageSize*page -1)
     const edgeIndex = (page - 1) * pageSize - 1;
     if (edgeIndex < allEdges.length) {
       pageCursors[page] = allEdges[edgeIndex].cursor;
@@ -773,7 +810,7 @@ function computePageCursors(allEdges, pageSize) {
 }
 
 /* ------------------------------------------------------------------
-   5) REGULAR SEARCH: fetch only this page's subset
+   5) REGULAR SEARCH: fetch the current page's subset
 ------------------------------------------------------------------- */
 async function regularSearch({
   context,
@@ -817,11 +854,11 @@ async function regularSearch({
 }
 
 /**
- * Query for the final subset
+ * Query for final subset (the current page)
  */
 const FILTERED_PRODUCTS_QUERY = `#graphql
   query FilteredProducts(
-    $filterQuery: String!
+    $filterQuery: String
     $sortKey: ProductSortKeys
     $reverse: Boolean
     $after: String
@@ -893,7 +930,6 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
 ------------------------------------------------------------------- */
 function getVisiblePages(currentPage, totalPages, maxCount = 5) {
   if (totalPages <= maxCount) {
-    // If total pages <= 5, just show them all
     return Array.from({length: totalPages}, (_, i) => i + 1);
   }
 
@@ -922,9 +958,9 @@ function getVisiblePages(currentPage, totalPages, maxCount = 5) {
   return pages;
 }
 
-/**
- * Predictive search query and fragments (unchanged!)
- */
+/* ------------------------------------------------------------------
+   7) PREDICTIVE SEARCH (unchanged)
+------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
     __typename
@@ -943,7 +979,6 @@ const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
     trackingParameters
   }
 `;
-
 const PREDICTIVE_SEARCH_COLLECTION_FRAGMENT = `#graphql
   fragment PredictiveCollection on Collection {
     __typename
@@ -959,7 +994,6 @@ const PREDICTIVE_SEARCH_COLLECTION_FRAGMENT = `#graphql
     trackingParameters
   }
 `;
-
 const PREDICTIVE_SEARCH_PAGE_FRAGMENT = `#graphql
   fragment PredictivePage on Page {
     __typename
@@ -969,7 +1003,6 @@ const PREDICTIVE_SEARCH_PAGE_FRAGMENT = `#graphql
     trackingParameters
   }
 `;
-
 const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
   fragment PredictiveProduct on Product {
     __typename
@@ -1001,7 +1034,6 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
     }
   }
 `;
-
 const PREDICTIVE_SEARCH_QUERY_FRAGMENT = `#graphql
   fragment PredictiveQuery on SearchQuerySuggestion {
     __typename
@@ -1010,7 +1042,6 @@ const PREDICTIVE_SEARCH_QUERY_FRAGMENT = `#graphql
     trackingParameters
   }
 `;
-
 const PREDICTIVE_SEARCH_QUERY = `#graphql
   query PredictiveSearch(
     $country: CountryCode
@@ -1022,7 +1053,7 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
     predictiveSearch(
       limitScope: $limitScope,
       query: $term,
-      types: $types,
+      types: $types
     ) {
       articles {
         ...PredictiveArticle
@@ -1048,9 +1079,6 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 
-/**
- * Predictive search fetcher (unchanged from your code!)
- */
 async function predictiveSearch({request, context}) {
   const {storefront} = context;
   const url = new URL(request.url);
@@ -1090,13 +1118,12 @@ async function predictiveSearch({request, context}) {
       `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
     );
   }
-
   if (!items) {
     throw new Error('No predictive search data returned from Shopify API');
   }
 
   const total = Object.values(items).reduce(
-    (acc, item) => acc + item.length,
+    (acc, itemArray) => acc + itemArray.length,
     0,
   );
 
