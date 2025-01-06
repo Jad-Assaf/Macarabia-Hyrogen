@@ -12,6 +12,7 @@ import {
   Analytics,
   VariantSelector,
   getSeoMeta,
+  Image,
 } from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
