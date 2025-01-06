@@ -12,7 +12,7 @@
     margin: 75px;
 }
 
-.filters fieldset div{
+.filters fieldset div {
     max-height: 200px;
     overflow: auto;
 }
@@ -123,6 +123,10 @@ select#sort-select {
         display: none;
     }
 
+    .search-filters-container {
+        width: 100vw;
+    }
+
     .search-results-grid {
         justify-content: space-evenly;
         gap: 5px;
@@ -130,7 +134,7 @@ select#sort-select {
     }
 
     .search-results-grid .product-card {
-        width: 40vw !important;
+        width: 45vw !important;
     }
 }
 
