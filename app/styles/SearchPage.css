@@ -55,8 +55,8 @@
 .search-results-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: start;
-    gap: 10px;
+    justify-content: center;
+    gap: 30px;
 }
 
 select#sort-select {
@@ -120,6 +120,8 @@ select#sort-select {
 
     .search-results-grid {
         justify-content: space-evenly;
+        gap: 5px;
+        row-gap: 15px;
     }
 
     .search-results-grid .product-card {
