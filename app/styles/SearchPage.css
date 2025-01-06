@@ -60,7 +60,8 @@
 }
 
 select#sort-select {
-    border-radius: 7px;
+    border: 1px solid #d1d5db;
+    border-radius: 35px;
     padding: 5px 10px;
     margin-left: 5px;
     font-size: 14px;
