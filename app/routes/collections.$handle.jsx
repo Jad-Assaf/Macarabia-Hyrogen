@@ -998,17 +998,7 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
   const ref = useRef(null);
 
   // Always the very first variant on SSR + initial client render
-  const [selectedVariant, setSelectedVariant] = useState(
-    product.variants.nodes[0],
-  );
-
-  // In an effect, if you want to prefer an available one:
-  useEffect(() => {
-    const firstAvailable =
-      product.variants.nodes.find((v) => v.availableForSale) ||
-      product.variants.nodes[0];
-    setSelectedVariant(firstAvailable);
-  }, [product.variants.nodes]);
+  const [selectedVariant] = useState(product.variants.nodes[0]);
 
   const variantUrl = useVariantUrl(
     product.handle,
