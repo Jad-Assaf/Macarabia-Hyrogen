@@ -460,7 +460,7 @@ export default function SearchPage() {
                       padding: '0.5rem 1rem',
                       border:
                         pageNum === currentPage
-                          ? '1px solid #000'
+                          ? '1px solid #232323'
                           : '1px solid #ccc',
                       borderRadius: '50%',
                       fontWeight: pageNum === currentPage ? 'bold' : 'normal',
