@@ -492,7 +492,7 @@ export default function Collection() {
       )}
 
       <div className="flex flex-col lg:flex-row w-[100%]">
-        {/* {isDesktop && (
+        {isDesktop && (
           <div className="w-[220px]">
             <FiltersDrawer
               filters={collection.products.filters}
@@ -516,7 +516,7 @@ export default function Collection() {
               onRemoveFilter={handleFilterRemove}
             />
           </div>
-        )} */}
+        )}
 
         <div className="flex-1 mt-[94px]">
           <hr className="col-hr"></hr>
@@ -1027,7 +1027,7 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
           >
             {product.featuredImage && (
               <div className="collection-product-image">
-                <Image
+                <img
                   srcSet={`${product.featuredImage.url}?width=300&quality=15 300w,
                            ${product.featuredImage.url}?width=600&quality=15 600w,
                            ${product.featuredImage.url}?width=1200&quality=15 1200w`}
@@ -1035,7 +1035,6 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
                   loading="lazy"
                   width="180px"
                   height="180px"
-                  onLoad={() => setIsImageLoaded(true)}
                 />
               </div>
             )}
