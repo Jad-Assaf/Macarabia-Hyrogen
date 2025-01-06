@@ -60,7 +60,7 @@
 .search-results-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-between;
     gap: 30px;
 }
 
@@ -207,7 +207,7 @@ select#sort-select {
 .search-results-grid .product-card {
     width: 42%;
     min-width: unset !important;
-    max-width: 190px !important;
+    max-width: 210px !important;
 }
 
 @keyframes slideDown {
