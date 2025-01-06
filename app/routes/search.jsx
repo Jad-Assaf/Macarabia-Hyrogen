@@ -432,7 +432,7 @@ const FILTERED_PRODUCTS_QUERY = `
           handle
           productType
           description
-          images(first: 1) {
+          images(first: 3) {
             nodes {
               url
               altText
