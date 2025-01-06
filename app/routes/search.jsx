@@ -1,84 +1,68 @@
 import {json} from '@shopify/remix-oxygen';
-import {useLoaderData, useSearchParams, useNavigate} from '@remix-run/react';
+import {
+  useLoaderData,
+  useSearchParams,
+  useNavigate,
+  Link,
+} from '@remix-run/react';
 import {useState} from 'react';
 import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import '../styles/SearchPage.css';
 
-/* ------------------------------------------------------------------
-   1) MAIN SEARCH ROUTE
-------------------------------------------------------------------- */
+/**
+ * @type {import('@remix-run/react').MetaFunction}
+ */
+export const meta = () => {
+  return [{title: `Hydrogen | Search`}];
+};
+
+/**
+ * @param {import('@shopify/remix-oxygen').LoaderFunctionArgs} args
+ */
 export async function loader({request, context}) {
+  const {storefront} = context;
   const url = new URL(request.url);
   const searchParams = url.searchParams;
 
-  // Check if we want predictive search (used in your search bar)
+  // Check if predictive search
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
-    // Perform predictive search, then return
+    // Immediately do predictive
     const result = await predictiveSearch({request, context}).catch((error) => {
       console.error('Predictive Search Error:', error);
       return {type: 'predictive', term: '', result: null, error: error.message};
     });
-
     return json({
       ...result,
-      // Minimal response—predictive search typically doesn't need
-      // the rest of the pagination data
       vendors: [],
       productTypes: [],
+      // No pagination needed for predictive results
       pageInfo: {},
-      currentPage: 1,
-      totalPages: 1,
     });
   }
 
-  const pageFromQuery = parseInt(searchParams.get('page') || '1', 10);
-  const currentPage =
-    isNaN(pageFromQuery) || pageFromQuery < 1 ? 1 : pageFromQuery;
+  // Parse after/before for cursor-based pagination
+  const after = searchParams.get('after') || null;
+  const before = searchParams.get('before') || null;
 
-  /**
-   * STEP A) Build filters: handle vendor => `vendor:"..."`, productType => `product_type:"..."`.
-   * We'll detect the requested filterKey and map them to Shopify fields accordingly.
-   */
-  const shopifyFilterKeyMap = {
-    vendor: 'vendor',
-    productType: 'product_type',
-    // More if needed...
-  };
-
-  // Collect the filter values
-  const filterMap = new Map();
+  // Build any filters from `filter_` query params
+  const filterQueryParts = [];
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
-      const rawKey = key.replace('filter_', '');
-      if (!filterMap.has(rawKey)) {
-        filterMap.set(rawKey, []);
-      }
-      filterMap.get(rawKey).push(value);
+      const filterKey = key.replace('filter_', '');
+      // e.g. vendor => vendor:"Nike"
+      // or multiple => (vendor:"Nike" OR vendor:"Adidas")
+      // For simplicity, treat them as vendor:"value"
+      // (or you'd map them more carefully if needed)
+      filterQueryParts.push(`${filterKey}:"${value}"`);
     }
   }
 
-  // Prepare the text-based query filter
-  const filterQueryParts = [];
-  for (const [rawKey, values] of filterMap.entries()) {
-    const shopifyKey = shopifyFilterKeyMap[rawKey] || rawKey;
-
-    if (values.length === 1) {
-      // single value => vendor:"Nike"
-      filterQueryParts.push(`${shopifyKey}:"${values[0]}"`);
-    } else {
-      // multiple => (vendor:"Nike" OR vendor:"Adidas")
-      const orGroup = values.map((v) => `${shopifyKey}:"${v}"`).join(' OR ');
-      filterQueryParts.push(`(${orGroup})`);
-    }
-  }
-
-  // Add optional term, minPrice, maxPrice
+  // Price range
   const term = searchParams.get('q') || '';
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
-
   if (minPrice) {
     filterQueryParts.push(`variants.price:>${minPrice}`);
   }
@@ -86,8 +70,8 @@ export async function loader({request, context}) {
     filterQueryParts.push(`variants.price:<${maxPrice}`);
   }
 
-  let filterQuery = term.trim();
-  if (filterQueryParts.length > 0) {
+  let filterQuery = term;
+  if (filterQueryParts.length) {
     if (filterQuery) {
       filterQuery += ' AND ' + filterQueryParts.join(' AND ');
     } else {
@@ -95,7 +79,7 @@ export async function loader({request, context}) {
     }
   }
 
-  // Sorting
+  // Sort
   const sortKeyMapping = {
     featured: 'RELEVANCE',
     'price-low-high': 'PRICE',
@@ -106,91 +90,42 @@ export async function loader({request, context}) {
   const reverseMapping = {
     'price-high-low': true,
   };
-
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  /**
-   * STEP B) We do 2 fetches:
-   *    1) fetchAllEdges() *without* any filter query for building the full list
-   *       of all possible vendors/productTypes in the store.
-   *    2) fetchAllEdges() *with* the user's filterQuery for the actual results.
-   */
-  const [unfilteredAllEdges, filteredEdges] = await Promise.all([
-    fetchAllEdges({
-      storefront: context.storefront,
-      filterQuery: '', // no filter => entire store
-      sortKey: 'RELEVANCE',
-      reverse: false,
-    }),
-    fetchAllEdges({
-      storefront: context.storefront,
-      filterQuery,
-      sortKey,
-      reverse,
-    }),
-  ]);
-
-  // Gather vendor & productType from unfilteredAllEdges
-  const allVendors = [
-    ...new Set(unfilteredAllEdges.map(({node}) => node.vendor).filter(Boolean)),
-  ].sort();
-  const allProductTypes = [
-    ...new Set(
-      unfilteredAllEdges.map(({node}) => node.productType).filter(Boolean),
-    ),
-  ].sort();
-
-  const totalProducts = filteredEdges.length;
-  const pageSize = 24;
-  const totalPages = Math.ceil(totalProducts / pageSize);
-
-  // If 0 results
-  if (totalProducts === 0) {
-    return json({
-      type: 'regular',
-      term: filterQuery,
-      result: {products: {edges: []}, total: 0},
-      vendors: allVendors,
-      productTypes: allProductTypes,
-      pageInfo: {},
-      currentPage: 1,
-      totalPages: 1,
-    });
-  }
-
-  // Clamp currentPage
-  const safeCurrentPage =
-    currentPage > totalPages ? totalPages : currentPage < 1 ? 1 : currentPage;
-
-  // Build an array of cursors from the filteredEdges
-  const pageCursors = computePageCursors(filteredEdges, pageSize);
-  const afterCursor = pageCursors[safeCurrentPage];
-
-  // Now fetch only the subset for this page
-  const finalResult = await regularSearch({
+  // Perform the regular search with cursors
+  const result = await regularSearch({
+    request,
     context,
     filterQuery,
     sortKey,
     reverse,
-    after: afterCursor,
-    first: pageSize,
+    after,
+    before,
   }).catch((error) => {
     console.error('Search Error:', error);
-    return {type: 'regular', term: '', result: null, error: error.message};
+    return {term: '', result: null, error: error.message};
   });
 
+  // Extract vendor / productType from these results
+  const filteredVendors = [
+    ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
+  ].sort();
+  const filteredProductTypes = [
+    ...new Set(
+      result?.result?.products?.edges.map(({node}) => node.productType),
+    ),
+  ].sort();
+
   return json({
-    ...finalResult,
-    vendors: allVendors,
-    productTypes: allProductTypes,
-    currentPage: safeCurrentPage,
-    totalPages,
+    ...result,
+    vendors: filteredVendors,
+    productTypes: filteredProductTypes,
   });
 }
 
 /* ------------------------------------------------------------------
-   2) REACT COMPONENT
+   REACT COMPONENT
 ------------------------------------------------------------------- */
 export default function SearchPage() {
   const {
@@ -200,18 +135,16 @@ export default function SearchPage() {
     vendors = [],
     productTypes = [],
     error,
-    currentPage = 1,
-    totalPages = 1,
   } = useLoaderData();
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Price Range States
+  // Price range local states
   const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
 
-  // Desktop collapsibles
+  // Desktop filter toggles
   const [showVendors, setShowVendors] = useState(false);
   const [showProductTypes, setShowProductTypes] = useState(false);
   const [showPriceRange, setShowPriceRange] = useState(false);
@@ -223,7 +156,6 @@ export default function SearchPage() {
   const [mobileShowPriceRange, setMobileShowPriceRange] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  // Close mobile filters
   const closeMobileFilters = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -232,9 +164,7 @@ export default function SearchPage() {
     }, 300);
   };
 
-  /* -----------------------
-     FILTER CHANGE HANDLERS
-  ------------------------*/
+  // Filter changes
   const handleFilterChange = (filterKey, value, checked) => {
     const params = new URLSearchParams(searchParams);
 
@@ -248,16 +178,19 @@ export default function SearchPage() {
         params.append(`filter_${filterKey}`, item),
       );
     }
-    // Reset page to 1
-    params.delete('page');
+
+    // Reset cursors
+    params.delete('after');
+    params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
   const handleSortChange = (e) => {
     const params = new URLSearchParams(searchParams);
     params.set('sort', e.target.value);
-    // Reset page to 1
-    params.delete('page');
+    // Reset cursors
+    params.delete('after');
+    params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
@@ -273,32 +206,52 @@ export default function SearchPage() {
     } else {
       params.delete('maxPrice');
     }
-
-    // Reset page to 1
-    params.delete('page');
+    // Reset cursors
+    params.delete('after');
+    params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
-  /* -----------------------
-     NEXT / PREV ONLY
-  ------------------------*/
-  const goToPage = (pageNumber) => {
+  // If we have no products, show "no results"
+  const edges = result?.products?.edges || [];
+  if (!edges.length) {
+    return (
+      <div className="search">
+        <h1>Search Results</h1>
+        <p>No results found</p>
+      </div>
+    );
+  }
+
+  // Grab pageInfo so we know if there's a next / prev page
+  const pageInfo = result?.products?.pageInfo || {};
+  const hasNextPage = pageInfo.hasNextPage;
+  const hasPreviousPage = pageInfo.hasPreviousPage;
+
+  // Handler: next => set after = pageInfo.endCursor
+  const goNext = () => {
+    if (!hasNextPage) return;
     const params = new URLSearchParams(searchParams);
-    params.set('page', String(pageNumber));
+    params.set('after', pageInfo.endCursor);
+    params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
-  // We only show the "previous" button if currentPage > 1
-  const hasPrev = currentPage > 1;
-  // We only show the "next" button if currentPage < totalPages
-  const hasNext = currentPage < totalPages;
+  // Handler: prev => set before = pageInfo.startCursor
+  const goPrev = () => {
+    if (!hasPreviousPage) return;
+    const params = new URLSearchParams(searchParams);
+    params.set('before', pageInfo.startCursor);
+    params.delete('after');
+    navigate(`/search?${params.toString()}`);
+  };
 
   return (
     <div className="search">
       <h1>Search Results</h1>
 
       <div className="search-filters-container" style={{display: 'flex'}}>
-        {/* ------------- SIDEBAR FILTERS ------------- */}
+        {/* Sidebar (Desktop) */}
         <div className="filters">
           <fieldset>
             <button
@@ -350,30 +303,30 @@ export default function SearchPage() {
             </button>
             {showProductTypes && (
               <div>
-                {productTypes.map((productType) => {
+                {productTypes.map((ptype) => {
                   const isChecked = searchParams
                     .getAll('filter_productType')
-                    .includes(productType);
+                    .includes(ptype);
                   return (
-                    <div key={productType} className="filter-option">
+                    <div key={ptype} className="filter-option">
                       <input
                         type="checkbox"
-                        id={`productType-${productType}`}
-                        value={productType}
+                        id={`productType-${ptype}`}
+                        value={ptype}
                         checked={isChecked}
                         onChange={(e) =>
                           handleFilterChange(
                             'productType',
-                            productType,
+                            ptype,
                             e.target.checked,
                           )
                         }
                       />
                       <label
                         className="filter-label"
-                        htmlFor={`productType-${productType}`}
+                        htmlFor={`productType-${ptype}`}
                       >
-                        {productType}
+                        {ptype}
                       </label>
                     </div>
                   );
@@ -428,109 +381,54 @@ export default function SearchPage() {
           </fieldset>
         </div>
 
-        {/* ------------- MAIN SEARCH RESULTS ------------- */}
-        {result?.products?.edges?.length > 0 ? (
-          <div className="search-results">
-            {/* Sort UI */}
-            <div>
-              <label htmlFor="sort-select">Sort by:</label>
-              <select
-                id="sort-select"
-                onChange={handleSortChange}
-                value={searchParams.get('sort') || 'featured'}
+        {/* Main Search Results */}
+        <div className="search-results">
+          {/* Sorting */}
+          <div>
+            <label htmlFor="sort-select">Sort by:</label>
+            <select
+              id="sort-select"
+              onChange={handleSortChange}
+              value={searchParams.get('sort') || 'featured'}
+            >
+              <option value="featured">Featured</option>
+              <option value="price-low-high">Price: Low - High</option>
+              <option value="price-high-low">Price: High - Low</option>
+              <option value="best-selling">Best Selling</option>
+              <option value="newest">Newest</option>
+            </select>
+          </div>
+
+          {/* Product Grid */}
+          <div className="search-results-grid">
+            {edges.map(({node: product}, idx) => (
+              <ProductItem product={product} index={idx} key={product.id} />
+            ))}
+          </div>
+
+          {/* Prev / Next Buttons */}
+          <div style={{marginTop: '1rem', display: 'flex', gap: '1rem'}}>
+            {pageInfo.hasPreviousPage && (
+              <button
+                onClick={goPrev}
+                style={{backgroundColor: 'transparent', cursor: 'pointer'}}
               >
-                <option value="featured">Featured</option>
-                <option value="price-low-high">Price: Low - High</option>
-                <option value="price-high-low">Price: High - Low</option>
-                <option value="best-selling">Best Selling</option>
-                <option value="newest">Newest</option>
-              </select>
-            </div>
-
-            {/* Grid of Products */}
-            <div className="search-results-grid">
-              {result.products.edges.map(({node: product}, index) => (
-                <ProductItem product={product} index={index} key={product.id} />
-              ))}
-            </div>
-
-            {/* PREV / NEXT ONLY */}
-            {totalPages > 1 && (
-              <div
-                style={{
-                  marginTop: '1rem',
-                  display: 'flex',
-                  gap: '1rem',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                ← Previous Page
+              </button>
+            )}
+            {pageInfo.hasNextPage && (
+              <button
+                onClick={goNext}
+                style={{backgroundColor: 'transparent', cursor: 'pointer'}}
               >
-                {hasPrev && (
-                  <button
-                    onClick={() => goToPage(currentPage - 1)}
-                    aria-label="Previous Page"
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {/* Left Arrow SVG */}
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                    <span style={{marginLeft: 5}}>Prev</span>
-                  </button>
-                )}
-
-                {hasNext && (
-                  <button
-                    onClick={() => goToPage(currentPage + 1)}
-                    aria-label="Next Page"
-                    style={{
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <span style={{marginRight: 5}}>Next</span>
-                    {/* Right Arrow SVG */}
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </button>
-                )}
-              </div>
+                Next Page →
+              </button>
             )}
           </div>
-        ) : (
-          <p>No results found</p>
-        )}
+        </div>
       </div>
 
-      {/* ------------- MOBILE FILTERS ------------- */}
+      {/* Mobile Filters */}
       <button
         className="mobile-filters-toggle"
         onClick={() => setIsMobileFiltersOpen(true)}
@@ -554,18 +452,23 @@ export default function SearchPage() {
               >
                 <g>
                   <path
-                    d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565
-                    c-2.913-2.911-6.866-4.55-10.992-4.55c-4.127,0-8.08,1.639-10.993,4.55L285.08,171.705L59.25,4.565
-                    c-2.913-2.911-6.866-4.55-10.993-4.55c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986
-                    l171.138,171.128L4.575,401.505c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55
-                    c4.127,0,8.08-1.639,10.994-4.55l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55
-                    c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"
+                    d="M285.08,230.397L456.218,59.27
+                    c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55
+                    c-4.127,0-8.08,1.639-10.993,4.55L285.08,171.705L59.25,4.565
+                    c-2.913-2.911-6.866-4.55-10.993-4.55
+                    c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284
+                    c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128
+                    L4.575,401.505c-6.074,6.077-6.074,15.911,0,21.986
+                    l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55
+                    c4.127,0,8.08-1.639,10.994-4.55l171.117-171.12
+                    l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55
+                    c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719
+                    c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"
                   />
                 </g>
               </svg>
             </button>
 
-            {/* Mobile Vendor Filter */}
             <fieldset>
               <button
                 type="button"
@@ -604,7 +507,6 @@ export default function SearchPage() {
               )}
             </fieldset>
 
-            {/* Mobile Product Type Filter */}
             <fieldset>
               <button
                 type="button"
@@ -616,27 +518,27 @@ export default function SearchPage() {
               </button>
               {mobileShowProductTypes && (
                 <div className="filter-options-container">
-                  {productTypes.map((productType) => {
+                  {productTypes.map((type) => {
                     const isChecked = searchParams
                       .getAll('filter_productType')
-                      .includes(productType);
+                      .includes(type);
                     return (
-                      <div key={productType} className="filter-option">
+                      <div key={type} className="filter-option">
                         <input
                           type="checkbox"
-                          id={`mobile-productType-${productType}`}
-                          value={productType}
+                          id={`mobile-productType-${type}`}
+                          value={type}
                           checked={isChecked}
                           onChange={(e) =>
                             handleFilterChange(
                               'productType',
-                              productType,
+                              type,
                               e.target.checked,
                             )
                           }
                         />
-                        <label htmlFor={`mobile-productType-${productType}`}>
-                          {productType}
+                        <label htmlFor={`mobile-productType-${type}`}>
+                          {type}
                         </label>
                       </div>
                     );
@@ -645,7 +547,6 @@ export default function SearchPage() {
               )}
             </fieldset>
 
-            {/* Mobile Price Range Filter */}
             <fieldset>
               <button
                 type="button"
@@ -689,150 +590,32 @@ export default function SearchPage() {
 }
 
 /* ------------------------------------------------------------------
-   3) FETCH ALL PRODUCT EDGES
+   GRAPHQL + REGULAR SEARCH
 ------------------------------------------------------------------- */
-async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
-  let allEdges = [];
-  let hasNextPage = true;
-  let cursor = null;
 
-  while (hasNextPage) {
-    // Request up to 250 at a time
-    const res = await storefront.query(MINIMAL_FILTER_QUERY, {
-      variables: {
-        filterQuery,
-        sortKey,
-        reverse,
-        first: 50,
-        after: cursor,
-      },
-    });
-
-    const {products} = res;
-    if (!products?.edges?.length) break;
-
-    allEdges.push(...products.edges);
-    hasNextPage = products.pageInfo.hasNextPage;
-    cursor = products.pageInfo.endCursor;
-  }
-
-  return allEdges;
-}
-
-const MINIMAL_FILTER_QUERY = `#graphql
-  query AllProductsForCount(
-    $filterQuery: String
-    $sortKey: ProductSortKeys
-    $reverse: Boolean
-    $first: Int
-    $after: String
-  ) {
-    products(
-      query: $filterQuery
-      sortKey: $sortKey
-      reverse: $reverse
-      first: $first
-      after: $after
-    ) {
-      edges {
-        cursor
-        node {
-          id
-          vendor
-          productType
-        }
-      }
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-    }
-  }
-`;
-
-/* ------------------------------------------------------------------
-   4) COMPUTE PAGE CURSORS
-------------------------------------------------------------------- */
-function computePageCursors(allEdges, pageSize) {
-  if (!allEdges.length) return [null];
-
-  const total = allEdges.length;
-  const totalPages = Math.ceil(total / pageSize);
-  const pageCursors = [];
-  pageCursors[1] = null; // page 1 => no "after" needed
-
-  for (let page = 2; page <= totalPages; page++) {
-    // The last item on the previous page is at index ((page - 1) * pageSize) - 1
-    const edgeIndex = (page - 1) * pageSize - 1;
-    if (edgeIndex < allEdges.length) {
-      pageCursors[page] = allEdges[edgeIndex].cursor;
-    }
-  }
-
-  return pageCursors;
-}
-
-/* ------------------------------------------------------------------
-   5) REGULAR SEARCH: fetch the current page's subset
-------------------------------------------------------------------- */
-async function regularSearch({
-  context,
-  filterQuery,
-  sortKey,
-  reverse,
-  after,
-  first,
-}) {
-  const {storefront} = context;
-  try {
-    const {products} = await storefront.query(FILTERED_PRODUCTS_QUERY, {
-      variables: {filterQuery, sortKey, reverse, after, first},
-    });
-
-    if (!products?.edges) {
-      return {
-        type: 'regular',
-        term: filterQuery,
-        result: {products: {edges: []}, total: 0},
-      };
-    }
-
-    return {
-      type: 'regular',
-      term: filterQuery,
-      result: {
-        products,
-        total: products.edges.length,
-      },
-    };
-  } catch (err) {
-    console.error('Error during regular search:', err);
-    return {
-      type: 'regular',
-      term: filterQuery,
-      result: null,
-      error: err.message,
-    };
-  }
-}
-
+/**
+ * Query for the subset with cursors
+ */
 const FILTERED_PRODUCTS_QUERY = `#graphql
   query FilteredProducts(
-    $filterQuery: String
-    $sortKey: ProductSortKeys
-    $reverse: Boolean
-    $after: String
-    $first: Int
+    $filterQuery: String,
+    $sortKey: ProductSortKeys,
+    $reverse: Boolean,
+    $after: String,
+    $before: String,
+    $first: Int,
+    $last: Int
   ) {
     products(
-      query: $filterQuery
-      sortKey: $sortKey
-      reverse: $reverse
-      first: $first
-      after: $after
+      query: $filterQuery,
+      sortKey: $sortKey,
+      reverse: $reverse,
+      after: $after,
+      before: $before,
+      first: $first,
+      last: $last
     ) {
       edges {
-        cursor
         node {
           vendor
           id
@@ -879,14 +662,85 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
       }
       pageInfo {
         hasNextPage
+        hasPreviousPage
+        startCursor
         endCursor
       }
     }
   }
 `;
 
+/**
+ * Regular search fetcher using cursors (no "fetch all"!)
+ * If `after` is present, we use `first=24`.
+ * If `before` is present, we use `last=24`.
+ * If neither is present, we just do first=24 from the start.
+ */
+async function regularSearch({
+  request,
+  context,
+  filterQuery,
+  sortKey,
+  reverse,
+  after = null,
+  before = null,
+}) {
+  const {storefront} = context;
+
+  // Decide if we go forward or backward
+  let first = null;
+  let last = null;
+
+  if (after) {
+    first = 24; // going forward
+  } else if (before) {
+    last = 24; // going backward
+  } else {
+    // default: first page
+    first = 24;
+  }
+
+  const variables = {
+    filterQuery,
+    sortKey,
+    reverse,
+    after,
+    before,
+    first,
+    last,
+  };
+
+  try {
+    const {products} = await storefront.query(FILTERED_PRODUCTS_QUERY, {
+      variables,
+    });
+
+    if (!products?.edges) {
+      return {
+        type: 'regular',
+        term: filterQuery,
+        result: {products: {edges: []}},
+      };
+    }
+
+    return {
+      type: 'regular',
+      term: filterQuery,
+      result: {products},
+    };
+  } catch (error) {
+    console.error('Regular search error:', error);
+    return {
+      type: 'regular',
+      term: filterQuery,
+      result: null,
+      error: error.message,
+    };
+  }
+}
+
 /* ------------------------------------------------------------------
-   6) PREDICTIVE SEARCH (unchanged)
+   PREDICTIVE SEARCH (unchanged)
 ------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
@@ -999,13 +853,7 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
       }
     }
   }
-  ${PREDICTIVE_SEARCH_ARTICLE_FRAGMENT}
-  ${PREDICTIVE_SEARCH_COLLECTION_FRAGMENT}
-  ${PREDICTIVE_SEARCH_PAGE_FRAGMENT}
-  ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
-  ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
-
 async function predictiveSearch({request, context}) {
   const {storefront} = context;
   const url = new URL(request.url);
@@ -1013,15 +861,14 @@ async function predictiveSearch({request, context}) {
   const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
 
-  if (!term) return {type, term, result: getEmptyPredictiveSearchResult()};
+  if (!term) {
+    return {type, term, result: getEmptyPredictiveSearchResult()};
+  }
 
-  // Break the search term into individual words
   const terms = term
     .split(/\s+/)
-    .map((word) => word.trim())
+    .map((w) => w.trim())
     .filter(Boolean);
-
-  // Construct a flexible query that matches SKU, title, or description
   const queryTerm = terms
     .map(
       (word) =>
@@ -1049,11 +896,7 @@ async function predictiveSearch({request, context}) {
     throw new Error('No predictive search data returned from Shopify API');
   }
 
-  const total = Object.values(items).reduce(
-    (acc, itemArray) => acc + itemArray.length,
-    0,
-  );
-
+  const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
   return {type, term, result: {items, total}};
 }
 
