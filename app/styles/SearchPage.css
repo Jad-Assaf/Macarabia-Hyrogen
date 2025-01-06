@@ -16,6 +16,14 @@
     width: 100% !important;
 }
 
+.search-filters-container{
+    width: 90vw;
+}
+
+.filters{
+    width: 14%;
+}
+
 .search-filters-container fieldset {
     padding: 0;
     margin: 0;
@@ -41,6 +49,7 @@
 
 .search-results {
     justify-content: flex-end;
+    width: 80%;
 }
 
 .search-results-grid {
