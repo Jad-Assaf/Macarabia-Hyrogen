@@ -92,6 +92,7 @@ export function ProductImages({images, selectedVariantImage}) {
 
   return (
     <div className="product-images-container">
+      {/* Thumbnails */}
       <div className="thumbContainer">
         <div className="thumbnails">
           {images.map(({node: image}, index) => (
@@ -106,20 +107,22 @@ export function ProductImages({images, selectedVariantImage}) {
                 data={image}
                 alt={image.altText || 'Thumbnail Image'}
                 aspectRatio="1/1"
-                width={100}
-                height={100}
-                loading="lazy"
+                width={80}
+                height={80}
+                loading="lazy" // Thumbnails can load lazily
+                decoding="async"
               />
             </div>
           ))}
         </div>
       </div>
 
+      {/* Main Image */}
       <div
         className="main-image"
         onClick={() => setIsLightboxOpen(true)}
         style={{cursor: 'grab'}}
-        {...swipeHandlers} // Attach swipe handlers to the main image
+        {...swipeHandlers}
       >
         {selectedImage && (
           <div
@@ -132,13 +135,13 @@ export function ProductImages({images, selectedVariantImage}) {
               key={imageKey}
               data={selectedImage}
               alt={selectedImage.altText || 'Product Image'}
-              aspectRatio="1/1"
               sizes="(min-width: 45em) 50vw, 100vw"
-              width="570px"
-              height="570px"
               loading="eager"
-              decoding='sync'
+              decoding="async"
               onLoad={() => setIsImageLoaded(true)}
+              loaderOptions={{
+                scale: 2, // or any scale factor
+              }}
             />
           </div>
         )}
@@ -164,6 +167,7 @@ export function ProductImages({images, selectedVariantImage}) {
         </div>
       </div>
 
+      {/* Lightbox */}
       {isLightboxOpen && (
         <Lightbox
           open={isLightboxOpen}
