@@ -137,6 +137,7 @@ export function ProductImages({images, selectedVariantImage}) {
               width="570px"
               height="570px"
               loading="eager"
+              decoding='sync'
               onLoad={() => setIsImageLoaded(true)}
             />
           </div>
