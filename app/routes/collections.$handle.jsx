@@ -103,9 +103,7 @@ export const meta = ({data}) => {
             url: `https://macarabia.me/products/${encodeURIComponent(
               product?.handle,
             )}`,
-            priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split('T')[0],
+            priceValidUntil: '2025-12-31',
             shippingDetails: {
               '@type': 'OfferShippingDetails',
               shippingRate: {
@@ -454,7 +452,7 @@ export default function Collection() {
     <div className="collection">
       <h1>{collection.title}</h1>
 
-      {/* {sliderCollections && sliderCollections.length > 0 && (
+      {sliderCollections && sliderCollections.length > 0 && (
         <div className="slide-con">
           <div className="category-slider">
             {sliderCollections.map(
@@ -489,7 +487,7 @@ export default function Collection() {
             )}
           </div>
         </div>
-      )} */}
+      )}
 
       <div className="flex flex-col lg:flex-row w-[100%]">
         {isDesktop && (
