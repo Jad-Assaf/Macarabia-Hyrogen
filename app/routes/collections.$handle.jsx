@@ -8,7 +8,6 @@ import {
 } from '@remix-run/react';
 import {
   getPaginationVariables,
-  Image,
   Money,
   Analytics,
   VariantSelector,
@@ -364,6 +363,11 @@ function loadDeferredData({context}) {
 export default function Collection() {
   const {collection, appliedFilters, sliderCollections} = useLoaderData();
   const [userSelectedNumberInRow, setUserSelectedNumberInRow] = useState(null); // Tracks user selection
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   // *** CHANGED HERE: always return 1 if the user hasn't manually chosen a layout ***
   const calculateNumberInRow = (width, userSelection) => {
@@ -377,7 +381,7 @@ export default function Collection() {
   const [numberInRow, setNumberInRow] = useState(
     typeof window !== 'undefined' ? calculateNumberInRow(window.innerWidth) : 1,
   );
-  const isDesktop = useMediaQuery({minWidth: 1024});
+  const isDesktop = hasMounted ? useMediaQuery({minWidth: 1024}) : false;
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -418,7 +422,7 @@ export default function Collection() {
     navigate(newUrl);
   };
 
-  const sortedProducts = React.useMemo(() => {
+  const sortedProducts = useMemo(() => {
     if (!collection || !collection.products || !collection.products.nodes)
       return [];
     const products = [...collection.products.nodes];
@@ -1002,12 +1006,9 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
     product.variants.nodes[0],
   );
 
-  // In an effect, if you want to prefer an available one:
   useEffect(() => {
-    const firstAvailable =
-      product.variants.nodes.find((v) => v.availableForSale) ||
-      product.variants.nodes[0];
-    setSelectedVariant(firstAvailable);
+    const available = product.variants.nodes.find((v) => v.availableForSale);
+    if (available) setSelectedVariant(available);
   }, [product.variants.nodes]);
 
   const variantUrl = useVariantUrl(
