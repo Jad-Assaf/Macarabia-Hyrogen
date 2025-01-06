@@ -505,7 +505,7 @@ export default function Collection() {
                 {handle: 'pc-parts', title: 'PC Parts'},
                 {handle: 'networking', title: 'Networking'},
                 {handle: 'monitors', title: 'Monitors'},
-                {handle: 'mobile-phones', title: 'Mobile Phones'},
+                {handle: 'mobiles', title: 'Mobile Phones'},
                 {handle: 'tablets', title: 'Tablets'},
                 {handle: 'audio', title: 'Audio'},
                 {handle: 'accessories', title: 'Accessories'},
