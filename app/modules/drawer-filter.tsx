@@ -436,7 +436,7 @@ export default function SortMenu({
       </MenuButton>
       <MenuItems
         as="nav"
-        className="absolute right-0 top-12 flex h-fit w-40 flex-col gap-2 border border-line/75 bg-background p-[1px]"
+        className="absolute right-0 top-12 flex h-fit w-40 flex-col gap-2 border border-gray-300 border-line/75 bg-background p-[1px]"
       >
         {items.map((item) => (
           <MenuItem key={item.label}>

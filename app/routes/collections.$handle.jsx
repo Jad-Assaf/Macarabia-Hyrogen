@@ -502,7 +502,16 @@ export default function Collection() {
                 {handle: 'gaming', title: 'Gaming'},
                 {handle: 'laptops', title: 'Laptops'},
                 {handle: 'desktops', title: 'Desktops'},
+                {handle: 'pc-parts', title: 'PC Parts'},
+                {handle: 'networking', title: 'Networking'},
                 {handle: 'monitors', title: 'Monitors'},
+                {handle: 'mobile-phones', title: 'Mobile Phones'},
+                {handle: 'tablets', title: 'Tablets'},
+                {handle: 'audio', title: 'Audio'},
+                {handle: 'accessories', title: 'Accessories'},
+                {handle: 'fitness', title: 'Fitness'},
+                {handle: 'photography', title: 'Photography'},
+                {handle: 'home-appliances', title: 'Home Appliances'},
               ]}
               onRemoveFilter={handleFilterRemove}
             />

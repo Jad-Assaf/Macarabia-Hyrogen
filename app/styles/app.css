@@ -1841,18 +1841,18 @@ button.layout-buttons.first-btn svg * {
 }
 
 button.layout-buttons.first-btn.active svg * {
-  fill: #232323;
+  fill: #fff;
   stroke: transparent;
 }
 
 .layout-buttons.active svg * {
-  stroke: #232323;
+  stroke: #fff;
   box-shadow: inset rgb(0 0 0) 0px -25px 20px -20px;
 }
 
 .layout-buttons.active {
-  background-color: #ebebeb;
-  border-color: #232323;
+  background-color: #000;
+  border-color: #000;
 }
 
 button.layout-buttons.first-btn svg {
