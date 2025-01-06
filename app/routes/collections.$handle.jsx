@@ -994,11 +994,16 @@ export default function Collection() {
  *   loading?: 'eager' | 'lazy';
  * }}
  */
-const ProductItem = (({product, index, numberInRow}) => {
+const ProductItem = React.memo(({product, index, numberInRow}) => {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const ref = useRef(null);
 
-  // Always the very first variant on SSR + initial client render
-  const [selectedVariant] = useState(product.variants.nodes[0]);
+  const [selectedVariant, setSelectedVariant] = useState(() => {
+    return (
+      product.variants.nodes.find((variant) => variant.availableForSale) ||
+      product.variants.nodes[0]
+    );
+  });
 
   const variantUrl = useVariantUrl(
     product.handle,
@@ -1056,14 +1061,14 @@ const ProductItem = (({product, index, numberInRow}) => {
             <ProductForm
               product={product}
               selectedVariant={selectedVariant}
-
+              setSelectedVariant={setSelectedVariant}
             />
           </div>
         </div>
         <ProductForm
           product={product}
           selectedVariant={selectedVariant}
-
+          setSelectedVariant={setSelectedVariant}
         />
       </div>
     </div>
