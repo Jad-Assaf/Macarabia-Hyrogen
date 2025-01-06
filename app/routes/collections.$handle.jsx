@@ -46,7 +46,7 @@ export const meta = ({data}) => {
     title: `${collection?.title || 'Collection'} | Macarabia`,
     description: truncateText(
       collection?.description || 'Explore our latest collection at Macarabia.',
-      30,
+      20,
     ),
     url: `https://macarabia.me/collections/${collection?.handle || ''}`,
     image:
@@ -59,7 +59,7 @@ export const meta = ({data}) => {
         '@type': 'CollectionPage',
         name: collection?.title || 'Collection',
         url: `https://macarabia.me/collections/${collection?.handle || ''}`,
-        description: truncateText(collection?.description || '', 30),
+        description: truncateText(collection?.description || '', 20),
         image: {
           '@type': 'ImageObject',
           url:
@@ -90,7 +90,7 @@ export const meta = ({data}) => {
             '@type': 'Brand',
             name: product?.vendor || 'Macarabia',
           },
-          description: truncateText(product?.description || '', 30),
+          description: truncateText(product?.description || '', 20),
           image: `https://macarabia.me/products/${product?.featuredImage?.url}`,
           offers: {
             '@type': 'Offer',
@@ -171,7 +171,7 @@ export const meta = ({data}) => {
         '@context': 'http://schema.org/',
         '@type': 'ItemList',
         name: collection?.title || 'Collection',
-        description: truncateText(collection?.description || '', 30),
+        description: truncateText(collection?.description || '', 20),
         url: `https://macarabia.me/collections/${collection?.handle || ''}`,
         itemListElement: collection?.products?.nodes
           ?.slice(0, 20)
