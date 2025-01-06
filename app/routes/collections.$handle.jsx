@@ -492,7 +492,7 @@ export default function Collection() {
       )}
 
       <div className="flex flex-col lg:flex-row w-[100%]">
-        {isDesktop && (
+        {/* {isDesktop && (
           <div className="w-[220px]">
             <FiltersDrawer
               filters={collection.products.filters}
@@ -516,7 +516,7 @@ export default function Collection() {
               onRemoveFilter={handleFilterRemove}
             />
           </div>
-        )}
+        )} */}
 
         <div className="flex-1 mt-[94px]">
           <hr className="col-hr"></hr>
