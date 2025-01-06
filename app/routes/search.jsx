@@ -14,7 +14,7 @@ import '../styles/SearchPage.css';
  * @type {import('@remix-run/react').MetaFunction}
  */
 export const meta = () => {
-  return [{title: `Hydrogen | Search`}];
+  return [{title: `MacArabia | Search`}];
 };
 
 /**
@@ -733,12 +733,12 @@ async function regularSearch({
   let first = null;
   let last = null;
   if (after) {
-    first = 24; // going forward
+    first = 50; // going forward
   } else if (before) {
-    last = 24; // going backward
+    last = 50; // going backward
   } else {
     // default: first page
-    first = 24;
+    first = 50;
   }
 
   const variables = {
