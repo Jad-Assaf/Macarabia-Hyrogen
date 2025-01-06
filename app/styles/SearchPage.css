@@ -4,7 +4,7 @@
     justify-content: center;
     align-items: center;
     max-width: 1500px;
-    margin: 50px auto;
+    margin: 50px auto 100px;
 }
 
 .filter-sort-container {
@@ -53,7 +53,7 @@
 }
 
 .search-results {
-    justify-content: flex-end;
+    /* justify-content: flex-end; */
     width: 86%;
 }
 
