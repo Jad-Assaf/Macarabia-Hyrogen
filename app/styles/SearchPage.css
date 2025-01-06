@@ -16,11 +16,11 @@
     width: 100% !important;
 }
 
-.search-filters-container{
+.search-filters-container {
     width: 90vw;
 }
 
-.filters{
+.filters {
     width: 14%;
 }
 
@@ -109,6 +109,10 @@ select#sort-select {
         display: block;
     }
 
+    .search-results {
+        width: 100%;
+    }
+
     .filters {
         display: none;
         /* Hide desktop filters */
@@ -119,7 +123,7 @@ select#sort-select {
     }
 
     .search-results-grid .product-card {
-        width: 30vw !important; 
+        width: 30vw !important;
         min-width: 175px !important;
     }
 }
