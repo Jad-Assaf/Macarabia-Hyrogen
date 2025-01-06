@@ -462,6 +462,7 @@ export default function SearchPage() {
                         pageNum === currentPage
                           ? '1px solid #000'
                           : '1px solid #ccc',
+                      borderRadius: '50%',
                       fontWeight: pageNum === currentPage ? 'bold' : 'normal',
                       cursor: 'pointer',
                     }}
