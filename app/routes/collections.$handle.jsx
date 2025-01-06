@@ -46,7 +46,7 @@ export const meta = ({data}) => {
     title: `${collection?.title || 'Collection'} | Macarabia`,
     description: truncateText(
       collection?.description || 'Explore our latest collection at Macarabia.',
-      150,
+      50,
     ),
     url: `https://macarabia.me/collections/${collection?.handle || ''}`,
     image:
@@ -59,7 +59,7 @@ export const meta = ({data}) => {
         '@type': 'CollectionPage',
         name: collection?.title || 'Collection',
         url: `https://macarabia.me/collections/${collection?.handle || ''}`,
-        description: truncateText(collection?.description || '', 150),
+        description: truncateText(collection?.description || '', 50),
         image: {
           '@type': 'ImageObject',
           url:
@@ -68,7 +68,7 @@ export const meta = ({data}) => {
         },
         hasPart: collection?.products?.nodes?.slice(0, 20).map((product) => ({
           '@type': 'Product',
-          name: truncateText(product?.title || 'Product', 140),
+          name: truncateText(product?.title || 'Product', 10),
           url: `https://macarabia.me/products/${encodeURIComponent(
             product?.handle,
           )}`,
@@ -90,7 +90,7 @@ export const meta = ({data}) => {
             '@type': 'Brand',
             name: product?.vendor || 'Macarabia',
           },
-          description: truncateText(product?.description || '', 150),
+          description: truncateText(product?.description || '', 50),
           image: `https://macarabia.me/products/${product?.featuredImage?.url}`,
           offers: {
             '@type': 'Offer',
@@ -171,7 +171,7 @@ export const meta = ({data}) => {
         '@context': 'http://schema.org/',
         '@type': 'ItemList',
         name: collection?.title || 'Collection',
-        description: truncateText(collection?.description || '', 150),
+        description: truncateText(collection?.description || '', 50),
         url: `https://macarabia.me/collections/${collection?.handle || ''}`,
         itemListElement: collection?.products?.nodes
           ?.slice(0, 20)
@@ -179,7 +179,7 @@ export const meta = ({data}) => {
             '@type': 'ListItem',
             position: index + 1,
             url: `https://macarabia.me/products/${encodeURIComponent(product?.handle)}`,
-            name: truncateText(product?.title || 'Product', 140),
+            name: truncateText(product?.title || 'Product', 10),
             image: {
               '@type': 'ImageObject',
               url:
@@ -1064,7 +1064,7 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
             <Link key={product.id} prefetch="intent" to={variantUrl}>
               <h4>{truncateText(product.title, 30)}</h4>
               <p className="product-description">
-                {truncateText(product.description, 60)}
+                {truncateText(product.description, 90)}
               </p>
               <div className="price-container">
                 <small
