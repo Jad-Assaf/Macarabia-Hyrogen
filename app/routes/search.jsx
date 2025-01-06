@@ -703,7 +703,7 @@ async function fetchAllEdges({storefront, filterQuery, sortKey, reverse}) {
         filterQuery,
         sortKey,
         reverse,
-        first: 250,
+        first: 50,
         after: cursor,
       },
     });
