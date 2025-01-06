@@ -8,11 +8,11 @@ import {
 } from '@remix-run/react';
 import {
   getPaginationVariables,
+  Image,
   Money,
   Analytics,
   VariantSelector,
   getSeoMeta,
-  Image,
 } from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
@@ -364,11 +364,6 @@ function loadDeferredData({context}) {
 export default function Collection() {
   const {collection, appliedFilters, sliderCollections} = useLoaderData();
   const [userSelectedNumberInRow, setUserSelectedNumberInRow] = useState(null); // Tracks user selection
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
 
   // *** CHANGED HERE: always return 1 if the user hasn't manually chosen a layout ***
   const calculateNumberInRow = (width, userSelection) => {
@@ -382,7 +377,7 @@ export default function Collection() {
   const [numberInRow, setNumberInRow] = useState(
     typeof window !== 'undefined' ? calculateNumberInRow(window.innerWidth) : 1,
   );
-  const isDesktop = hasMounted ? useMediaQuery({minWidth: 1024}) : false;
+  const isDesktop = useMediaQuery({minWidth: 1024});
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -423,7 +418,7 @@ export default function Collection() {
     navigate(newUrl);
   };
 
-  const sortedProducts = (() => {
+  const sortedProducts = React.useMemo(() => {
     if (!collection || !collection.products || !collection.products.nodes)
       return [];
     const products = [...collection.products.nodes];
@@ -439,7 +434,7 @@ export default function Collection() {
       if (!aInStock && bInStock) return 1;
       return 0;
     });
-  })();
+  }, [collection?.products?.nodes]);
 
   useEffect(() => {
     const url = new URL(window.location.href); // Get the current URL
@@ -1007,9 +1002,12 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
     product.variants.nodes[0],
   );
 
+  // In an effect, if you want to prefer an available one:
   useEffect(() => {
-    const available = product.variants.nodes.find((v) => v.availableForSale);
-    if (available) setSelectedVariant(available);
+    const firstAvailable =
+      product.variants.nodes.find((v) => v.availableForSale) ||
+      product.variants.nodes[0];
+    setSelectedVariant(firstAvailable);
   }, [product.variants.nodes]);
 
   const variantUrl = useVariantUrl(
