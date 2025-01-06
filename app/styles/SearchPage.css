@@ -12,6 +12,11 @@
     margin: 75px;
 }
 
+.filters fieldset div{
+    max-height: 200px;
+    overflow: auto;
+}
+
 .collection-product-link {
     width: 100% !important;
 }
