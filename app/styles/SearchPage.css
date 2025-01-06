@@ -55,8 +55,8 @@
 .search-results-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
-    row-gap: 30px;
+    justify-content: start;
+    gap: 30px;
 }
 
 select#sort-select {
@@ -115,11 +115,6 @@ select#sort-select {
 
     .filters {
         display: none;
-        /* Hide desktop filters */
-    }
-
-    .search-results-grid {
-        justify-content: space-around;
     }
 
     .search-results-grid .product-card {
