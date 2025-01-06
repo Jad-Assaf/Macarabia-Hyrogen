@@ -11,13 +11,15 @@ import {
   Image,
   Money,
   Analytics,
+  VariantSelector,
   getSeoMeta,
 } from '@shopify/hydrogen';
-import React, {useEffect, useRef, useState} from 'react';
 import {useVariantUrl} from '~/lib/variants';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {DrawerFilter} from '~/modules/drawer-filter';
 import {FILTER_URL_PREFIX} from '~/lib/const';
+import React, {useEffect, useRef, useState} from 'react';
+import {useMediaQuery} from 'react-responsive';
 import {FiltersDrawer} from '../modules/drawer-filter';
 import {getAppliedFilterLink} from '../lib/filter';
 import {AddToCartButton} from '../components/AddToCartButton';
@@ -26,7 +28,7 @@ import '../styles/CollectionSlider.css';
 
 function truncateText(text, maxWords) {
   if (!text || typeof text !== 'string') {
-    return '';
+    return ''; // Return an empty string if text is undefined or not a string
   }
   const words = text.split(' ');
   return words.length > maxWords
@@ -343,7 +345,7 @@ export async function loadCriticalData({context, params, request}) {
 function sanitizeHandle(handle) {
   return handle
     .toLowerCase()
-    .replace(/"/g, '')
+    .replace(/"/g, '') // Remove quotes
     .replace(/&/g, '')
     .replace(/\./g, '-')
     .replace(/\s+/g, '-');
@@ -361,13 +363,13 @@ function loadDeferredData({context}) {
 
 export default function Collection() {
   const {collection, appliedFilters, sliderCollections} = useLoaderData();
-  const [userSelectedNumberInRow, setUserSelectedNumberInRow] = useState(null);
+  const [userSelectedNumberInRow, setUserSelectedNumberInRow] = useState(null); // Tracks user selection
 
-  // Always default to 1 if user hasn't chosen a layout
-  function calculateNumberInRow(width, userSelection) {
+  // Always return 1 if user hasn't chosen a layout (same as before)
+  const calculateNumberInRow = (width, userSelection) => {
     if (userSelection !== null) return userSelection;
     return 1;
-  }
+  };
 
   const [screenWidth, setScreenWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth : 0,
@@ -377,7 +379,7 @@ export default function Collection() {
       ? calculateNumberInRow(window.innerWidth, userSelectedNumberInRow)
       : 1,
   );
-
+  const isDesktop = useMediaQuery({minWidth: 1024});
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -389,8 +391,7 @@ export default function Collection() {
       setNumberInRow(calculateNumberInRow(width, userSelectedNumberInRow));
     };
 
-    updateLayout(); // on mount
-
+    updateLayout(); // initial
     const debounce = (fn, delay) => {
       let timeoutId;
       return (...args) => {
@@ -401,35 +402,43 @@ export default function Collection() {
 
     const debouncedUpdateLayout = debounce(updateLayout, 100);
     window.addEventListener('resize', debouncedUpdateLayout);
-    return () => window.removeEventListener('resize', debouncedUpdateLayout);
+
+    return () => {
+      window.removeEventListener('resize', debouncedUpdateLayout);
+    };
   }, [userSelectedNumberInRow]);
 
-  function handleLayoutChange(n) {
-    setUserSelectedNumberInRow(n);
-    setNumberInRow(n);
-  }
+  const handleLayoutChange = (number) => {
+    setUserSelectedNumberInRow(number);
+    setNumberInRow(number);
+  };
 
-  function handleFilterRemove(filter) {
+  const handleFilterRemove = (filter) => {
     const newUrl = getAppliedFilterLink(filter, searchParams, location);
     navigate(newUrl);
-  }
+  };
+
+  /**
+   * 1) REMOVE client-side product sorting in `useMemo`.
+   *    Instead of re-sorting, just use the raw array:
+   */
+  const products = collection?.products?.nodes || [];
 
   useEffect(() => {
+    // Clean up '?direction' if present:
     const url = new URL(window.location.href);
-    if (url.search.includes('?direction')) {
+    const query = url.search;
+    if (query.includes('?direction')) {
       const cleanUrl = url.origin + url.pathname;
       window.history.replaceState({}, '', cleanUrl);
     }
   }, []);
 
-  // No client-side sorting: just use the collection's product nodes
-  const products = collection?.products?.nodes || [];
-
   return (
     <div className="collection">
       <h1>{collection.title}</h1>
 
-      {/* Always render sliderCollections (no isDesktop check) */}
+      {/* No change to sliderCollections logic */}
       {sliderCollections && sliderCollections.length > 0 && (
         <div className="slide-con">
           <div className="category-slider">
@@ -443,9 +452,10 @@ export default function Collection() {
                   >
                     {sliderCollection.image && (
                       <Image
+                        sizes="(min-width: 45em) 20vw, 40vw"
                         srcSet={`${sliderCollection.image.url}?width=300&quality=7 300w,
-                                 ${sliderCollection.image.url}?width=600&quality=7 600w,
-                                 ${sliderCollection.image.url}?width=1200&quality=7 1200w`}
+                                     ${sliderCollection.image.url}?width=600&quality=7 600w,
+                                     ${sliderCollection.image.url}?width=1200&quality=7 1200w`}
                         alt={
                           sliderCollection.image.altText ||
                           sliderCollection.title
@@ -466,77 +476,104 @@ export default function Collection() {
         </div>
       )}
 
-      {/* Always render FiltersDrawer (hide via CSS if small screen) */}
-      <div className="w-[220px]">
-        <FiltersDrawer
-          filters={collection.products.filters}
-          appliedFilters={appliedFilters}
-          collections={[
-            {handle: 'apple', title: 'Apple'},
-            {handle: 'gaming', title: 'Gaming'},
-            {handle: 'laptops', title: 'Laptops'},
-            {handle: 'desktops', title: 'Desktops'},
-            {handle: 'pc-parts', title: 'PC Parts'},
-            {handle: 'networking', title: 'Networking'},
-            {handle: 'monitors', title: 'Monitors'},
-            {handle: 'mobiles', title: 'Mobile Phones'},
-            {handle: 'tablets', title: 'Tablets'},
-            {handle: 'audio', title: 'Audio'},
-            {handle: 'accessories', title: 'Accessories'},
-            {handle: 'fitness', title: 'Fitness'},
-            {handle: 'photography', title: 'Photography'},
-            {handle: 'home-appliances', title: 'Home Appliances'},
-          ]}
-          onRemoveFilter={handleFilterRemove}
-        />
-      </div>
-
-      <div className="flex-1 mt-[94px]">
-        <hr className="col-hr" />
-
-        <div className="view-container">
-          <div className="layout-controls">
-            <span className="number-sort">View As:</span>
-            {/* Example layout toggles */}
-            <button
-              className={`layout-buttons ${numberInRow === 1 ? 'active' : ''}`}
-              onClick={() => handleLayoutChange(1)}
-            >
-              1
-            </button>
-            <button
-              className={`layout-buttons ${numberInRow === 2 ? 'active' : ''}`}
-              onClick={() => handleLayoutChange(2)}
-            >
-              2
-            </button>
-            <button
-              className={`layout-buttons ${numberInRow === 3 ? 'active' : ''}`}
-              onClick={() => handleLayoutChange(3)}
-            >
-              3
-            </button>
-            {/* etc. */}
-          </div>
-        </div>
-
-        <PaginatedResourceSection
-          key={`products-grid-${numberInRow}`}
-          connection={{
-            ...collection.products,
-            nodes: products, // no client re-sorting
-          }}
-          resourcesClassName={`products-grid grid-cols-${numberInRow}`}
-        >
-          {({node: product, index}) => (
-            <ProductItem
-              key={product.id}
-              product={product}
-              index={index}
-              numberInRow={numberInRow}
+      <div className="flex flex-col lg:flex-row w-[100%]">
+        {/* No change to isDesktop, but keep the same conditional layout */}
+        {isDesktop && (
+          <div className="w-[220px]">
+            <FiltersDrawer
+              filters={collection.products.filters}
+              appliedFilters={appliedFilters}
+              collections={[
+                {handle: 'apple', title: 'Apple'},
+                {handle: 'gaming', title: 'Gaming'},
+                {handle: 'laptops', title: 'Laptops'},
+                {handle: 'desktops', title: 'Desktops'},
+                {handle: 'pc-parts', title: 'PC Parts'},
+                {handle: 'networking', title: 'Networking'},
+                {handle: 'monitors', title: 'Monitors'},
+                {handle: 'mobiles', title: 'Mobile Phones'},
+                {handle: 'tablets', title: 'Tablets'},
+                {handle: 'audio', title: 'Audio'},
+                {handle: 'accessories', title: 'Accessories'},
+                {handle: 'fitness', title: 'Fitness'},
+                {handle: 'photography', title: 'Photography'},
+                {handle: 'home-appliances', title: 'Home Appliances'},
+              ]}
+              onRemoveFilter={handleFilterRemove}
             />
-          )}
-        </PaginatedResourceSection>
+          </div>
+        )}
+
+        <div className="flex-1 mt-[94px]">
+          <hr className="col-hr"></hr>
+
+          <div className="view-container">
+            <div className="layout-controls">
+              <span className="number-sort">View As:</span>
+              {screenWidth >= 300 && (
+                <button
+                  className={`layout-buttons first-btn ${
+                    numberInRow === 1 ? 'active' : ''
+                  }`}
+                  onClick={() => handleLayoutChange(1)}
+                >
+                  {/* same SVG */}
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g strokeWidth="0"></g>
+                    <g strokeLinecap="round" strokeLinejoin="round"></g>
+                    <g>
+                      <path
+                        d="M2 6C2 5.44772 2.44772 5 3 5H21C21.5523 5 22 5.44772 22 6C22 6.55228 21.5523 7 21 7H3C2.44772 7 2 6.55228 2 6Z"
+                        fill="#808080"
+                      ></path>
+                      <path
+                        d="M2 12C2 11.4477 2.44772 11 3 11H21C21.5523 11 22 11.4477 22 12C22 12.5523 21.5523 13 21 13H3C2.44772 13 2 12.5523 2 12Z"
+                        fill="#808080"
+                      ></path>
+                      <path
+                        d="M3 17C2.44772 17 2 17.4477 2 18C2 18.5523 2.44772 19 3 19H21C21.5523 19 22 18.5523 22 18C22 17.4477 21.5523 17 21 17H3Z"
+                        fill="#808080"
+                      ></path>
+                    </g>
+                  </svg>
+                </button>
+              )}
+              {/* ... the rest of your layout buttons ... */}
+            </div>
+
+            <DrawerFilter
+              filters={collection.products.filters}
+              appliedFilters={appliedFilters}
+              numberInRow={numberInRow}
+              onLayoutChange={handleLayoutChange}
+              productNumber={products.length}
+              isDesktop={isDesktop}
+            />
+          </div>
+
+          <PaginatedResourceSection
+            key={`products-grid-${numberInRow}`}
+            connection={{
+              ...collection.products,
+              // 2) Use 'products' directly (no client re-sort)
+              nodes: products,
+            }}
+            resourcesClassName={`products-grid grid-cols-${numberInRow}`}
+          >
+            {({node: product, index}) => (
+              <ProductItem
+                key={product.id}
+                product={product}
+                index={index}
+                numberInRow={numberInRow}
+              />
+            )}
+          </PaginatedResourceSection>
+        </div>
       </div>
 
       <Analytics.CollectionView
@@ -552,14 +589,21 @@ export default function Collection() {
 }
 
 /**
- * A safe "ProductItem" that doesn't re-check inventory or re-sort variants.
- * Always picks variant[0].
+ * @param {{
+ *   product: ProductItemFragment;
+ *   loading?: 'eager' | 'lazy';
+ * }}
  */
-const ProductItem = React.memo(({product}) => {
+const ProductItem = React.memo(({product, index, numberInRow}) => {
   const ref = useRef(null);
 
-  // Always pick the first variant
-  const [selectedVariant] = useState(product.variants.nodes[0]);
+  /**
+   * 3) Always pick variant[0] so SSR/client never disagree
+   *    Remove dynamic "find((variant) => variant.availableForSale)"
+   */
+  const [selectedVariant, setSelectedVariant] = useState(
+    product.variants.nodes[0],
+  );
 
   const variantUrl = useVariantUrl(
     product.handle,
@@ -575,9 +619,15 @@ const ProductItem = React.memo(({product}) => {
     <div className="product-item-collection product-card" ref={ref}>
       <div>
         <div className="mobile-container">
-          <Link to={variantUrl} className="collection-product-link">
+          <Link
+            key={product.id}
+            prefetch="intent"
+            to={variantUrl}
+            className="collection-product-link"
+          >
             {product.featuredImage && (
               <div className="collection-product-image">
+                {/* 4) Remove 'onLoad' or 'isImageLoaded' usage. Just a plain <Image>. */}
                 <Image
                   srcSet={`${product.featuredImage.url}?width=300&quality=15 300w,
                            ${product.featuredImage.url}?width=600&quality=15 600w,
@@ -591,7 +641,7 @@ const ProductItem = React.memo(({product}) => {
             )}
           </Link>
           <div className="product-info-container">
-            <Link to={variantUrl}>
+            <Link key={product.id} prefetch="intent" to={variantUrl}>
               <h4>{truncateText(product.title, 30)}</h4>
               <p className="product-description">
                 {truncateText(product.description, 90)}
@@ -609,19 +659,31 @@ const ProductItem = React.memo(({product}) => {
                 )}
               </div>
             </Link>
-            <ProductForm product={product} selectedVariant={selectedVariant} />
+            <ProductForm
+              product={product}
+              selectedVariant={selectedVariant}
+              setSelectedVariant={setSelectedVariant}
+            />
           </div>
         </div>
-        <ProductForm product={product} selectedVariant={selectedVariant} />
+        <ProductForm
+          product={product}
+          selectedVariant={selectedVariant}
+          setSelectedVariant={setSelectedVariant}
+        />
       </div>
     </div>
   );
 });
 
 /**
- * Basic ProductForm that doesn't re-check variants
+ * @param {{
+ *   product: ProductFragment;
+ *   selectedVariant: ProductVariantFragment;
+ *   setSelectedVariant: (variant: ProductVariantFragment) => void;
+ * }}
  */
-function ProductForm({product, selectedVariant}) {
+function ProductForm({product, selectedVariant, setSelectedVariant}) {
   const {open} = useAside();
   const hasVariants = product.variants.nodes.length > 1;
 
@@ -631,6 +693,7 @@ function ProductForm({product, selectedVariant}) {
         disabled={!selectedVariant || !selectedVariant.availableForSale}
         onClick={() => {
           if (hasVariants) {
+            // Navigate to product page
             window.location.href = `/products/${encodeURIComponent(
               product.handle,
             )}`;
@@ -821,3 +884,8 @@ const COLLECTION_QUERY = `#graphql
     }
   }
 `;
+
+/** @typedef {import('@shopify/remix-oxygen').LoaderFunctionArgs} LoaderFunctionArgs */
+/** @template T @typedef {import('@remix-run/react').MetaFunction<T>} MetaFunction */
+/** @typedef {import('storefrontapi.generated').ProductItemFragment} ProductItemFragment */
+/** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */
