@@ -1,5 +1,5 @@
 import {Link} from '@remix-run/react';
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 
 // Reusable Component for CollectionItem
 const CollectionItem = ({collection, index}) => {
