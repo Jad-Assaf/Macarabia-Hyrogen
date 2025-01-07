@@ -1079,13 +1079,26 @@ export const CollectionCircles = ({collections}) => {
   };
 
   return (
-    <div className="menu-slider-container">
+    <div className="menu-slider-container" style={{position: 'relative'}}>
       {/* Previous Button */}
-      <button className="circle-prev-button" onClick={() => scrollSlider(-600)}>
+      <button
+        className="circle-prev-button"
+        onClick={() => scrollSlider(-600)}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '0',
+          transform: 'translateY(-50%)',
+        }}
+      >
         <CustomLeftArrow />
       </button>
 
-      <div className="animated-menu-item" ref={sliderRef}>
+      <div
+        className="animated-menu-item"
+        ref={sliderRef}
+        style={{overflowX: 'auto', display: 'flex'}}
+      >
         {collections.map((collection, collectionIndex) => (
           <CollectionItem
             collection={collection}
@@ -1096,7 +1109,16 @@ export const CollectionCircles = ({collections}) => {
       </div>
 
       {/* Next Button */}
-      <button className="circle-next-button" onClick={() => scrollSlider(600)}>
+      <button
+        className="circle-next-button"
+        onClick={() => scrollSlider(600)}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          right: '0',
+          transform: 'translateY(-50%)',
+        }}
+      >
         <CustomRightArrow />
       </button>
     </div>

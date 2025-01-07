@@ -119,6 +119,7 @@ body {
 .menu-slider-container {
   min-height: 233px;
   max-height: 233px;
+  position: relative;
 }
 
 .menu-item-image-wrapper {
