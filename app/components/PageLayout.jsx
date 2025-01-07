@@ -1,4 +1,5 @@
 import {Await, Link} from '@remix-run/react';
+import ReactPixel from 'react-facebook-pixel';
 import {Suspense, useId} from 'react';
 import {Aside} from '~/components/Aside';
 import {Header, HeaderMenu} from '~/components/Header';
@@ -47,6 +48,19 @@ export function PageLayout({
   publicStoreDomain,
   footer, // Add footer as a prop
 }) {
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const options = {
+        autoConfig: true,
+        debug: false, // Enable debugging during development if needed
+      };
+
+      ReactPixel.init('321309553208857', {}, options); // Replace 'YOUR_PIXEL_ID' with the actual Pixel ID
+      ReactPixel.pageView(); // Tracks page view events
+    }
+  }, []);
+
   return (
     <Aside.Provider>
       <CartAside cart={cart} />
