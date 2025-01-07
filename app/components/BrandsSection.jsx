@@ -27,7 +27,7 @@ export default function BrandSection({brands}) {
         onClick={() => scrollGrid(-600)}
         style={{
           position: 'absolute',
-          top: '50%',
+          top: '60%',
           left: '0',
           transform: 'translateY(-50%)',
           zIndex: 10,
@@ -81,7 +81,7 @@ export default function BrandSection({brands}) {
         onClick={() => scrollGrid(600)}
         style={{
           position: 'absolute',
-          top: '50%',
+          top: '60%',
           right: '0',
           transform: 'translateY(-50%)',
           zIndex: 10,
