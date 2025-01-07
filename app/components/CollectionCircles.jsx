@@ -1069,7 +1069,6 @@ export const homeAppliancesMenu = [
   },
 ];
 
-// Reusable Mapping Function
 export const CollectionCircles = ({collections}) => {
   const sliderRef = useRef(null); // Reference for the slider container
 
@@ -1082,8 +1081,8 @@ export const CollectionCircles = ({collections}) => {
   return (
     <div className="menu-slider-container">
       {/* Previous Button */}
-      <button className="home-prev-button" onClick={() => scrollSlider(-600)}>
-        <LeftArrowIcon />
+      <button className="circle-prev-button" onClick={() => scrollSlider(-600)}>
+        <CustomLeftArrow />
       </button>
 
       <div className="animated-menu-item" ref={sliderRef}>
@@ -1097,15 +1096,15 @@ export const CollectionCircles = ({collections}) => {
       </div>
 
       {/* Next Button */}
-      <button className="home-next-button" onClick={() => scrollSlider(600)}>
-        <RightArrowIcon />
+      <button className="circle-next-button" onClick={() => scrollSlider(600)}>
+        <CustomRightArrow />
       </button>
     </div>
   );
 };
 
 // Arrow Icons
-const LeftArrowIcon = () => (
+const CustomLeftArrow = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -1119,7 +1118,7 @@ const LeftArrowIcon = () => (
   </svg>
 );
 
-const RightArrowIcon = () => (
+const CustomRightArrow = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -1132,4 +1131,3 @@ const RightArrowIcon = () => (
     <polyline points="9 18 15 12 9 6"></polyline>
   </svg>
 );
-
