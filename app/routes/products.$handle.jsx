@@ -442,33 +442,9 @@ export function ProductForm({
 
   // Possibly build a WhatsApp link
   const isProductPage = location.pathname.includes('/products/');
-  function generateWhatsAppLinkHydrogen(productTitle, locationPath) {
-    const phoneNumber = '9613963961';
-    const baseURL = 'https://macarabia.me';
-    const message = `Hi, I'd like to buy ${productTitle} ${baseURL}${locationPath}`;
-
-    // Encode the full message
-    const encodedMessage = encodeURI(message);
-
-    // Generate the WhatsApp link
-    const whatsappShareUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
-
-    return whatsappShareUrl;
-  }
-
-  // Example usage in Shopify Hydrogen
-  const product = {
-    title: 'Product Name®', // Example product title
-  };
-  const location = {
-    pathname: '/product-page', // Example location path
-  };
-
-  // Generate the WhatsApp share link
-  const whatsappShareUrl = generateWhatsAppLinkHydrogen(
-    product.title,
-    location.pathname,
-  );
+const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613963961&text=${encodeURIComponent(
+  `Hi, I'd like to buy ${product.title} https://macarabia.me${location.pathname}`,
+)}`;
 
   // WhatsApp SVG icon (if you still want the share button)
   const WhatsAppIcon = () => (
