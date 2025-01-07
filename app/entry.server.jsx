@@ -37,6 +37,14 @@ export default async function handleRequest(
       'https://monorail-edge.shopifysvc.com', // Allow Shopify service connections
       'https://connect.facebook.net', // Required for Meta Pixel
     ],
+    imgSrc: [
+      "'self'",
+      'data:',
+      // If you rely on data URIs or placeholders, keep 'data:'
+      'https://connect.facebook.net',
+      'https://www.facebook.com',
+      // Include any other image domains your site references
+    ],
   });
 
   const body = await renderToReadableStream(
