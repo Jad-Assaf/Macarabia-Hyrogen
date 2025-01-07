@@ -107,7 +107,6 @@
 }
 
 .menu-item-container {
-    margin: 0px 25px 0 0;
     scroll-snap-align: start;
     text-align: center;
     display: flex;

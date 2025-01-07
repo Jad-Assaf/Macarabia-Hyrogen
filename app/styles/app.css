@@ -110,6 +110,12 @@ body {
   display: flex;
 }
 
+.menu-slider-container .animated-menu-item{
+  width: 100%;
+  justify-content: space-evenly;
+  gap: 30px;
+}
+
 .menu-slider-container {
   min-height: 233px;
   max-height: 233px;

@@ -1071,17 +1071,65 @@ export const homeAppliancesMenu = [
 
 // Reusable Mapping Function
 export const CollectionCircles = ({collections}) => {
+  const sliderRef = useRef(null); // Reference for the slider container
+
+  const scrollSlider = (distance) => {
+    if (sliderRef.current) {
+      sliderRef.current.scrollBy({left: distance, behavior: 'smooth'});
+    }
+  };
+
   return (
     <div className="menu-slider-container">
-      <div className="animated-menu-item">
+      {/* Previous Button */}
+      <button className="home-prev-button" onClick={() => scrollSlider(-600)}>
+        <LeftArrowIcon />
+      </button>
+
+      <div className="animated-menu-item" ref={sliderRef}>
         {collections.map((collection, collectionIndex) => (
-            <CollectionItem
-              collection={collection}
-              index={collectionIndex}
-              key={collection.id}
-            />
+          <CollectionItem
+            collection={collection}
+            index={collectionIndex}
+            key={collection.id}
+          />
         ))}
       </div>
+
+      {/* Next Button */}
+      <button className="home-next-button" onClick={() => scrollSlider(600)}>
+        <RightArrowIcon />
+      </button>
     </div>
   );
 };
+
+// Arrow Icons
+const LeftArrowIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="15 18 9 12 15 6"></polyline>
+  </svg>
+);
+
+const RightArrowIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="9 18 15 12 9 6"></polyline>
+  </svg>
+);
+
