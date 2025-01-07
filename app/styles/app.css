@@ -85,7 +85,7 @@ body {
 } */
 
 .pb0 {
-  padding: 0;
+  padding: 0 !important;
 }
 
 .header-search svg {
@@ -1407,6 +1407,7 @@ li.cart-line .product-price {
     border-radius: 0 !important;
     background-color: #fff !important;
     border-left: none !important;
+    min-height: 46px;
   }
 
   .search-bar-submit {
