@@ -88,6 +88,11 @@ body {
   padding: 0;
 }
 
+.header-search svg {
+  width: 30px;
+  height: 30px;
+}
+
 .fade-in {
   opacity: 0;
   transition: opacity 0.5s ease;
