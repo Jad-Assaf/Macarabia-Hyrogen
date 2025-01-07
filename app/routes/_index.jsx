@@ -4,10 +4,8 @@ import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
-// REMOVED: import { CollectionDisplay } from '~/components/CollectionDisplay';
 import BrandSection from '~/components/BrandsSection';
 import {getSeoMeta} from '@shopify/hydrogen';
-import MenuItemsByHandle from '~/components/MenuItemsByHandle';
 import {
   CollectionCircles,
   accessoriesMenu,
@@ -177,8 +175,8 @@ export async function loader(args) {
     'gaming-laptops',
     'gaming-desktops',
     'console-games',
-    'acer-laptops',
-    'microsoft-surface-laptops',
+    'hp',
+    'lenovo',
     'microsoft-surface-accessories',
     'motherboards',
     'cpus',
@@ -187,7 +185,7 @@ export async function loader(args) {
     'wifi-routers',
     'wifi-range-extenders',
     'switches',
-    'apple-studio-display',
+    'msi-monitors',
     'aoc-monitors',
     'asus-monitors',
     'mobile-accessories',
@@ -477,13 +475,11 @@ export default function Homepage() {
       )}
 
       <CollectionCircles collections={laptopsMenu} />
-      {topProducts['acer-laptops'] && (
-        <TopProductSections collection={topProducts['acer-laptops']} />
+      {topProducts['hp'] && (
+        <TopProductSections collection={topProducts['hp']} />
       )}
-      {topProducts['microsoft-surface-laptops'] && (
-        <TopProductSections
-          collection={topProducts['microsoft-surface-laptops']}
-        />
+      {topProducts['lenovo'] && (
+        <TopProductSections collection={topProducts['lenovo']} />
       )}
       {topProducts['microsoft-surface-accessories'] && (
         <TopProductSections
@@ -517,8 +513,8 @@ export default function Homepage() {
       )} */}
 
       <CollectionCircles collections={monitorsMenu} />
-      {topProducts['apple-studio-display'] && (
-        <TopProductSections collection={topProducts['apple-studio-display']} />
+      {topProducts['msi-monitors'] && (
+        <TopProductSections collection={topProducts['msi-monitors']} />
       )}
       {topProducts['aoc-monitors'] && (
         <TopProductSections collection={topProducts['aoc-monitors']} />

@@ -49,11 +49,20 @@ export const appleMenu = [
   {
     id: 2,
     image: {
-      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/7c17e4425faa3ae0ea7a8989849774d8.jpg?v=1714656980',
-      altText: 'Apple Macbooks',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Apple-MacBook-Air.jpg?v=1714657225',
+      altText: 'Apple Macbook Air',
     },
     title: 'Apple Macbook',
-    url: '/collections/apple-macbook',
+    url: '/collections/apple-macbook-air',
+  },
+  {
+    id: 8,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Apple-MacBook-Pro.jpg?v=1714657223',
+      altText: 'Apple Macbooks Pro',
+    },
+    title: 'Apple Macbook Pro',
+    url: '/collections/apple-macbook-pro',
   },
   {
     id: 3,
@@ -139,6 +148,15 @@ export const gamingMenu = [
     },
     title: 'Gaming Console',
     url: '/collections/gaming-consoles',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Handhled-Gaming-Consoles-Collection.jpg?v=1714657197',
+      altText: 'Handheld Consoles',
+    },
+    title: 'Handheld Consoles',
+    url: '/collections/handheld-consoles',
   },
   {
     id: 5,
