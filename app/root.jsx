@@ -143,14 +143,6 @@ export function Layout({ children }) {
   const [nprogress, setNProgress] = useState(null); // Store NProgress instance
   const clarityId = 'pfyepst8v5'; // Replace with your Clarity project ID
 
-  const options = {
-    autoConfig: true, // Set to false if you want to configure manually
-    debug: false, // Enable for debugging Pixel events
-  };
-
-  ReactPixel.init('<321309553208857>', {}, options); // Replace <YOUR_PIXEL_ID> with your actual Pixel ID
-  ReactPixel.pageView(); 
-
   useEffect(() => {
     // Load NProgress once and set it in the state
     const loadNProgress = async () => {
