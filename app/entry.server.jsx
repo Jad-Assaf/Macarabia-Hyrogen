@@ -40,10 +40,16 @@ export default async function handleRequest(
     imgSrc: [
       "'self'",
       'data:',
-      // If you rely on data URIs or placeholders, keep 'data:'
-      'https://connect.facebook.net',
-      'https://www.facebook.com',
-      // Include any other image domains your site references
+      'blob:',
+      // Shopify CDN or subdomains
+      'https://cdn.shopify.com',
+      'https://cdn.shopifycdn.com',
+      'https://*.shopifycdn.com',
+      // If you're using `https://macarabia.me/` for images:
+      'https://macarabia.me',
+      // If some scripts or third-party have images from other domains, add them as well
+      'https://www.facebook.com', // if you need the FB Pixel 1x1
+      // etc.
     ],
   });
 
