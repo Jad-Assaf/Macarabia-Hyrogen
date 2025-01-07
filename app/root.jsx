@@ -1,5 +1,5 @@
-import { useNonce, getShopAnalytics, Analytics } from '@shopify/hydrogen';
-import { defer } from '@shopify/remix-oxygen';
+import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
+import {defer} from '@shopify/remix-oxygen';
 import {
   Links,
   Meta,
@@ -16,9 +16,9 @@ import favicon from '~/assets/macarabia-favicon-black_32x32.jpg';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import tailwindCss from './styles/tailwind.css?url';
-import { PageLayout } from '~/components/PageLayout';
-import { FOOTER_QUERY, HEADER_QUERY } from '~/lib/fragments';
-import { useEffect, useState } from 'react';
+import {PageLayout} from '~/components/PageLayout';
+import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import {useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
 
 /**
@@ -38,12 +38,12 @@ export const shouldRevalidate = ({
 
 export function links() {
   return [
-    { rel: 'stylesheet', href: appStyles },
-    { rel: 'stylesheet', href: resetStyles },
-    { rel: 'stylesheet', href: tailwindCss },
-    { rel: 'preconnect', href: 'https://cdn.shopify.com' },
-    { rel: 'preconnect', href: 'https://shop.app' },
-    { rel: 'icon', type: 'image/svg+xml', href: favicon },
+    {rel: 'stylesheet', href: appStyles},
+    {rel: 'stylesheet', href: resetStyles},
+    {rel: 'stylesheet', href: tailwindCss},
+    {rel: 'preconnect', href: 'https://cdn.shopify.com'},
+    {rel: 'preconnect', href: 'https://shop.app'},
+    {rel: 'icon', type: 'image/svg+xml', href: favicon},
   ];
 }
 
@@ -54,7 +54,7 @@ export async function loader(args) {
   try {
     const deferredData = await loadDeferredData(args);
     const criticalData = await loadCriticalData(args);
-    const { storefront, env } = args.context;
+    const {storefront, env} = args.context;
 
     return defer({
       ...deferredData,
@@ -74,7 +74,7 @@ export async function loader(args) {
     });
   } catch (error) {
     console.error('Loader error:', error);
-    throw new Response('Failed to load data', { status: 500 });
+    throw new Response('Failed to load data', {status: 500});
   }
 }
 
@@ -90,13 +90,13 @@ const processMenuItems = (items) => {
   }));
 };
 
-async function loadCriticalData({ context }) {
-  const { storefront } = context;
+async function loadCriticalData({context}) {
+  const {storefront} = context;
 
   try {
     // Fetch header data using the HEADER_QUERY
     const header = await storefront.query(HEADER_QUERY, {
-      variables: { headerMenuHandle: 'main-menu' },
+      variables: {headerMenuHandle: 'main-menu'},
     });
 
     // Process nested menus to extract images
@@ -104,22 +104,22 @@ async function loadCriticalData({ context }) {
       header.menu.items = processMenuItems(header.menu.items);
     }
 
-    return { header };
+    return {header};
   } catch (error) {
-    return { header: null }; // Fallback in case of error
+    return {header: null}; // Fallback in case of error
   }
 }
 
 /**
  * Load data for rendering content below the fold.
  */
-function loadDeferredData({ context }) {
-  const { storefront, customerAccount, cart } = context;
+function loadDeferredData({context}) {
+  const {storefront, customerAccount, cart} = context;
 
   const footer = storefront
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
-      variables: { footerMenuHandle: 'footer-menu' },
+      variables: {footerMenuHandle: 'footer-menu'},
     })
     .catch((error) => {
       console.error(error);
@@ -136,7 +136,7 @@ function loadDeferredData({ context }) {
 /**
  * Layout component for the application.
  */
-export function Layout({ children }) {
+export function Layout({children}) {
   const nonce = useNonce();
   const data = useRouteLoaderData('root');
   const navigation = useNavigation();
@@ -146,9 +146,9 @@ export function Layout({ children }) {
   useEffect(() => {
     // Load NProgress once and set it in the state
     const loadNProgress = async () => {
-      const { default: NProgress } = await import('nprogress');
+      const {default: NProgress} = await import('nprogress');
       await import('nprogress/nprogress.css');
-      NProgress.configure({ showSpinner: true });
+      NProgress.configure({showSpinner: true});
       setNProgress(NProgress); // Set NProgress once it's loaded
     };
 
@@ -169,7 +169,7 @@ export function Layout({ children }) {
         nprogress.done();
       }
     };
-  }, [navigation.state, nprogress]); 
+  }, [navigation.state, nprogress]);
 
   return (
     <html lang="en">
@@ -179,19 +179,20 @@ export function Layout({ children }) {
         <Meta />
         <Links />
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '321309553208857');
-              fbq('track', 'PageView');
-            `,
+                __html: `
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '321309553208857');
+            fbq('track', 'PageView');
+          `,
           }}
         />
       </head>
@@ -247,11 +248,11 @@ export function ErrorBoundary() {
   });
 
   return (
-          <div className="error-container">
-            <h1>Error</h1>
-            <h2>Status: {errorStatus}</h2>
-            <p>{errorMessage}</p>
-          </div>
+    <div className="error-container">
+      <h1>Error</h1>
+      <h2>Status: {errorStatus}</h2>
+      <p>{errorMessage}</p>
+    </div>
   );
 }
 
