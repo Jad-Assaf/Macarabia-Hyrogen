@@ -134,6 +134,11 @@ function loadDeferredData({ context }) {
   };
 }
 
+const options = {
+  autoConfig: true, // Set to false if you want to configure manually
+  debug: false, // Enable for debugging Pixel events
+};
+
 /**
  * Layout component for the application.
  */
@@ -144,20 +149,20 @@ export function Layout({ children }) {
   const [nprogress, setNProgress] = useState(null); // Store NProgress instance
   const clarityId = 'pfyepst8v5'; // Replace with your Clarity project ID
 
-  const options = {
-    autoConfig: true, // Set to false if you want to configure manually
-    debug: false, // Enable for debugging Pixel events
-  };
-
-  ReactPixel.init('<321309553208857>', {}, options); // Replace <YOUR_PIXEL_ID> with your actual Pixel ID
-  ReactPixel.pageView(); 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Initialize Facebook Pixel
+      ReactPixel.init('<321309553208857>', {}, options); // Replace <YOUR_PIXEL_ID> with your actual Pixel ID
+      ReactPixel.pageView(); // Track the initial page view
+    }
+  }, []); // Run only once on client-side mount
 
   useEffect(() => {
     // Load NProgress once and set it in the state
     const loadNProgress = async () => {
-      const { default: NProgress } = await import('nprogress');
+      const {default: NProgress} = await import('nprogress');
       await import('nprogress/nprogress.css');
-      NProgress.configure({ showSpinner: true });
+      NProgress.configure({showSpinner: true});
       setNProgress(NProgress); // Set NProgress once it's loaded
     };
 
@@ -178,7 +183,7 @@ export function Layout({ children }) {
         nprogress.done();
       }
     };
-  }, [navigation.state, nprogress]); 
+  }, [navigation.state, nprogress]);
 
   return (
     <html lang="en">
@@ -189,9 +194,7 @@ export function Layout({ children }) {
         <Links />
       </head>
       <body>
-        <ClarityTracker
-          clarityId={clarityId}
-        />
+        <ClarityTracker clarityId={clarityId} />
         {data ? (
           <Analytics.Provider
             cart={data.cart}
