@@ -1075,9 +1075,11 @@ export const CollectionCircles = ({collections}) => {
     <div className="menu-slider-container">
       <div className="animated-menu-item">
         {collections.map((collection, collectionIndex) => (
-          <div className="animated-menu-item" key={collection.id}>
-            <CollectionItem collection={collection} index={collectionIndex} />
-          </div>
+            <CollectionItem
+              collection={collection}
+              index={collectionIndex}
+              key={collection.id}
+            />
         ))}
       </div>
     </div>
