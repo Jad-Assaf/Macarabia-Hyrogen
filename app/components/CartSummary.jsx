@@ -30,15 +30,26 @@ export function CartSummary({cart, layout}) {
 /**
  * @param {{checkoutUrl?: string}}
  */
-function CartCheckoutActions({checkoutUrl}) {
-  if (!checkoutUrl) return null;
+export default function CartCheckoutActions({checkoutUrl, cartTotal}) {
+  if (!checkoutUrl) {
+    return null;
+  }
 
+  // If the cart total exceeds $5000, show a "contact sales" message
+  if (cartTotal > 5000) {
+    return (
+      <div className="cart-checkout-container">
+        <p>Your order is above $5000. Please contact sales to proceed.</p>
+      </div>
+    );
+  }
+
+  // Otherwise, display the normal checkout button
   return (
-    <div className='cart-checkout-container'>
-      <a href={checkoutUrl} target="_self" className='cart-checkout-button'>
+    <div className="cart-checkout-container">
+      <a href={checkoutUrl} target="_self" className="cart-checkout-button">
         <p>Continue to Checkout &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &rarr;</p>
       </a>
-      <br />
     </div>
   );
 }
