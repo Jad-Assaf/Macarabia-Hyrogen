@@ -1,5 +1,5 @@
 import {CartForm, Money} from '@shopify/hydrogen';
-import {useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 /**
  * @param {CartSummaryProps}
