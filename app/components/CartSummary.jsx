@@ -77,7 +77,11 @@ export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
         <div className="alert-box">
           <span className="alert-icon">&times;</span>
           <span className="alert-message">
-            Your order is above $5000. Please contact sales to proceed.
+            We apologize for any inconvenice! Your order is above $5000. Please
+            contact sales to proceed.
+            <br>
+              <a href="https://wa.me/9613020030">+961 3 020 030</a>
+            </br>
           </span>
         </div>
       )}
