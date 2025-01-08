@@ -8,7 +8,6 @@ export function CartSummary({cart, layout}) {
   const className =
     layout === 'page' ? 'cart-summary-page' : 'cart-summary-aside';
 
-  // Safely parse the subtotal
   const subtotal = parseFloat(cart?.cost?.subtotalAmount?.amount ?? '0');
 
   return (
@@ -20,7 +19,7 @@ export function CartSummary({cart, layout}) {
         <dd>
           {cart.cost?.subtotalAmount?.amount ? (
             <Money
-              data={cart.cost?.subtotalAmount}
+              data={cart.cost.subtotalAmount}
               style={{fontWeight: '500'}}
             />
           ) : (
@@ -41,38 +40,42 @@ export function CartSummary({cart, layout}) {
  * @param {{checkoutUrl?: string}}
  */
 export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
-  // Track alert visibility
   const [showAlert, setShowAlert] = useState(false);
 
-  // Automatically hide the alert if cartTotal falls below $5000
+  // Automatically hide the alert if the cart drops below $5000
   useEffect(() => {
     if (cartTotal < 5000 && showAlert) {
       setShowAlert(false);
     }
   }, [cartTotal, showAlert]);
 
-  // Handle checkout click
-  const handleCheckoutClick = (event) => {
+  // Handle the button click
+  const handleButtonClick = () => {
     if (cartTotal > 5000) {
-      event.preventDefault();
-      setShowAlert(true); // Show the alert box
+      // Show the alert
+      setShowAlert(true);
+    } else {
+      // Redirect to checkout
+      window.location.href = checkoutUrl;
     }
   };
 
-  // If no checkout URL, just don’t render anything
+  // If we don't have a valid checkout URL, don't render anything
   if (!checkoutUrl) return null;
 
   return (
     <div className="cart-checkout-container">
-      <a
-        href={checkoutUrl}
-        className={`cart-checkout-button ${cartTotal > 5000 ? 'disabled' : ''}`}
-        onClick={handleCheckoutClick}
+      {/* The button is disabled if the total is above $5000 */}
+      <button
+        type="button"
+        className="cart-checkout-button"
+        onClick={handleButtonClick}
+        disabled={cartTotal > 5000}
       >
-        Continue to Checkout &rarr;
-      </a>
+        Continue to Checkout &nbsp; &rarr;
+      </button>
 
-      {/* Alert box that appears when subtotal > 5000 */}
+      {/* Alert if cartTotal > $5000 */}
       {showAlert && (
         <div className="alert-box">
           <span className="alert-icon">&times;</span>
