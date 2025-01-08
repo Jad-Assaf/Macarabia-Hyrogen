@@ -8,17 +8,19 @@ export function CartSummary({cart, layout}) {
   const className =
     layout === 'page' ? 'cart-summary-page' : 'cart-summary-aside';
 
-  // Safely parse the subtotal (defaulting to 0 if not available)
+  // Convert subtotal to a number (defaulting to 0 if not available)
   const subtotal = parseFloat(cart?.cost?.subtotalAmount?.amount ?? '0');
 
   return (
     <div aria-labelledby="cart-summary" className={className}>
-      <h4><strong>Subtotal</strong></h4>
+      <h4>
+        <strong>Subtotal</strong>
+      </h4>
       <dl className="cart-subtotal">
         <dd>
-          {cart.cost?.subtotalAmount?.amount ? (
+          {cart?.cost?.subtotalAmount?.amount ? (
             <Money
-              data={cart.cost?.subtotalAmount}
+              data={cart.cost.subtotalAmount}
               style={{fontWeight: '500'}}
             />
           ) : (
@@ -39,13 +41,22 @@ export function CartSummary({cart, layout}) {
  * @param {{checkoutUrl?: string}}
  */
 export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
-  const [showMessage, setShowMessage] = useState(false);
+  // Local state to track whether we show the popup
+  const [showPopup, setShowPopup] = useState(false);
 
+  // Hide the popup automatically if the subtotal goes below $5000
+  useEffect(() => {
+    if (cartTotal < 5000 && showPopup) {
+      setShowPopup(false);
+    }
+  }, [cartTotal, showPopup]);
+
+  // Handle the button click
   const handleCheckoutClick = (event) => {
     if (cartTotal > 5000) {
-      // Prevent navigation and show the message
+      // Prevent navigation and show the popup
       event.preventDefault();
-      setShowMessage(true);
+      setShowPopup(true);
     }
   };
 
@@ -53,14 +64,20 @@ export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
     <div className="cart-checkout-container">
       <a
         href={checkoutUrl}
+        target="_self"
         className={`cart-checkout-button ${cartTotal > 5000 ? 'disabled' : ''}`}
         onClick={handleCheckoutClick}
       >
-        <p>Continue to Checkout &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &rarr;</p>
+        <p>Continue to Checkout &nbsp; &rarr;</p>
       </a>
 
-      {showMessage && (
-        <p>Your order is above $5000. Please contact sales to proceed.</p>
+      {/* Simple popup/modal overlay */}
+      {showPopup && (
+        <div className="popup-overlay">
+          <div className="popup-content">
+            <p>Your order is above $5000. Please contact sales to proceed.</p>
+          </div>
+        </div>
       )}
     </div>
   );
