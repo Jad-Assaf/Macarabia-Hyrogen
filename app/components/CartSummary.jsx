@@ -8,48 +8,60 @@ export function CartSummary({cart, layout}) {
   const className =
     layout === 'page' ? 'cart-summary-page' : 'cart-summary-aside';
 
+  // Safely parse the subtotal (defaulting to 0 if not available)
+  const subtotal = parseFloat(cart?.cost?.subtotalAmount?.amount ?? '0');
+
   return (
     <div aria-labelledby="cart-summary" className={className}>
       <h4><strong>Subtotal</strong></h4>
       <dl className="cart-subtotal">
-        {/* <dt>Subtotal</dt> */}
         <dd>
           {cart.cost?.subtotalAmount?.amount ? (
-            <Money data={cart.cost?.subtotalAmount} style={{fontWeight: '500'}}/>
+            <Money
+              data={cart.cost?.subtotalAmount}
+              style={{fontWeight: '500'}}
+            />
           ) : (
             '-'
           )}
         </dd>
       </dl>
-      {/* <CartDiscounts discountCodes={cart.discountCodes} /> */}
-      {/* <CartGiftCard giftCardCodes={cart.appliedGiftCards} /> */}
-      <CartCheckoutActions checkoutUrl={cart.checkoutUrl} />
+
+      <CartCheckoutActions
+        checkoutUrl={cart.checkoutUrl}
+        cartTotal={subtotal}
+      />
     </div>
   );
 }
+
 /**
  * @param {{checkoutUrl?: string}}
  */
-export default function CartCheckoutActions({checkoutUrl, cartTotal}) {
-  if (!checkoutUrl) {
-    return null;
-  }
+export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
+  const [showMessage, setShowMessage] = useState(false);
 
-  // If the cart total exceeds $5000, show a "contact sales" message
-  if (cartTotal > 5000) {
-    return (
-      <div className="cart-checkout-container">
-        <p>Your order is above $5000. Please contact sales to proceed.</p>
-      </div>
-    );
-  }
+  const handleCheckoutClick = (event) => {
+    if (cartTotal > 5000) {
+      // Prevent navigation and show the message
+      event.preventDefault();
+      setShowMessage(true);
+    }
+  };
 
-  // Otherwise, display the normal checkout button
   return (
     <div className="cart-checkout-container">
-      <a href={checkoutUrl} target="_self" className="cart-checkout-button">
+      <a
+        href={checkoutUrl}
+        className={`cart-checkout-button ${cartTotal > 5000 ? 'disabled' : ''}`}
+        onClick={handleCheckoutClick}
+      >
         <p>Continue to Checkout &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &rarr;</p>
       </a>
+
+      {showMessage && (
+        <p>Your order is above $5000. Please contact sales to proceed.</p>
+      )}
     </div>
   );
 }

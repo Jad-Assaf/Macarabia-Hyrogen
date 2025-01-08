@@ -185,6 +185,11 @@ body {
   display: none;
 }
 
+.cart-checkout-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .circle-prev-button,
 .circle-next-button {
   background-color: #232323;
