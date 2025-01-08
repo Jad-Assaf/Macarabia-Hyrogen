@@ -110,7 +110,7 @@ body {
   display: flex;
 }
 
-.menu-slider-container .animated-menu-item{
+.menu-slider-container .animated-menu-item {
   width: 100%;
   justify-content: space-evenly;
   gap: 30px;
@@ -212,6 +212,10 @@ body {
 .alert-message {
   font-size: 12px;
   line-height: 1.4;
+}
+
+.cart-err-msg-link {
+  text-decoration: underline;
 }
 
 .circle-prev-button,

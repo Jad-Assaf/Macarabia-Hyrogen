@@ -78,9 +78,7 @@ export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
           <span className="alert-icon">&times;</span>
           <span className="alert-message">
             We apologize for any inconvenice! Your order is above $5000. Please
-            contact sales to proceed.
-            <br />
-              <a href="https://wa.me/9613020030">+961 3 020 030</a>
+            contact sales to proceed. <a className='cart-err-msg-link' href="https://wa.me/9613020030">+961 3 020 030</a>
           </span>
         </div>
       )}
