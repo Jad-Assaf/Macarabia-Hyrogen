@@ -185,31 +185,35 @@ body {
   display: none;
 }
 
+/* Make the button appear disabled when cartTotal > 5000 */
 .cart-checkout-button.disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
-/* Popup overlay that covers the screen */
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
+/* Alert box styling (similar to your screenshot) */
+.alert-box {
+  margin-top: 1rem;
+  padding: 12px 16px;
+  background-color: #c0392b;
+  /* A red background */
+  color: #fff;
+  border-radius: 4px;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
 }
 
-/* Popup content styling */
-.popup-content {
-  background: #fff;
-  padding: 2em;
-  border-radius: 6px;
-  max-width: 500px;
-  text-align: center;
+/* The "×" icon on the left */
+.alert-icon {
+  font-weight: bold;
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+/* The main message text */
+.alert-message {
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .circle-prev-button,

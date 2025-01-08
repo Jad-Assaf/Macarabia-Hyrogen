@@ -8,7 +8,7 @@ export function CartSummary({cart, layout}) {
   const className =
     layout === 'page' ? 'cart-summary-page' : 'cart-summary-aside';
 
-  // Convert subtotal to a number (defaulting to 0 if not available)
+  // Safely parse the subtotal
   const subtotal = parseFloat(cart?.cost?.subtotalAmount?.amount ?? '0');
 
   return (
@@ -18,9 +18,9 @@ export function CartSummary({cart, layout}) {
       </h4>
       <dl className="cart-subtotal">
         <dd>
-          {cart?.cost?.subtotalAmount?.amount ? (
+          {cart.cost?.subtotalAmount?.amount ? (
             <Money
-              data={cart.cost.subtotalAmount}
+              data={cart.cost?.subtotalAmount}
               style={{fontWeight: '500'}}
             />
           ) : (
@@ -41,42 +41,44 @@ export function CartSummary({cart, layout}) {
  * @param {{checkoutUrl?: string}}
  */
 export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
-  // Local state to track whether we show the popup
-  const [showPopup, setShowPopup] = useState(false);
+  // Track alert visibility
+  const [showAlert, setShowAlert] = useState(false);
 
-  // Hide the popup automatically if the subtotal goes below $5000
+  // Automatically hide the alert if cartTotal falls below $5000
   useEffect(() => {
-    if (cartTotal < 5000 && showPopup) {
-      setShowPopup(false);
+    if (cartTotal < 5000 && showAlert) {
+      setShowAlert(false);
     }
-  }, [cartTotal, showPopup]);
+  }, [cartTotal, showAlert]);
 
-  // Handle the button click
+  // Handle checkout click
   const handleCheckoutClick = (event) => {
     if (cartTotal > 5000) {
-      // Prevent navigation and show the popup
       event.preventDefault();
-      setShowPopup(true);
+      setShowAlert(true); // Show the alert box
     }
   };
+
+  // If no checkout URL, just don’t render anything
+  if (!checkoutUrl) return null;
 
   return (
     <div className="cart-checkout-container">
       <a
         href={checkoutUrl}
-        target="_self"
         className={`cart-checkout-button ${cartTotal > 5000 ? 'disabled' : ''}`}
         onClick={handleCheckoutClick}
       >
-        <p>Continue to Checkout &nbsp; &rarr;</p>
+        Continue to Checkout &rarr;
       </a>
 
-      {/* Simple popup/modal overlay */}
-      {showPopup && (
-        <div className="popup-overlay">
-          <div className="popup-content">
-            <p>Your order is above $5000. Please contact sales to proceed.</p>
-          </div>
+      {/* Alert box that appears when subtotal > 5000 */}
+      {showAlert && (
+        <div className="alert-box">
+          <span className="alert-icon">&times;</span>
+          <span className="alert-message">
+            Your order is above $5000. Please contact sales to proceed.
+          </span>
         </div>
       )}
     </div>
