@@ -42,40 +42,37 @@ export function CartSummary({cart, layout}) {
 export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
   const [showAlert, setShowAlert] = useState(false);
 
-  // Automatically hide the alert if the cart drops below $5000
+  // Hide the alert if the subtotal drops below $5000
   useEffect(() => {
     if (cartTotal < 5000 && showAlert) {
       setShowAlert(false);
     }
   }, [cartTotal, showAlert]);
 
-  // Handle the button click
   const handleButtonClick = () => {
     if (cartTotal > 5000) {
-      // Show the alert
+      // Prevent navigation, show alert
       setShowAlert(true);
     } else {
-      // Redirect to checkout
+      // Navigate to checkout
       window.location.href = checkoutUrl;
     }
   };
 
-  // If we don't have a valid checkout URL, don't render anything
   if (!checkoutUrl) return null;
 
   return (
     <div className="cart-checkout-container">
-      {/* The button is disabled if the total is above $5000 */}
       <button
         type="button"
-        className="cart-checkout-button"
+        className={`cart-checkout-button ${
+          cartTotal > 5000 ? 'disabled-look' : ''
+        }`}
         onClick={handleButtonClick}
-        disabled={cartTotal > 5000}
       >
         Continue to Checkout &nbsp; &rarr;
       </button>
 
-      {/* Alert if cartTotal > $5000 */}
       {showAlert && (
         <div className="alert-box">
           <span className="alert-icon">&times;</span>

@@ -185,12 +185,13 @@ body {
   display: none;
 }
 
-.cart-checkout-button[disabled] {
-  cursor: not-allowed;
+/* Dim/disable look (no actual 'disabled' attr so click can fire) */
+.disabled-look {
   opacity: 0.6;
+  cursor: not-allowed;
 }
 
-/* Alert box styling */
+/* Alert box styling (red box with '×') */
 .alert-box {
   margin-top: 1rem;
   padding: 12px 16px;
