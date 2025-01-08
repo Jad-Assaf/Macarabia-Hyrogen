@@ -196,7 +196,7 @@ body {
   margin-top: 1rem;
   padding: 12px 16px;
   background-color: #c0392b;
-  /* A red background */
+  position: absolute;
   color: #fff;
   border-radius: 4px;
   display: inline-flex;
