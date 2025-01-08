@@ -30,26 +30,12 @@ export function CartSummary({cart, layout}) {
 /**
  * @param {{checkoutUrl?: string}}
  */
-function CartCheckoutActions({checkoutUrl, cartTotal}) {
+function CartCheckoutActions({checkoutUrl}) {
   if (!checkoutUrl) return null;
 
-  const handleCheckoutClick = (e) => {
-    if (cartTotal > 5000) {
-      e.preventDefault(); // Prevent the default redirect
-      alert(
-        'Your order exceeds $5000. Please contact sales for further assistance.',
-      );
-    }
-  };
-
   return (
-    <div className="cart-checkout-container">
-      <a
-        href={checkoutUrl}
-        target="_self"
-        className="cart-checkout-button"
-        onClick={handleCheckoutClick}
-      >
+    <div className='cart-checkout-container'>
+      <a href={checkoutUrl} target="_self" className='cart-checkout-button'>
         <p>Continue to Checkout &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &rarr;</p>
       </a>
       <br />
