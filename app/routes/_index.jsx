@@ -433,7 +433,7 @@ export default function Homepage() {
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
       {topProducts['new-arrivals'] && (
-        <TopProductSections collection={'new-arrivals'} />
+        <TopProductSections collection={topProducts['new-arrivals']} />
       )}
 
       <CollectionCircles collections={appleMenu} />
