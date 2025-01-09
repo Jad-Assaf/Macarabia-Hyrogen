@@ -105,11 +105,19 @@ export function ProductItem({product, index}) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isSoldOut, setIsSoldOut] = useState(false); // State to track sold-out status
   const slideshowInterval = 3000; // Time for each slide
 
   const images = product.images?.nodes || [];
 
-  // Handle image click to switch images
+  useEffect(() => {
+    // Check if the product is sold out
+    const soldOut = !product.variants?.nodes?.some(
+      (variant) => variant.availableForSale,
+    );
+    setIsSoldOut(soldOut); // Update the state
+  }, [product]);
+
   const handleImageClick = (e) => {
     e.preventDefault(); // Prevent the link from being triggered
     setCurrentImageIndex((prevIndex) =>
@@ -167,6 +175,13 @@ export function ProductItem({product, index}) {
       <Link to={`/products/${encodeURIComponent(product.handle)}`}>
         {images.length > 0 && (
           <div className="product-slideshow" style={styles.slideshow}>
+            {/* Sold-out banner */}
+            <div
+              className="sold-out-ban"
+              style={{display: isSoldOut ? 'block' : 'none'}} // Conditional display
+            >
+              <p>Sold Out</p>
+            </div>
             <img
               src={images[currentImageIndex]?.url}
               alt={images[currentImageIndex]?.altText || 'Product Image'}

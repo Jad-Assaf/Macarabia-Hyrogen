@@ -1518,6 +1518,17 @@ li.cart-line .product-price {
   z-index: 10;
 }
 
+.sold-out-ban {
+  display: none;
+  position: absolute;
+  background-color: #cccccc;
+  color: #fff;
+  width: 50%;
+  left: -11%;
+  transform: rotate(-45deg);
+  top: 8%;
+}
+
 .clear-search-button svg{
   width: 12px;
   height: 12px;
