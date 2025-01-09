@@ -59,7 +59,7 @@ export async function loader(args) {
     return defer({
       ...deferredData,
       ...criticalData,
-      publicStoreDomain: 'macarabia.me',
+      publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
       shop: getShopAnalytics({
         storefront,
         publicStorefrontId: env.PUBLIC_STOREFRONT_ID,

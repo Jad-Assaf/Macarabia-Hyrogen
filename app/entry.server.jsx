@@ -19,13 +19,12 @@ export default async function handleRequest(
 ) {
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
-      checkoutDomain: 'macarabia.me',
-      storeDomain: 'macarabia.me',
+      checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
+      storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
     // Add your custom script sources here
     scriptSrc: [
       "'self'", // Allow scripts from the same origin
-      'https://macarabia.me',
       'https://www.clarity.ms', // Allow scripts from clarity.ms
       'https://*.clarity.ms', // Allow scripts from clarity.ms
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
@@ -33,7 +32,6 @@ export default async function handleRequest(
     ],
     connectSrc: [
       "'self'", // Allow connections to the same origin
-      'https://macarabia.me',
       'https://x.clarity.ms', // Allow connections to Clarity
       'https://*.clarity.ms', // Allow connections to any subdomain of clarity.ms
       'https://monorail-edge.shopifysvc.com', // Allow Shopify service connections
@@ -43,13 +41,10 @@ export default async function handleRequest(
       "'self'",
       'data:',
       'blob:',
-      // Shopify CDN or subdomains
       'https://cdn.shopify.com',
       'https://cdn.shopifycdn.com',
       'https://*.shopifycdn.com',
-      // If you're using `https://macarabia.me/` for images:
       'https://macarabia.me',
-      // If some scripts or third-party have images from other domains, add them as well
       'https://www.facebook.com', // if you need the FB Pixel 1x1
       // etc.
     ],
