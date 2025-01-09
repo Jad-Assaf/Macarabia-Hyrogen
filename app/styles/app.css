@@ -1508,7 +1508,7 @@ li.cart-line .product-price {
 /* Ensure visibility on all devices */
 .clear-search-button {
   position: absolute;
-  right: 15%;
+  right: 10%;
   background: none;
   border: none;
   font-size: 16px;
@@ -1516,6 +1516,11 @@ li.cart-line .product-price {
   fill: #000;
   cursor: pointer;
   z-index: 10;
+}
+
+.clear-search-button svg{
+  width: 12px;
+  height: 12px;
 }
 
 .clear-search-button:hover {
