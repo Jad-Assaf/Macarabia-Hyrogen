@@ -429,7 +429,7 @@ button {
 .grid-cols-3 .product-card,
 .grid-cols-4 .product-card,
 .grid-cols-5 .product-card {
-  min-height: 410px;
+  /* min-height: 410px; */
   max-width: unset;
 }
 
