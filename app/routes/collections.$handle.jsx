@@ -1015,11 +1015,18 @@ export default function Collection() {
  */
 const ProductItem = React.memo(({product, index, numberInRow}) => {
   const ref = useRef(null);
+  const [isSoldOut, setIsSoldOut] = useState(false);
+
+  useEffect(() => {
+    // Check if the product is sold out (no variants are available for sale)
+    const soldOut = !product.variants.nodes.some(
+      (variant) => variant.availableForSale,
+    );
+    setIsSoldOut(soldOut); // Update the state
+  }, [product]);
 
   const [selectedVariant, setSelectedVariant] = useState(() => {
-    return (
-      product.variants.nodes[0]
-    );
+    return product.variants.nodes[0];
   });
 
   const variantUrl = useVariantUrl(
@@ -1044,6 +1051,13 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
           >
             {product.featuredImage && (
               <div className="collection-product-image">
+                {/* Sold-out banner */}
+                <div
+                  className="sold-out-ban"
+                  style={{display: isSoldOut ? 'block' : 'none'}} // Conditionally displayed
+                >
+                  <p>Sold Out</p>
+                </div>
                 <Image
                   srcSet={`${product.featuredImage.url}?width=300&quality=15 300w,
                            ${product.featuredImage.url}?width=600&quality=15 600w,
