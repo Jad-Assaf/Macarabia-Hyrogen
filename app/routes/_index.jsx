@@ -1,4 +1,4 @@
-import React, {Suspense, lazy, startTransition} from 'react';
+import React from 'react';
 import {defer} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';

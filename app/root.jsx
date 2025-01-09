@@ -178,7 +178,7 @@ export function Layout({children}) {
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <Meta />
         <Links />
-        {/* <script
+        <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
                 __html: `
@@ -194,7 +194,7 @@ export function Layout({children}) {
             fbq('track', 'PageView');
           `,
           }}
-        /> */}
+        />
       </head>
       <body>
         <ClarityTracker clarityId={clarityId} />
