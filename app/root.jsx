@@ -20,9 +20,6 @@ import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
-import dotenv from 'dotenv';
-dotenv.config();
-
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
