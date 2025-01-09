@@ -414,9 +414,28 @@ export default function Collection() {
   };
 
   const handleFilterRemove = (filter) => {
-    const newUrl = getAppliedFilterLink(filter, searchParams, location);
+    const updatedParams = new URLSearchParams(searchParams.toString());
+
+    // Clean up 'direction' and 'cursor' parameters
+    updatedParams.delete('direction');
+    updatedParams.delete('cursor');
+
+    const newUrl = getAppliedFilterLink(filter, updatedParams, location);
     navigate(newUrl);
   };
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const query = url.searchParams;
+
+    // Remove 'direction' and 'cursor' if they exist
+    query.delete('direction');
+    query.delete('cursor');
+
+    const cleanUrl = `${url.origin}${url.pathname}?${query.toString()}`;
+    window.history.replaceState({}, '', cleanUrl);
+  }, []);
+
 
   const sortedProducts = React.useMemo(() => {
     if (!collection || !collection.products || !collection.products.nodes)
