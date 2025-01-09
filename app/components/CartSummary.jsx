@@ -77,7 +77,7 @@ export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
         <div className="alert-box">
           <span className="alert-icon">&times;</span>
           <span className="alert-message">
-            We apologize for any inconvenice! Your order is above $5000. Please
+            We apologize for any inconvenience! Your order is above $5000. Please
             contact sales to proceed. <a className='cart-err-msg-link' href="https://wa.me/9613020030">+961 3 020 030</a>
           </span>
         </div>
