@@ -19,8 +19,8 @@ export default async function handleRequest(
 ) {
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
-      checkoutDomain: 'https://macarabia.me',
-      storeDomain: 'https://macarabia.me',
+      checkoutDomain: 'macarabia.me',
+      storeDomain: 'macarabia.me',
     },
     // Add your custom script sources here
     scriptSrc: [
