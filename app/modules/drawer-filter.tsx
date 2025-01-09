@@ -66,20 +66,26 @@ function ListItemFilter({
   }, [appliedFilters, isChecked]);
 
   const handleCheckedChange = (checked: boolean) => {
-    setChecked(checked);
-    if (checked) {
-      const link = getFilterLink(option.input as string, params, location);
+  setChecked(checked);
+
+  // Clean up 'direction' and 'cursor' parameters
+  const updatedParams = new URLSearchParams(params.toString());
+  updatedParams.delete('direction');
+  updatedParams.delete('cursor');
+
+  if (checked) {
+    const link = getFilterLink(option.input as string, updatedParams, location);
+    navigate(link);
+  } else {
+    const filter = appliedFilters.find(
+      (filter) => JSON.stringify(filter.filter) === option.input
+    );
+    if (filter) {
+      const link = getAppliedFilterLink(filter, updatedParams, location);
       navigate(link);
-    } else {
-      const filter = appliedFilters.find(
-        (filter) => JSON.stringify(filter.filter) === option.input
-      );
-      if (filter) {
-        let link = getAppliedFilterLink(filter, params, location);
-        navigate(link);
-      }
     }
-  };
+  }
+};
 
   return (
     <div className="flex gap-2">
