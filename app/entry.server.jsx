@@ -25,6 +25,7 @@ export default async function handleRequest(
     // Add your custom script sources here
     scriptSrc: [
       "'self'", // Allow scripts from the same origin
+      'https://macarabia.me',
       'https://www.clarity.ms', // Allow scripts from clarity.ms
       'https://*.clarity.ms', // Allow scripts from clarity.ms
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
@@ -32,6 +33,7 @@ export default async function handleRequest(
     ],
     connectSrc: [
       "'self'", // Allow connections to the same origin
+      'https://macarabia.me',
       'https://x.clarity.ms', // Allow connections to Clarity
       'https://*.clarity.ms', // Allow connections to any subdomain of clarity.ms
       'https://monorail-edge.shopifysvc.com', // Allow Shopify service connections
