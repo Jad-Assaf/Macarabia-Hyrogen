@@ -102,13 +102,6 @@ export async function loader(args) {
   const banners = [
     {
       desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/christmas-banner.jpg?v=1733318318',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/christmas-mobile-banner.jpg?v=1733318318',
-      link: '/collections/new-arrivals',
-    },
-    {
-      desktopImageUrl:
         'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/macbook-pro-m4-banner_756f37f6-cf6d-4484-80ed-8b510a64db28.jpg?v=1731332730',
       mobileImageUrl:
         'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/macbook-pro-m4-mobilebanner.jpg?v=1731333133',
