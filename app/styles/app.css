@@ -1526,7 +1526,11 @@ li.cart-line .product-price {
   width: 50%;
   left: -11%;
   transform: rotate(-45deg);
-  top: 8%;
+  top: 7%;
+}
+
+.sold-out-ban p{
+  font-size: 14px;
 }
 
 .clear-search-button svg{
