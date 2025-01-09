@@ -162,6 +162,7 @@ export async function loader(args) {
 
   // Define all collection handles you want to display using TopProductSections
   const TOP_PRODUCT_HANDLES = [
+    'new-arrivals',
     'apple-accessories',
     'apple-macbook',
     'apple-imac',
@@ -224,11 +225,6 @@ export async function loader(args) {
     description: criticalData.description,
     url: criticalData.url,
     sliderCollections: criticalData.sliderCollections,
-    // REMOVED: No longer deferring menuCollections
-    deferredData: {
-      // REMOVED: menuCollections: criticalData.menuCollections,
-      newArrivalsCollection: criticalData.newArrivalsCollection,
-    },
     topProducts: topProductsByHandle, // Add fetched TopProductSections collections here
   };
 
@@ -258,15 +254,12 @@ async function loadCriticalData({context}) {
     `,
   );
 
-  const [sliderCollections, newArrivalsCollection] = await Promise.all([
+  const [sliderCollections] = await Promise.all([
     fetchCollectionsByHandles(context, menuHandles),
-    fetchCollectionByHandle(context, 'new-arrivals'),
   ]);
 
   return {
     sliderCollections,
-    // REMOVED: menuCollections,
-    newArrivalsCollection,
     title: shop.name,
     description: shop.description,
     url: 'https://macarabia.me',
@@ -431,18 +424,16 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, deferredData, topProducts} =
+  const {banners, sliderCollections, topProducts} =
     useLoaderData();
 
-  // REMOVED: const menuCollections = deferredData?.menuCollections || [];
-  const newArrivalsCollection = deferredData?.newArrivalsCollection;
 
   return (
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      {newArrivalsCollection && (
-        <TopProductSections collection={newArrivalsCollection} />
+      {topProducts['new-arrivals'] && (
+        <TopProductSections collection={'new-arrivals'} />
       )}
 
       <CollectionCircles collections={appleMenu} />
