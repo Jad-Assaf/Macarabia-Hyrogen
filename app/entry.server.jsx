@@ -17,6 +17,19 @@ export default async function handleRequest(
   remixContext,
   context,
 ) {
+  // Redirect logic for www.macarabia.me to macarabia.me
+  const url = new URL(request.url);
+  if (url.hostname === 'www.macarabia.me') {
+    // Redirect to macarabia.me with the same path and query params
+    const redirectUrl = `https://macarabia.me${url.pathname}${url.search}`;
+    return new Response(null, {
+      status: 301,
+      headers: {
+        Location: redirectUrl,
+      },
+    });
+  }
+
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
