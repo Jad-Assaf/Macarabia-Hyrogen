@@ -731,7 +731,7 @@ button.reset:hover:not(:has(> *)) {
 */
 /* Header Container */
 .header {
-  background: #000;
+  background: #232323;
   z-index: 5;
   width: 100vw;
   display: flex;
@@ -739,7 +739,7 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .header-menu-desktop>.menu-item-level-1 {
-  color: #000;
+  color: #232323;
   position: static;
   padding: 15px;
 }
