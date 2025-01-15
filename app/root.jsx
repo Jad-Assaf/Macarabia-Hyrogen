@@ -188,6 +188,11 @@ export function Layout({children}) {
         />
         <script
           defer
+          src="https://shown.io/metrics/db07REXo9x"
+          type="text/javascript"
+        ></script>
+        <script
+          defer
           nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
