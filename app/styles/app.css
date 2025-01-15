@@ -1055,14 +1055,14 @@ button.reset:hover:not(:has(> *)) {
   top: 100%;
   left: 0;
   width: 100vw;
-  background-color: white;
+  background-color: #232323;
   z-index: 1000;
   padding: 30px 50px;
   border-radius: 0;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
   transform: translateY(-10px);
-  color: #000;
+  color: #fff;
 }
 
 
@@ -1082,7 +1082,7 @@ button.reset:hover:not(:has(> *)) {
 
 /* Styling for nested submenu links */
 .submenu-level-2 a {
-  color: #000;
+  color: #fff;
   font-size: 0.9rem;
 }
 
