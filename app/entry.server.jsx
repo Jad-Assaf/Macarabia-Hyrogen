@@ -42,6 +42,7 @@ export default async function handleRequest(
       'https://*.clarity.ms', // Allow scripts from clarity.ms
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
       'https://connect.facebook.net', // Required for Meta Pixel
+      'https://shown.io', // Required for Meta Pixel
     ],
     connectSrc: [
       "'self'", // Allow connections to the same origin
@@ -49,6 +50,7 @@ export default async function handleRequest(
       'https://*.clarity.ms', // Allow connections to any subdomain of clarity.ms
       'https://monorail-edge.shopifysvc.com', // Allow Shopify service connections
       'https://connect.facebook.net', // Required for Meta Pixel
+      'https://shown.io/', // Required for Meta Pixel
     ],
     imgSrc: [
       "'self'",
@@ -59,6 +61,7 @@ export default async function handleRequest(
       'https://*.shopifycdn.com',
       'https://macarabia.me',
       'https://www.facebook.com', // if you need the FB Pixel 1x1
+      'https://shown.io/', // if you need the FB Pixel 1x1
       // etc.
     ],
   });
