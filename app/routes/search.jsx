@@ -14,7 +14,7 @@ import '../styles/SearchPage.css';
  * @type {import('@remix-run/react').MetaFunction}
  */
 export const meta = () => {
-  return [{title: `971Souq | Search`}];
+  return [{title: `Macarabia | Search`}];
 };
 
 /**
@@ -102,25 +102,34 @@ export async function loader({request, context}) {
     .filter(Boolean)
     .map((word) => `*${word}*`); // Add wildcards to each term
 
-  // Construct field-specific search clauses
+  // **Step 1:** Start by searching only within the title
+  const fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR '); // Use OR for field-specific terms
+
+  // **Step 2 (Optional):** Include description and variants.sku if needed
+  // Uncomment the following lines to include additional fields after verifying titles work
+  /*
   const fieldSpecificTerms = terms
     .map(
       (word) =>
         `(title:${word} OR description:${word} OR variants.sku:${word})`,
     )
     .join(' AND '); // Combine with AND for multiple terms
+  */
 
   // Now, use 'fieldSpecificTerms' instead of 'termWithWildcards' in the filterQuery
   let filterQuery = fieldSpecificTerms;
 
   if (filterQueryParts.length > 0) {
     if (filterQuery) {
-      // e.g. "(title:*XM5* OR description:*XM5* OR variants.sku:*XM5*) AND (vendor:"Nike" OR vendor:"Adidas")"
+      // e.g. "title:*XM5* AND (vendor:"Sony" OR vendor:"Adidas")"
       filterQuery += ' AND ' + filterQueryParts.join(' AND ');
     } else {
       filterQuery = filterQueryParts.join(' AND ');
     }
   }
+
+  // **Debugging Step:** Log the constructed filterQuery
+  console.log('Filter Query:', filterQuery);
 
   // -----------------------------------------
   // Sort
