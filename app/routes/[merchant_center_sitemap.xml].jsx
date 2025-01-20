@@ -1,23 +1,26 @@
-// New Route for Merchant Center Sitemap
+import { flattenConnection } from "@shopify/hydrogen-react";
+
 export async function loader({request, context: {storefront}}) {
-  const baseUrl = new URL(request.url).origin;
+  try {
+    const baseUrl = new URL(request.url).origin;
 
-  // Fetch all products for Merchant Center
-  const products = await fetchAllResources({
-    storefront,
-    query: MERCHANT_PRODUCTS_QUERY,
-    field: 'products',
-  });
+    const products = await fetchAllResources({
+      storefront,
+      query: MERCHANT_PRODUCTS_QUERY,
+      field: 'products',
+    });
 
-  // Generate the Merchant Center sitemap
-  const sitemap = generateMerchantSitemap({products, baseUrl});
-
-  return new Response(sitemap, {
-    headers: {
-      'Content-Type': 'application/xml',
-      'Cache-Control': `max-age=${60 * 60 * 24}`, // Cache for 24 hours
-    },
-  });
+    const sitemap = generateMerchantSitemap({products, baseUrl});
+    return new Response(sitemap, {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': `max-age=${60 * 60 * 24}`, // Cache for 24 hours
+      },
+    });
+  } catch (error) {
+    console.error('Error generating sitemap:', error);
+    return new Response('Internal Server Error', {status: 500});
+  }
 }
 
 /**
