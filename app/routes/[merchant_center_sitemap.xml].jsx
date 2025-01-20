@@ -7,8 +7,7 @@ import {flattenConnection} from '@shopify/hydrogen';
 export async function loader({request, context: {storefront}}) {
   const baseUrl = new URL(request.url).origin;
 
-  // Fetch all products (or only those you want in Merchant Center).
-  // You could further refine the GraphQL query to fetch only specific products if needed.
+  // Fetch all products you want in your feed:
   const products = await fetchAllResources({
     storefront,
     query: PRODUCTS_QUERY,
@@ -21,14 +20,14 @@ export async function loader({request, context: {storefront}}) {
   return new Response(feedXml, {
     headers: {
       'Content-Type': 'application/xml',
-      // Decide on your own cache strategy
-      'Cache-Control': `max-age=${60 * 60}`, // e.g., 1 hour
+      // Adjust caching as desired
+      'Cache-Control': `max-age=${60 * 60}`, // 1 hour
     },
   });
 }
 
 /**
- * Fetches paginated data just like in your main sitemap loader.
+ * Fetch all pages of data until we hit the limit or no more results.
  */
 async function fetchAllResources({storefront, query, field}) {
   const MAX_URLS_PER_PAGE = 250;
@@ -56,59 +55,79 @@ async function fetchAllResources({storefront, query, field}) {
       : null;
   } while (nextPageCursor && allNodes.length < GOOGLE_SITEMAP_LIMIT);
 
+  // Return the limited array if needed
   return allNodes.slice(0, GOOGLE_SITEMAP_LIMIT);
 }
 
 /**
  * Generates the RSS feed for Google Merchant Center.
+ * We create one <item> per variant, including all images in the product.
  */
 function generateMerchantCenterFeed({products, baseUrl}) {
-  // Customize <title>, <description>, and store branding as needed
+  // Flatten into a single list of items (product-variant pairs)
+  const allItems = products.flatMap((product) => {
+    if (!product?.variants?.nodes?.length) return [];
+    return product.variants.nodes.map((variant) => ({
+      product,
+      variant,
+    }));
+  });
+
   return `<?xml version="1.0"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
   <channel>
     <title>Your Store Title</title>
     <link>${baseUrl}</link>
     <description>Your store feed for Google Merchant Center</description>
-    ${products.map((product) => renderProductItem(product, baseUrl)).join('')}
+    ${allItems
+      .map(({product, variant}) =>
+        renderProductVariantItem(product, variant, baseUrl),
+      )
+      .join('')}
   </channel>
 </rss>`;
 }
 
 /**
- * Render a single <item> entry for each product.
- * Customize fields as needed:
- *  - g:availability
- *  - g:price (use real variant prices)
- *  - g:condition
- *  - g:brand
- *  - etc.
+ * Render a single <item> entry for each product-variant pair.
  */
-function renderProductItem(product, baseUrl) {
-  // Example: using the first variant for price and possibly for availability
-  // Adjust to your logic (e.g., pick default variant).
-  const variant = product?.variants?.nodes?.[0];
+function renderProductVariantItem(product, variant, baseUrl) {
+  // Parse numeric IDs or just use the GraphQL GIDs
+  const productId = parseGid(product.id); // e.g. 'gid://shopify/Product/12345' -> '12345'
+  const variantId = parseGid(variant.id); // e.g. 'gid://shopify/ProductVariant/67890' -> '67890'
+  const combinedId = `${productId}_${variantId}`;
+
+  // Price from the variant
   const price = variant?.priceV2?.amount || '0.00';
   const currencyCode = variant?.priceV2?.currencyCode || 'USD';
 
-  // Demo brand fallback. If you have vendor or brand fields, use them.
+  // Brand fallback (if your store uses 'vendor', use that; otherwise hardcode or fetch from Metafields)
   const brand = product.vendor || 'YourBrand';
 
+  // Images: first one is <g:image_link>, additional are <g:additional_image_link>
+  const allImages = product?.images?.nodes || [];
+  const firstImageUrl = allImages[0]?.url ? xmlEncode(allImages[0].url) : '';
+  const additionalImageTags = allImages
+    .slice(1)
+    .map((img) => {
+      const url = xmlEncode(img.url);
+      return `<g:additional_image_link>${url}</g:additional_image_link>`;
+    })
+    .join('');
+
+  // Example availability, condition, etc.
   return `
     <item>
-      <g:id>${xmlEncode(product.handle)}</g:id>
+      <g:id>${xmlEncode(combinedId)}</g:id>
       <g:title>${xmlEncode(product.title)}</g:title>
-      <g:description>${xmlEncode(product?.description || '')}</g:description>
+      <g:description>${xmlEncode(product.description || '')}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(product.handle)}</g:link>
-      ${
-        product.featuredImage
-          ? `<g:image_link>${xmlEncode(
-              product.featuredImage.url,
-            )}</g:image_link>`
-          : ''
-      }
+      ${firstImageUrl ? `<g:image_link>${firstImageUrl}</g:image_link>` : ''}
+      ${additionalImageTags}
       <g:condition>new</g:condition>
-      <g:availability>in stock</g:availability>
+      <g:availability>${
+        variant?.availableForSale ? 'in stock' : 'out of stock'
+      }</g:availability>
       <g:price>${price} ${currencyCode}</g:price>
       <g:brand>${xmlEncode(brand)}</g:brand>
     </item>
@@ -116,7 +135,15 @@ function renderProductItem(product, baseUrl) {
 }
 
 /**
- * Simple XML encoding to avoid breaking tags with special chars.
+ * Extract the numeric part from the Shopify global ID, or just return the full ID if preferred.
+ */
+function parseGid(gid) {
+  // e.g. 'gid://shopify/Product/1234567890'
+  return gid?.split('/').pop();
+}
+
+/**
+ * Simple XML encoding to avoid issues with special characters.
  */
 function xmlEncode(string) {
   return String(string || '').replace(
@@ -125,7 +152,14 @@ function xmlEncode(string) {
   );
 }
 
-// Include variants in your product query so you can fetch actual pricing, etc.
+/**
+ * A GraphQL query that fetches:
+ *  - The product `id` and `handle`
+ *  - `vendor` (optional brand field)
+ *  - `description`
+ *  - Up to 20 images
+ *  - All variants (here, we request up to 100, but can paginate if you have more)
+ */
 const PRODUCTS_QUERY = `#graphql
   query Products($first: Int!, $after: String) {
     products(first: $first, after: $after, query: "published_status:'online_store:visible'") {
@@ -134,22 +168,27 @@ const PRODUCTS_QUERY = `#graphql
         endCursor
       }
       nodes {
+        id
         handle
         title
         description
         vendor
         updatedAt
-        featuredImage {
-          url
-          altText
-        }
-        variants(first: 1) {
+        images(first: 20) {
           nodes {
+            url
+            altText
+          }
+        }
+        variants(first: 100) {
+          nodes {
+            id
+            title
+            availableForSale
             priceV2 {
               amount
               currencyCode
             }
-            availableForSale
           }
         }
       }
