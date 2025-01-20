@@ -1,134 +1,169 @@
 import {flattenConnection} from '@shopify/hydrogen';
 
+/**
+ * A loader to create an RSS XML feed with each product variant as a separate <item>.
+ * Adapt the fields inside `renderProductVariantItem` to fit your needs.
+ */
 export async function loader({request, context: {storefront}}) {
   const baseUrl = new URL(request.url).origin;
 
-  // Fetch all products to include in your feed
-  const products = await fetchAllProducts(storefront);
+  // 1. Fetch all products/variants
+  const products = await fetchAllResources({
+    storefront,
+    query: PRODUCTS_QUERY,
+    field: 'products',
+  });
 
-  // Generate an RSS/XML feed for Meta
-  const feedXml = generateMetaXML({products, baseUrl});
+  // 2. Generate the feed (similar structure to your Merchant Center feed)
+  const feedXml = generateMetaXmlFeed({products, baseUrl});
 
   return new Response(feedXml, {
     headers: {
       'Content-Type': 'application/xml',
-      // Example caching: 1 hour
-      'Cache-Control': `max-age=${60 * 60}`,
+      'Cache-Control': `max-age=${60 * 60}`, // 1 hour cache
     },
   });
 }
 
 /**
- * Fetch all products (paginated) from Shopify.
+ * Reusable helper to fetch all paginated data up to the limit.
  */
-async function fetchAllProducts(storefront) {
-  const MAX_PER_PAGE = 250;
-  const GLOBAL_MAX = 50000;
+async function fetchAllResources({storefront, query, field}) {
+  const MAX_URLS_PER_PAGE = 250;
+  const TOTAL_LIMIT = 50000;
 
-  let allProducts = [];
-  let afterCursor = null;
-  let hasNextPage = true;
+  let allNodes = [];
+  let nextPageCursor = null;
 
-  while (hasNextPage && allProducts.length < GLOBAL_MAX) {
-    const data = await storefront.query(PRODUCTS_QUERY, {
-      variables: {first: MAX_PER_PAGE, after: afterCursor},
+  do {
+    const response = await storefront.query(query, {
+      variables: {
+        first: MAX_URLS_PER_PAGE,
+        after: nextPageCursor,
+      },
     });
-    const productsConnection = data?.products;
-    if (!productsConnection) break;
 
-    const nodes = flattenConnection(productsConnection);
-    allProducts = allProducts.concat(nodes);
-    hasNextPage = productsConnection.pageInfo.hasNextPage;
-    afterCursor = productsConnection.pageInfo.endCursor;
-  }
+    const connection = response?.[field];
+    if (!connection) break;
 
-  return allProducts.slice(0, GLOBAL_MAX);
+    const nodes = flattenConnection(connection);
+    allNodes = allNodes.concat(nodes);
+
+    nextPageCursor = connection.pageInfo.hasNextPage
+      ? connection.pageInfo.endCursor
+      : null;
+  } while (nextPageCursor && allNodes.length < TOTAL_LIMIT);
+
+  return allNodes.slice(0, TOTAL_LIMIT);
 }
 
 /**
- * Build the Meta-compatible XML feed (RSS 2.0).
+ * Generates an RSS 2.0 XML feed using <g:> tags (common for Google/Meta).
+ * Creates one <item> for each variant.
  */
-function generateMetaXML({products, baseUrl}) {
-  // Typically, one <item> per product or variant. This example is one per product.
+function generateMetaXmlFeed({products, baseUrl}) {
+  // Flatten products into an array of (product, variant) pairs
+  const allItems = products.flatMap((product) => {
+    if (!product?.variants?.nodes?.length) return [];
+    return product.variants.nodes.map((variant) => ({product, variant}));
+  });
+
   return `<?xml version="1.0"?>
-<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
   <channel>
     <title>Your Store Title</title>
     <link>${baseUrl}</link>
-    <description>Your store feed for Meta Catalog</description>
-    ${products.map((product) => renderItem(product, baseUrl)).join('')}
+    <description>Your feed for Meta (or other channels)</description>
+    ${allItems
+      .map(({product, variant}) =>
+        renderProductVariantItem(product, variant, baseUrl),
+      )
+      .join('')}
   </channel>
 </rss>`;
 }
 
 /**
- * Render a single <item>. Feel free to expand or loop over variants if needed.
+ * Renders an individual <item> with whatever fields you need.
+ * Compare to your existing merchant feed to see what's different.
  */
-function renderItem(product, baseUrl) {
-  const productId = parseGid(product.id) || 'unknown_id';
-  const productUrl = `${baseUrl}/products/${xmlEncode(product.handle)}`;
-  const title = product.title || 'Untitled Product';
-  const description = stripHtml(product.bodyHtml || '');
+function renderProductVariantItem(product, variant, baseUrl) {
+  const productId = parseGid(product.id);
+  const variantId = parseGid(variant.id);
+  const combinedId = `${productId}_${variantId}`;
+
+  // Example: price from variant
+  const price = variant?.priceV2?.amount || '0.00';
+  const currencyCode = variant?.priceV2?.currencyCode || 'USD';
+
+  // Basic brand fallback
   const brand = product.vendor || 'MyBrand';
-  const primaryImage = product.images?.nodes?.[0]?.url || '';
-  const price = product?.variants?.nodes?.[0]?.priceV2;
-  const priceAmount = price?.amount || '0.00';
-  const priceCurrency = price?.currencyCode || 'USD';
-  // Simple availability example. If you want variant-level accuracy, handle that accordingly.
-  const inStock = product?.variants?.nodes?.some((v) => v.availableForSale);
 
-  // Additional example fields like shipping, google_product_category, custom_label_0, etc.
-  // Customize as your store data allows or as Meta feed requires.
+  // Gather images: first is <g:image_link>, rest as <g:additional_image_link>
+  const allImages = product?.images?.nodes || [];
+  const firstImageUrl = allImages[0]?.url ? xmlEncode(allImages[0].url) : '';
+  const additionalImageTags = allImages
+    .slice(1)
+    .map(
+      (img) =>
+        `<g:additional_image_link>${xmlEncode(
+          img.url,
+        )}</g:additional_image_link>`,
+    )
+    .join('');
 
+  // Some extra fields that differ from your standard Merchant feed:
+  //  - Shipping
+  //  - google_product_category
+  //  - custom_label_0
+  // Modify or remove as needed.
   return `
     <item>
-      <g:id>${xmlEncode(productId)}</g:id>
-      <g:title>${xmlEncode(title)}</g:title>
-      <g:description>${xmlEncode(description)}</g:description>
-      <g:link>${xmlEncode(productUrl)}</g:link>
-      <g:image_link>${xmlEncode(primaryImage)}</g:image_link>
+      <g:id>${xmlEncode(combinedId)}</g:id>
+      <g:title>${xmlEncode(product.title)}</g:title>
+      <g:description>${xmlEncode(product.description || '')}</g:description>
+      <g:link>${baseUrl}/products/${xmlEncode(product.handle)}</g:link>
+      ${firstImageUrl ? `<g:image_link>${firstImageUrl}</g:image_link>` : ''}
+      ${additionalImageTags}
       <g:brand>${xmlEncode(brand)}</g:brand>
       <g:condition>new</g:condition>
-      <g:availability>${inStock ? 'in stock' : 'out of stock'}</g:availability>
-      <g:price>${priceAmount} ${priceCurrency}</g:price>
+      <g:availability>${
+        variant?.availableForSale ? 'in stock' : 'out of stock'
+      }</g:availability>
+      <g:price>${price} ${currencyCode}</g:price>
       <g:shipping>
         <g:country>US</g:country>
         <g:service>Standard</g:service>
-        <g:price>5.00 USD</g:price>
+        <g:price>4.95 USD</g:price>
       </g:shipping>
       <g:google_product_category>Animals &gt; Pet Supplies</g:google_product_category>
-      <g:custom_label_0>Custom Label Data</g:custom_label_0>
+      <g:custom_label_0>Made in Waterford, IE</g:custom_label_0>
     </item>
   `;
 }
 
 /**
- * Parse the numeric portion of Shopify's global ID, e.g. 'gid://shopify/Product/12345' => '12345'.
+ * Parse numeric ID out of the Shopify global ID (e.g. "gid://shopify/Product/12345" -> "12345").
  */
 function parseGid(gid) {
-  return gid?.split('/')?.pop();
+  return gid?.split('/').pop();
 }
 
 /**
- * Remove HTML tags for safe text use in the feed.
- */
-function stripHtml(html) {
-  return html.replace(/<[^>]+>/g, '').trim();
-}
-
-/**
- * Encode special characters for XML.
+ * XML-encode special characters.
  */
 function xmlEncode(string) {
-  if (!string) return '';
-  return string.replace(/[&<>'"]/g, (char) => `&#${char.charCodeAt(0)};`);
+  return String(string || '').replace(
+    /[&<>'"]/g,
+    (char) => `&#${char.charCodeAt(0)};`,
+  );
 }
 
 /**
- * Example GraphQL query fetching:
- *  - Product ID, handle, title, bodyHtml (description), vendor
- *  - Up to 10 images
- *  - Up to 5 variants (expand or paginate if needed)
+ * Example GraphQL query:
+ *  - product id, handle, title, description, vendor
+ *  - multiple images
+ *  - variants (e.g. up to 100)
  */
 const PRODUCTS_QUERY = `#graphql
   query Products($first: Int!, $after: String) {
@@ -139,17 +174,21 @@ const PRODUCTS_QUERY = `#graphql
       }
       nodes {
         id
-        title
-        vendor
         handle
-        bodyHtml
-        images(first: 10) {
+        title
+        description
+        vendor
+        updatedAt
+        images(first: 20) {
           nodes {
             url
+            altText
           }
         }
-        variants(first: 5) {
+        variants(first: 100) {
           nodes {
+            id
+            title
             availableForSale
             priceV2 {
               amount
