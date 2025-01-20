@@ -187,6 +187,26 @@ export function Layout({children}) {
           content="ca1idnp1x728fhk6zouywowcqgb2xt"
         />
         <script
+          async
+          nonce={nonce}
+          src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
+        ></script>
+
+        {/* 2. Inline GA Initialization Script */}
+        <script
+          async
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+
+              gtag('config', 'G-3PZN80E9FJ');
+            `,
+          }}
+        ></script>
+        <script
           defer
           src="https://shown.io/metrics/db07REXo9x"
           type="text/javascript"
