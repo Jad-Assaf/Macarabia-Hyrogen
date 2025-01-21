@@ -234,7 +234,7 @@ export function Layout({children}) {
                   s.parentNode.insertBefore(t,s);
                 })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
                 
-                fbq('init', '584100154491311');
+                fbq('init', '321309553208857');
                 fbq('track', 'PageView');
               };
             `,
