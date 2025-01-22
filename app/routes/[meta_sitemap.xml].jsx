@@ -92,14 +92,20 @@ function renderProductVariantItem(product, variant, baseUrl) {
   const variantId = parseGid(variant.id);
   const combinedId = `${productId}_${variantId}`;
 
-  // Example: price from variant
+  // Price from the variant
   const price = variant?.priceV2?.amount || '0.00';
   const currencyCode = variant?.priceV2?.currencyCode || 'USD';
 
   // Basic brand fallback
   const brand = product.vendor || 'MyBrand';
 
-  // Gather images: first is <g:image_link>, rest as <g:additional_image_link>
+  // (A) Read the metafield with key = "product_category"
+  const googleCategory =
+    product?.metafields?.[0]?.value || 'Animals > Pet Supplies';
+  // If `metafields(identifiers: [...])` returns exactly one object, it might be product.metafields[0].
+  // If you expect multiple metafields, adjust indexing. Or find it by .find(m => m.key === 'product_category').
+
+  // Gather images
   const allImages = product?.images?.nodes || [];
   const firstImageUrl = allImages[0]?.url ? xmlEncode(allImages[0].url) : '';
   const additionalImageTags = allImages
@@ -112,11 +118,6 @@ function renderProductVariantItem(product, variant, baseUrl) {
     )
     .join('');
 
-  // Some extra fields that differ from your standard Merchant feed:
-  //  - Shipping
-  //  - google_product_category
-  //  - custom_label_0
-  // Modify or remove as needed.
   return `
     <item>
       <g:id>${xmlEncode(combinedId)}</g:id>
@@ -136,7 +137,9 @@ function renderProductVariantItem(product, variant, baseUrl) {
         <g:service>Standard</g:service>
         <g:price>4.95 USD</g:price>
       </g:shipping>
-      <g:google_product_category>Animals &gt; Pet Supplies</g:google_product_category>
+      <g:google_product_category>${xmlEncode(
+        googleCategory,
+      )}</g:google_product_category>
       <g:custom_label_0>Made in Waterford, IE</g:custom_label_0>
     </item>
   `;
@@ -195,6 +198,10 @@ const PRODUCTS_QUERY = `#graphql
               currencyCode
             }
           }
+        }
+        metafields(identifiers: [{namespace: "google", key: "product_category"}]) {
+          value
+          key
         }
       }
     }
