@@ -102,6 +102,15 @@ function renderProductVariantItem(product, variant, baseUrl) {
   // Gather images: first is <g:image_link>, rest as <g:additional_image_link>
   const allImages = product?.images?.nodes || [];
   const firstImageUrl = allImages[0]?.url ? xmlEncode(allImages[0].url) : '';
+  const additionalImageTags = allImages
+    .slice(1)
+    .map(
+      (img) =>
+        `<g:additional_image_link>${xmlEncode(
+          img.url,
+        )}</g:additional_image_link>`,
+    )
+    .join('');
 
   // Some extra fields that differ from your standard Merchant feed:
   //  - Shipping
@@ -115,6 +124,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
       <g:description>${xmlEncode(product.description || '')}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(product.handle)}</g:link>
       ${firstImageUrl ? `<g:image_link>${firstImageUrl}</g:image_link>` : ''}
+      ${additionalImageTags}
       <g:brand>${xmlEncode(brand)}</g:brand>
       <g:condition>new</g:condition>
       <g:availability>${
@@ -169,7 +179,7 @@ const PRODUCTS_QUERY = `#graphql
         description
         vendor
         updatedAt
-        images(first: 1) {
+        images(first: 3) {
           nodes {
             url
             altText
