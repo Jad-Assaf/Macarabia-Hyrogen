@@ -41,6 +41,33 @@ export default function MetaPixel() {
           value: event.data?.productVariant?.price?.amount,
         });
       });
+
+      // Subscribe to purchase_completed event
+      window.analytics.subscribe('purchase_completed', async (event) => {
+        fbq('track', 'Purchase', {
+          content_ids: event.data?.lineItems?.map(
+            (item) => item.productVariant.id,
+          ),
+          value: event.data?.totalPrice?.amount,
+          currency: event.data?.totalPrice?.currencyCode,
+          content_type: 'product',
+        });
+      });
+
+      // Subscribe to product_added_to_cart event
+      window.analytics.subscribe('product_added_to_cart', async (event) => {
+        fbq('track', 'AddToCart', {
+          content_ids: [event.data?.cartLine?.merchandise?.productVariant?.id],
+          content_name:
+            event.data?.cartLine?.merchandise?.productVariant?.title,
+          currency:
+            event.data?.cartLine?.merchandise?.productVariant?.price
+              ?.currencyCode,
+          value:
+            event.data?.cartLine?.merchandise?.productVariant?.price?.amount,
+          content_type: 'product',
+        });
+      });
     }
 
     // Clean up (optional)
