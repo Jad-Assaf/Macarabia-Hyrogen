@@ -31,6 +31,18 @@ export default function MetaPixel() {
     fbq('init', '321309553208857');
     fbq('track', 'PageView');
 
+    // Subscribe to product_viewed event
+    if (window.analytics) {
+      window.analytics.subscribe('product_viewed', async (event) => {
+        fbq('track', 'ViewContent', {
+          content_ids: [event.data?.productVariant?.id],
+          content_name: event.data?.productVariant?.title,
+          currency: event.data?.productVariant?.price?.currencyCode,
+          value: event.data?.productVariant?.price?.amount,
+        });
+      });
+    }
+
     // Clean up (optional)
     return () => {
       delete window.fbq;
