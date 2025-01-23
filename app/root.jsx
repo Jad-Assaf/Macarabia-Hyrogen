@@ -187,42 +187,36 @@ export function Layout({children}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        {!isLinux && (
-          <meta
-            name="google-site-verification"
-            content="tGAcrZ3TpRDtQqmjqfYOuQpdBqsLCTr5YzcG7syVPEk"
-          />
-        )}
+        <meta
+          name="google-site-verification"
+          content="tGAcrZ3TpRDtQqmjqfYOuQpdBqsLCTr5YzcG7syVPEk"
+        />
         <Meta />
         <Links />
-        {!isLinux && (
-          <meta
-            name="facebook-domain-verification"
-            content="ca1idnp1x728fhk6zouywowcqgb2xt"
-          />
-        )}
-        {!isLinux && (
-          <>
-            <script
-              async
-              nonce={nonce}
-              src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
-            ></script>
-            <script
-              async
-              nonce={nonce}
-              dangerouslySetInnerHTML={{
-                __html: `
+        <meta
+          name="facebook-domain-verification"
+          content="ca1idnp1x728fhk6zouywowcqgb2xt"
+        />
+        <script
+          async
+          nonce={nonce}
+          src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
+        ></script>
+
+        {/* 2. Inline GA Initialization Script */}
+        <script
+          async
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
 
               gtag('config', 'G-3PZN80E9FJ');
             `,
-              }}
-            ></script>
-          </>
-        )}
+          }}
+        ></script>
         <MetaPixel />
       </head>
       <body>
