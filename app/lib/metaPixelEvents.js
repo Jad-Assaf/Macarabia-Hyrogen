@@ -2,7 +2,7 @@
 
 /**
  * Utility function to extract the numeric ID from Shopify's global ID (gid).
- * Example: "gid://shopify/ProductVariant/123456789" => "123456789"
+ * Example: "gid://shopify/Product/123456789" => "123456789"
  * @param {string} gid - The global ID from Shopify.
  * @returns {string} - The extracted numeric ID.
  */
@@ -17,16 +17,16 @@ const extractNumericId = (gid) => {
  * @param {Object} product - The product details.
  */
 export const trackViewContent = (product) => {
-  const variantId = extractNumericId(product.selectedVariant?.id);
-  const price = product.selectedVariant?.price?.amount || 0;
-  const currency = product.selectedVariant?.price?.currencyCode || 'USD';
+  const productId = extractNumericId(product.id); // **Updated: Extract Product ID**
+  const price = product.price?.amount || 0; // **Updated: Use product.price instead of selectedVariant**
+  const currency = product.price?.currencyCode || 'USD'; // **Updated: Use product.price instead of selectedVariant.currencyCode**
 
   if (typeof fbq === 'function') {
     fbq('track', 'ViewContent', {
       value: parseFloat(price),
       currency: currency,
-      content_ids: [variantId],
-      content_type: 'product_variant',
+      content_ids: [productId], // **Updated: Use Product ID**
+      content_type: 'product', // **Updated: Change from 'product_variant' to 'product'**
     });
   }
 };
@@ -36,16 +36,16 @@ export const trackViewContent = (product) => {
  * @param {Object} product - The product details.
  */
 export const trackAddToCart = (product) => {
-  const variantId = extractNumericId(product.selectedVariant?.id);
-  const price = product.selectedVariant?.price?.amount || 0;
-  const currency = product.selectedVariant?.price?.currencyCode || 'USD';
+  const productId = extractNumericId(product.id); // **Updated: Extract Product ID**
+  const price = product.price?.amount || 0; // **Updated: Use product.price instead of selectedVariant**
+  const currency = product.price?.currencyCode || 'USD'; // **Updated: Use product.price instead of selectedVariant.currencyCode**
 
   if (typeof fbq === 'function') {
     fbq('track', 'AddToCart', {
       value: parseFloat(price),
       currency: currency,
-      content_ids: [variantId],
-      content_type: 'product_variant',
+      content_ids: [productId], // **Updated: Use Product ID**
+      content_type: 'product', // **Updated: Change from 'product_variant' to 'product'**
     });
   }
 };
@@ -57,13 +57,13 @@ export const trackAddToCart = (product) => {
 export const trackPurchase = (order) => {
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
-      content_ids: order.items.map((item) => item.id),
-      content_type: 'product',
+      content_ids: order.items.map((item) => extractNumericId(item.productId)), // **Updated: Use Product ID**
+      content_type: 'product', // **Ensure content_type is 'product'**
       currency: 'USD',
       value: order.total,
       num_items: order.items.length,
       contents: order.items.map((item) => ({
-        id: item.id,
+        id: extractNumericId(item.productId), // **Updated: Use Product ID**
         quantity: item.quantity,
         item_price: item.price,
       })),
@@ -91,14 +91,14 @@ export const trackSearch = (query) => {
 export const trackInitiateCheckout = (cart) => {
   if (typeof fbq === 'function') {
     try {
-      const contentIds = cart.items?.map((item) => item.id) || [];
+      const contentIds = cart.items?.map((item) => extractNumericId(item.productId)) || []; // **Updated: Use Product ID**
       const value = parseFloat(cart.cost?.totalAmount?.amount) || 0;
       const currency = cart.cost?.totalAmount?.currencyCode || 'USD';
       const numItems = cart.items?.length || 0;
 
       fbq('track', 'InitiateCheckout', {
-        content_ids: contentIds,
-        content_type: 'product',
+        content_ids: contentIds, // **Updated: Use Product IDs**
+        content_type: 'product', // **Ensure content_type is 'product'**
         value: value,
         currency: currency,
         num_items: numItems,
