@@ -1,5 +1,6 @@
 import {CartForm, Money} from '@shopify/hydrogen';
 import {useEffect, useRef, useState} from 'react';
+import {trackInitiateCheckout} from '~/lib/metaPixelEvents'; // **Added Import**
 
 /**
  * @param {CartSummaryProps}
@@ -28,18 +29,25 @@ export function CartSummary({cart, layout}) {
         </dd>
       </dl>
 
+      {/* **Added `cart` Prop Here** */}
       <CartCheckoutActions
         checkoutUrl={cart.checkoutUrl}
         cartTotal={subtotal}
+        cart={cart} // **Added Prop**
       />
     </div>
   );
 }
 
 /**
- * @param {{checkoutUrl?: string}}
+ * @param {{checkoutUrl?: string, cartTotal?: number, cart: CartApiQueryFragment}} // **Updated Prop Types**
  */
-export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
+export default function CartCheckoutActions({
+  checkoutUrl,
+  cartTotal = 0,
+  cart,
+}) {
+  // **Added `cart` Parameter**
   const [showAlert, setShowAlert] = useState(false);
 
   // Hide the alert if the subtotal drops below $5000
@@ -54,6 +62,9 @@ export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
       // Prevent navigation, show alert
       setShowAlert(true);
     } else {
+      // **Added: Track Initiate Checkout Event**
+      trackInitiateCheckout(cart); // **Added Line**
+
       // Navigate to checkout
       window.location.href = checkoutUrl;
     }
@@ -69,6 +80,7 @@ export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
           cartTotal > 5000 ? 'disabled-look' : ''
         }`}
         onClick={handleButtonClick}
+        aria-label="Continue to Checkout" // **Optional: Added aria-label for accessibility**
       >
         Continue to Checkout &nbsp; &rarr;
       </button>
@@ -77,8 +89,11 @@ export default function CartCheckoutActions({checkoutUrl, cartTotal = 0}) {
         <div className="alert-box">
           <span className="alert-icon">&times;</span>
           <span className="alert-message">
-            We apologize for any inconvenience! Your order is above $5000. Please
-            contact sales to proceed. <a className='cart-err-msg-link' href="https://wa.me/9613020030">+961 3 020 030</a>
+            We apologize for any inconvenience! Your order is above $5000.
+            Please contact sales to proceed.{' '}
+            <a className="cart-err-msg-link" href="https://wa.me/9613020030">
+              +961 3 020 030
+            </a>
           </span>
         </div>
       )}
