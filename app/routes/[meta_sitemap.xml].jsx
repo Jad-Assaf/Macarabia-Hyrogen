@@ -90,7 +90,7 @@ function generateMetaXmlFeed({products, baseUrl}) {
 function renderProductVariantItem(product, variant, baseUrl) {
   const productId = parseGid(product.id);
   const variantId = parseGid(variant.id);
-  const combinedId = `${variantId}`;
+  const combinedId = `${productId}_${variantId}`;
 
   // Example: price from variant
   const price = variant?.priceV2?.amount || '0.00';
@@ -119,7 +119,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
   // Modify or remove as needed.
   return `
     <item>
-      <g:id>${xmlEncode(productId)}</g:id>
+      <g:id>${xmlEncode(combinedId)}</g:id>
       <g:title>${xmlEncode(product.title)}</g:title>
       <g:description>${xmlEncode(product.description || '')}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(product.handle)}</g:link>
