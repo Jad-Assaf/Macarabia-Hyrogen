@@ -21,7 +21,7 @@ import {RELATED_PRODUCTS_QUERY} from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
-import { trackAddToCart, trackViewContent } from '~/lib/metaPixelEvents';
+import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
 
 export const meta = ({data}) => {
   const product = data?.product;
@@ -342,7 +342,6 @@ export function ProductForm({
     trackAddToCart(product);
   };
 
-
   // Sync local state when the parent’s selectedVariant changes
   useEffect(() => {
     if (!selectedVariant?.selectedOptions) return;
@@ -516,10 +515,13 @@ export function ProductForm({
       </VariantSelector>
 
       <div className="product-form">
-        {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
+        {/* Add-to-Cart button with corrected onClick handler */}
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
-          onClick={() => open('cart'), handleAddToCart()}
+          onClick={() => {
+            handleAddToCart(); // Track the AddToCart event
+            open('cart'); // Open the cart aside/modal
+          }}
           lines={
             selectedVariant
               ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
@@ -591,8 +593,8 @@ export function ProductForm({
 //             disabled={isUnavailable || fetcher.state !== 'idle'}
 //             className={`buy-now-button ${isUnavailable ? 'disabled' : ''}`}
 //             onClick={handleAnimation}
-//             animate={isAnimating ? {scale: 1.05} : {scale: 1}}
-//             transition={{duration: 0.3}}
+//             animate={isAnimating ? { scale: 1.05 } : { scale: 1 }}
+//             transition={{ duration: 0.3 }}
 //           >
 //             Buy Now
 //           </motion.button>
@@ -640,6 +642,15 @@ export default function Product() {
     selectedVariant?.compareAtPrice &&
     selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
 
+  // Define the onAddToCart function
+  const onAddToCart = (product) => {
+    // Existing add to cart logic (if any)
+    // Example: addItemToCart(selectedVariant.id, quantity);
+
+    // Track the AddToCart event
+    trackAddToCart(product);
+  };
+
   return (
     <div className="product">
       <div className="ProductPageTop">
@@ -685,6 +696,7 @@ export default function Product() {
                 product={product}
                 selectedVariant={selectedVariant}
                 onVariantChange={setSelectedVariant}
+                onAddToCart={onAddToCart}
                 variants={[]}
                 quantity={Number(quantity)}
               />
@@ -700,6 +712,7 @@ export default function Product() {
                     product={product}
                     selectedVariant={selectedVariant}
                     onVariantChange={setSelectedVariant}
+                    onAddToCart={onAddToCart}
                     variants={data?.product?.variants?.nodes || []}
                     quantity={quantity}
                   />
