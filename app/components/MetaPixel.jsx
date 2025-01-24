@@ -1,16 +1,25 @@
-// src/utils/FacebookPixel.jsx
+// src/components/MetaPixel.jsx
 import {useEffect} from 'react';
-import ReactPixel from 'react-facebook-pixel';
 
 const MetaPixel = ({pixelId}) => {
   useEffect(() => {
-    if (!pixelId) return;
+    const loadReactPixel = async () => {
+      if (!pixelId) return;
 
-    ReactPixel.init(pixelId);
-    ReactPixel.pageView(); // Track initial page view
+      try {
+        // Dynamically import react-facebook-pixel
+        const ReactPixel = (await import('react-facebook-pixel')).default;
 
-    // Optionally, track page views on route changes
-    // You can integrate with your routing library to detect route changes
+        ReactPixel.init(pixelId);
+        ReactPixel.pageView(); // Track initial page view
+
+        // Example: Track additional events here or integrate with routing
+      } catch (error) {
+        console.error('MetaPixel Error:', error);
+      }
+    };
+
+    loadReactPixel();
   }, [pixelId]);
 
   return null;

@@ -1,3 +1,4 @@
+// src/root.jsx
 import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
 import {defer} from '@shopify/remix-oxygen';
 import {
