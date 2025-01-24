@@ -2,14 +2,42 @@
 
 /**
  * Utility function to extract the numeric ID from Shopify's global ID (gid).
- * Example: "gid://shopify/ProductVariant/123456789" => "123456789"
+ * Example: "gid://shopify/Product/123456789" => "123456789"
  * @param {string} gid - The global ID from Shopify.
  * @returns {string} - The extracted numeric ID.
  */
-const extractNumericId = (gid) => {
+const parseGid = (gid) => { // **Updated: Renamed from extractNumericId to parseGid**
   if (!gid) return '';
   const parts = gid.split('/');
   return parts[parts.length - 1];
+};
+
+/**
+ * Helper function to generate unique event IDs.
+ * Uses crypto.randomUUID if available, otherwise falls back to a custom method.
+ * @returns {string} - A unique event ID.
+ */
+const generateEventId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  } else {
+    // Fallback to a simple unique ID generator
+    return (
+      Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
+    );
+  }
+};
+
+/**
+ * Helper function to generate a combined ID from product and variant IDs.
+ * @param {string} productGid - The global ID of the product.
+ * @param {string} variantGid - The global ID of the variant.
+ * @returns {string} - The combined ID in the format "productId_variantId".
+ */
+const getCombinedId = (productGid, variantGid) => { // **Added: Helper function for combinedId**
+  const productId = parseGid(productGid);
+  const variantId = parseGid(variantGid);
+  return `${productId}_${variantId}`;
 };
 
 /**
@@ -17,16 +45,21 @@ const extractNumericId = (gid) => {
  * @param {Object} product - The product details.
  */
 export const trackViewContent = (product) => {
-  const variantId = extractNumericId(product.selectedVariant?.id);
-  const price = product.selectedVariant?.price?.amount || 0;
-  const currency = product.selectedVariant?.price?.currencyCode || 'USD';
+  const productId = parseGid(product.id); // **Updated: Extract Product ID**
+  const variantId = parseGid(product.selectedVariant?.id); // **Added: Extract Variant ID**
+  const combinedId = getCombinedId(product.id, product.selectedVariant?.id); // **Added: Generate combinedId**
+  const price = product.price?.amount || 0; // **Updated: Use product.price instead of selectedVariant**
+  const currency = product.price?.currencyCode || 'USD'; // **Updated: Use product.price instead of selectedVariant.currencyCode**
+
+  const eventId = generateEventId(); // **Added event_id**
 
   if (typeof fbq === 'function') {
     fbq('track', 'ViewContent', {
       value: parseFloat(price),
       currency: currency,
-      content_ids: [variantId],
-      content_type: 'product_variant',
+      content_ids: [combinedId], // **Updated: Use combinedId**
+      content_type: 'product', // **Updated: Change from 'product_variant' to 'product'**
+      event_id: eventId, // **Added event_id**
     });
   }
 };
@@ -36,16 +69,18 @@ export const trackViewContent = (product) => {
  * @param {Object} product - The product details.
  */
 export const trackAddToCart = (product) => {
-  const variantId = extractNumericId(product.selectedVariant?.id);
-  const price = product.selectedVariant?.price?.amount || 0;
-  const currency = product.selectedVariant?.price?.currencyCode || 'USD';
+  const productId = parseGid(product.id); // **Updated: Extract Product ID**
+  const variantId = parseGid(product.selectedVariant?.id); // **Added: Extract Variant ID**
+  const combinedId = getCombinedId(product.id, product.selectedVariant?.id); // **Added: Generate combinedId**
+  const price = product.price?.amount || 0; // **Updated: Use product.price instead of selectedVariant**
+  const currency = product.price?.currencyCode || 'USD'; // **Updated: Use product.price instead of selectedVariant.currencyCode**
 
   if (typeof fbq === 'function') {
     fbq('track', 'AddToCart', {
       value: parseFloat(price),
       currency: currency,
-      content_ids: [variantId],
-      content_type: 'product_variant',
+      content_ids: [combinedId], // **Updated: Use combinedId**
+      content_type: 'product', // **Updated: Change from 'product_variant' to 'product'**
     });
   }
 };
@@ -56,14 +91,15 @@ export const trackAddToCart = (product) => {
  */
 export const trackPurchase = (order) => {
   if (typeof fbq === 'function') {
+
     fbq('track', 'Purchase', {
-      content_ids: order.items.map((item) => item.id),
-      content_type: 'product',
+      content_ids: order.items.map((item) => getCombinedId(item.productId, item.variantId)), // **Updated: Use combinedId**
+      content_type: 'product', // **Ensure content_type is 'product'**
       currency: 'USD',
       value: order.total,
       num_items: order.items.length,
       contents: order.items.map((item) => ({
-        id: item.id,
+        id: getCombinedId(item.productId, item.variantId), // **Updated: Use combinedId**
         quantity: item.quantity,
         item_price: item.price,
       })),
@@ -76,10 +112,13 @@ export const trackPurchase = (order) => {
  * @param {string} query - The search query.
  */
 export const trackSearch = (query) => {
+  const eventId = generateEventId(); // **Added event_id**
+
   if (typeof fbq === 'function') {
     fbq('track', 'Search', {
       search_string: query,
       content_category: 'Search',
+      event_id: eventId, // **Added event_id**
     });
   }
 };
@@ -91,14 +130,15 @@ export const trackSearch = (query) => {
 export const trackInitiateCheckout = (cart) => {
   if (typeof fbq === 'function') {
     try {
-      const contentIds = cart.items?.map((item) => item.id) || [];
+      const combinedIds = cart.items?.map((item) => getCombinedId(item.productId, item.variantId)) || []; // **Updated: Use combinedId**
       const value = parseFloat(cart.cost?.totalAmount?.amount) || 0;
       const currency = cart.cost?.totalAmount?.currencyCode || 'USD';
       const numItems = cart.items?.length || 0;
 
+
       fbq('track', 'InitiateCheckout', {
-        content_ids: contentIds,
-        content_type: 'product',
+        content_ids: combinedIds, // **Updated: Use combinedIds**
+        content_type: 'product', // **Ensure content_type is 'product'**
         value: value,
         currency: currency,
         num_items: numItems,
@@ -116,6 +156,7 @@ export const trackInitiateCheckout = (cart) => {
  * @param {Object} order - The order details.
  */
 export const trackAddPaymentInfo = (order) => {
+
   if (typeof fbq === 'function') {
     fbq('track', 'AddPaymentInfo', {
       currency: 'USD',
