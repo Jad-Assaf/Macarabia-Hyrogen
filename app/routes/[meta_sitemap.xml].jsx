@@ -90,7 +90,7 @@ function generateMetaXmlFeed({products, baseUrl}) {
 function renderProductVariantItem(product, variant, baseUrl) {
   const productId = parseGid(product.id);
   const variantId = parseGid(variant.id);
-  const combinedId = `${productId}_${variantId}`;
+  const combinedId = `$${variantId}`;
 
   // Example: price from variant
   const price = variant?.priceV2?.amount || '0.00';
