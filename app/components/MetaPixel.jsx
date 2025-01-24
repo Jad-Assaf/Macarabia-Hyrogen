@@ -1,7 +1,10 @@
 // src/components/MetaPixelManual.jsx
 import {useEffect} from 'react';
+import {useLocation} from 'react-router-dom'; // Adjust based on your routing library
 
 const MetaPixel = ({pixelId}) => {
+  const location = useLocation(); // Adjust based on your routing library
+
   useEffect(() => {
     if (!pixelId) return;
 
@@ -30,13 +33,33 @@ const MetaPixel = ({pixelId}) => {
       'https://connect.facebook.net/en_US/fbevents.js',
     );
 
+    // Initialize the Pixel
     fbq('init', pixelId);
     fbq('track', 'PageView');
 
-    // Optional: Track additional events here
+    // Track page views on route changes
   }, [pixelId]);
 
-  return null;
+  useEffect(() => {
+    if (typeof fbq === 'function') {
+      fbq('track', 'PageView');
+    }
+  }, [location]);
+
+  return (
+    <>
+      {/* Meta Pixel Noscript */}
+      <noscript>
+        <img
+          height="1"
+          width="1"
+          style={{display: 'none'}}
+          src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
+          alt="Meta Pixel"
+        />
+      </noscript>
+    </>
+  );
 };
 
 export default MetaPixel;

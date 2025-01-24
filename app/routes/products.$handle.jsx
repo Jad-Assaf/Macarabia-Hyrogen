@@ -21,6 +21,7 @@ import {RELATED_PRODUCTS_QUERY} from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
+import { trackViewContent } from '~/lib/metaPixelEvents';
 
 export const meta = ({data}) => {
   const product = data?.product;
@@ -601,6 +602,10 @@ export default function Product() {
   useEffect(() => {
     setSelectedVariant(product.selectedVariant);
     setQuantity(1); // If you want to reset quantity to 1 for new product
+  }, [product]);
+
+  useEffect(() => {
+    trackViewContent(product);
   }, [product]);
 
   const [quantity, setQuantity] = useState(1);
