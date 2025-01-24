@@ -21,6 +21,7 @@ import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
 import MetaPixel from './components/MetaPixel';
+import ClientOnly from './components/ClientOnly';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -155,7 +156,6 @@ export function Layout({children}) {
     }
   }, []);
 
-
   useEffect(() => {
     // Load NProgress once and set it in the state
     const loadNProgress = async () => {
@@ -219,7 +219,9 @@ export function Layout({children}) {
             `,
           }}
         ></script>
-        <MetaPixel pixelId={PIXEL_ID}/>
+        <ClientOnly>
+          <MetaPixel pixelId={PIXEL_ID} />
+        </ClientOnly>
       </head>
       <body>
         <ClarityTracker clarityId={clarityId} />
