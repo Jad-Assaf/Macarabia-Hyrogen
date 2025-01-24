@@ -37,6 +37,8 @@ export const shouldRevalidate = ({
   return defaultShouldRevalidate;
 };
 
+const PIXEL_ID = '321309553208857'; // Replace with your actual Pixel ID
+
 export function links() {
   return [
     {rel: 'stylesheet', href: appStyles},
@@ -217,7 +219,7 @@ export function Layout({children}) {
             `,
           }}
         ></script>
-        <MetaPixel />
+        <MetaPixel pixelId={PIXEL_ID}/>
       </head>
       <body>
         <ClarityTracker clarityId={clarityId} />
