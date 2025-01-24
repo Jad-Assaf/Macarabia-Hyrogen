@@ -18,10 +18,9 @@ import appStyles from '~/styles/app.css?url';
 import tailwindCss from './styles/tailwind.css?url';
 import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
-import {Suspense, useEffect, useState} from 'react';
+import React, {Suspense, useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
 const MetaPixel = React.lazy(() => import('./components/MetaPixel'));
-
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
