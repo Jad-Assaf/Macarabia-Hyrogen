@@ -66,7 +66,11 @@ export default function CartCheckoutActions({
       trackInitiateCheckout(cart); // **Added Line**
 
       // Navigate to checkout
-      window.location.href = checkoutUrl;
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      } else {
+        console.error('Checkout URL is undefined.');
+      }
     }
   };
 
@@ -193,7 +197,8 @@ function CartGiftCard({giftCardCodes}) {
             <div className="cart-discount">
               <code>{codes?.join(', ')}</code>
               &nbsp;
-              <button onSubmit={() => removeAppliedCode}>Remove</button>
+              {/* **Changed `onSubmit` to `onClick`** */}
+              <button onClick={removeAppliedCode}>Remove</button>
             </div>
           </UpdateGiftCardForm>
         </div>

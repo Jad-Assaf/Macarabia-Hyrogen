@@ -90,13 +90,24 @@ export const trackSearch = (query) => {
  */
 export const trackInitiateCheckout = (cart) => {
   if (typeof fbq === 'function') {
-    fbq('track', 'InitiateCheckout', {
-      content_ids: cart.items.map((item) => item.id),
-      content_type: 'product',
-      value: cart.total,
-      currency: 'USD',
-      num_items: cart.items.length,
-    });
+    try {
+      const contentIds = cart.items?.map((item) => item.id) || [];
+      const value = parseFloat(cart.cost?.totalAmount?.amount) || 0;
+      const currency = cart.cost?.totalAmount?.currencyCode || 'USD';
+      const numItems = cart.items?.length || 0;
+
+      fbq('track', 'InitiateCheckout', {
+        content_ids: contentIds,
+        content_type: 'product',
+        value: value,
+        currency: currency,
+        num_items: numItems,
+      });
+    } catch (error) {
+      console.error('Error tracking InitiateCheckout:', error);
+    }
+  } else {
+    console.warn('fbq is not defined. Ensure Meta Pixel is initialized correctly.');
   }
 };
 
