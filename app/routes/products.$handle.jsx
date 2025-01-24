@@ -21,7 +21,7 @@ import {RELATED_PRODUCTS_QUERY} from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
-import { trackViewContent } from '~/lib/metaPixelEvents';
+import { trackAddToCart, trackViewContent } from '~/lib/metaPixelEvents';
 
 export const meta = ({data}) => {
   const product = data?.product;
@@ -308,6 +308,7 @@ function pickOrSnapVariant(allVariants, newOptions, optionName, chosenVal) {
 
 export function ProductForm({
   product,
+  onAddToCart,
   selectedVariant,
   onVariantChange,
   variants = [],
@@ -332,6 +333,15 @@ export function ProductForm({
       return acc;
     }, {});
   });
+
+  const handleAddToCart = () => {
+    // Your add to cart logic
+    onAddToCart(product);
+
+    // Track the AddToCart event
+    trackAddToCart(product);
+  };
+
 
   // Sync local state when the parent’s selectedVariant changes
   useEffect(() => {
@@ -443,9 +453,9 @@ export function ProductForm({
 
   // Possibly build a WhatsApp link
   const isProductPage = location.pathname.includes('/products/');
-const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613020030&text=${encodeURIComponent(
-  `Hi, I'd like to buy ${product.title} https://macarabia.me${location.pathname}`,
-)}`;
+  const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613020030&text=${encodeURIComponent(
+    `Hi, I'd like to buy ${product.title} https://macarabia.me${location.pathname}`,
+  )}`;
 
   // WhatsApp SVG icon (if you still want the share button)
   const WhatsAppIcon = () => (
@@ -509,7 +519,7 @@ const whatsappShareUrl = `https://api.whatsapp.com/send?phone=9613020030&text=${
         {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
-          onClick={() => open('cart')}
+          onClick={() => open('cart'), handleAddToCart}
           lines={
             selectedVariant
               ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
