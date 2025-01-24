@@ -1,25 +1,39 @@
-// src/components/MetaPixel.jsx
+// src/components/MetaPixelManual.jsx
 import {useEffect} from 'react';
 
 const MetaPixel = ({pixelId}) => {
   useEffect(() => {
-    const loadReactPixel = async () => {
-      if (!pixelId) return;
+    if (!pixelId) return;
 
-      try {
-        // Dynamically import react-facebook-pixel
-        const ReactPixel = (await import('react-facebook-pixel')).default;
+    // Insert the Meta Pixel script
+    !(function (f, b, e, v, n, t, s) {
+      if (f.fbq) return;
+      n = f.fbq = function () {
+        n.callMethod
+          ? n.callMethod.apply(n, arguments)
+          : n.queue.push(arguments);
+      };
+      if (!f._fbq) f._fbq = n;
+      n.push = n;
+      n.loaded = !0;
+      n.version = '2.0';
+      n.queue = [];
+      t = b.createElement(e);
+      t.async = !0;
+      t.src = v;
+      s = b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t, s);
+    })(
+      window,
+      document,
+      'script',
+      'https://connect.facebook.net/en_US/fbevents.js',
+    );
 
-        ReactPixel.init(pixelId);
-        ReactPixel.pageView(); // Track initial page view
+    fbq('init', pixelId);
+    fbq('track', 'PageView');
 
-        // Example: Track additional events here or integrate with routing
-      } catch (error) {
-        console.error('MetaPixel Error:', error);
-      }
-    };
-
-    loadReactPixel();
+    // Optional: Track additional events here
   }, [pixelId]);
 
   return null;
