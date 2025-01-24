@@ -1,18 +1,32 @@
 // src/utils/metaPixelEvents.js
 
 /**
+ * Utility function to extract the numeric ID from Shopify's global ID (gid).
+ * Example: "gid://shopify/ProductVariant/123456789" => "123456789"
+ * @param {string} gid - The global ID from Shopify.
+ * @returns {string} - The extracted numeric ID.
+ */
+const extractNumericId = (gid) => {
+  if (!gid) return '';
+  const parts = gid.split('/');
+  return parts[parts.length - 1];
+};
+
+/**
  * Tracks a ViewContent event when a product is viewed.
  * @param {Object} product - The product details.
  */
 export const trackViewContent = (product) => {
+  const variantId = extractNumericId(product.selectedVariant?.id);
+  const price = product.selectedVariant?.price?.amount || 0;
+  const currency = product.selectedVariant?.price?.currencyCode || 'USD';
+
   if (typeof fbq === 'function') {
     fbq('track', 'ViewContent', {
-      content_name: product.title,
-      content_category: product.category,
-      content_ids: [product.id],
-      content_type: 'product',
-      value: product.price,
-      currency: 'USD',
+      value: parseFloat(price),
+      currency: currency,
+      content_ids: [variantId],
+      content_type: 'product_variant',
     });
   }
 };
@@ -22,14 +36,16 @@ export const trackViewContent = (product) => {
  * @param {Object} product - The product details.
  */
 export const trackAddToCart = (product) => {
+  const variantId = extractNumericId(product.selectedVariant?.id);
+  const price = product.selectedVariant?.price?.amount || 0;
+  const currency = product.selectedVariant?.price?.currencyCode || 'USD';
+
   if (typeof fbq === 'function') {
     fbq('track', 'AddToCart', {
-      content_name: product.title,
-      content_category: product.category,
-      content_ids: [product.id],
-      content_type: 'product',
-      value: product.price,
-      currency: 'USD',
+      value: parseFloat(price),
+      currency: currency,
+      content_ids: [variantId],
+      content_type: 'product_variant',
     });
   }
 };
