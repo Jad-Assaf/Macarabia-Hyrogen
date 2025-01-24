@@ -2,7 +2,7 @@
 import {useEffect} from 'react';
 import ReactPixel from 'react-facebook-pixel';
 
-const FacebookPixel = ({pixelId}) => {
+const MetaPixel = ({pixelId}) => {
   useEffect(() => {
     if (!pixelId) return;
 
@@ -16,4 +16,4 @@ const FacebookPixel = ({pixelId}) => {
   return null;
 };
 
-export default FacebookPixel;
+export default MetaPixel;
