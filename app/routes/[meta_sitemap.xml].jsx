@@ -119,7 +119,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
   // Modify or remove as needed.
   return `
     <item>
-      <g:id>${xmlEncode(combinedId)}</g:id>
+      <g:id>${xmlEncode(productId)}</g:id>
       <g:title>${xmlEncode(product.title)}</g:title>
       <g:description>${xmlEncode(product.description || '')}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(product.handle)}</g:link>
