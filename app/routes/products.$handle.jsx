@@ -519,7 +519,7 @@ export function ProductForm({
         {/* An Add-to-Cart button with the found (or parent’s) selectedVariant */}
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
-          onClick={() => open('cart'), handleAddToCart}
+          onClick={() => open('cart'), handleAddToCart()}
           lines={
             selectedVariant
               ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
