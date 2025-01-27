@@ -61,10 +61,9 @@ async function fetchAllResources({storefront, query, field}) {
 
 /**
  * Generates the RSS feed for Google Merchant Center.
- * We create one <item> per variant, including all images in the product.
+ * Variants are grouped by `item_group_id` (product ID).
  */
 function generateMerchantCenterFeed({products, baseUrl}) {
-  // Flatten into a single list of items (product-variant pairs)
   const allItems = products.flatMap((product) => {
     if (!product?.variants?.nodes?.length) return [];
     return product.variants.nodes.map((variant) => ({
@@ -90,21 +89,17 @@ function generateMerchantCenterFeed({products, baseUrl}) {
 
 /**
  * Render a single <item> entry for each product-variant pair.
+ * Includes <g:item_group_id> for grouping variants and <g:id> for the variant's ID.
  */
 function renderProductVariantItem(product, variant, baseUrl) {
-  // Parse numeric IDs or just use the GraphQL GIDs
-  const productId = parseGid(product.id); // e.g. 'gid://shopify/Product/12345' -> '12345'
-  const variantId = parseGid(variant.id); // e.g. 'gid://shopify/ProductVariant/67890' -> '67890'
-  const combinedId = `${productId}_${variantId}`;
+  const productId = parseGid(product.id); // Product ID for grouping
+  const variantId = parseGid(variant.id); // Variant ID for content ID
+  const combinedId = `${productId}_${variantId}`; // Unique ID
 
-  // Price from the variant
   const price = variant?.priceV2?.amount || '0.00';
   const currencyCode = variant?.priceV2?.currencyCode || 'USD';
-
-  // Brand fallback (if your store uses 'vendor', use that; otherwise hardcode or fetch from Metafields)
   const brand = product.vendor || 'YourBrand';
 
-  // Images: first one is <g:image_link>, additional are <g:additional_image_link>
   const allImages = product?.images?.nodes || [];
   const firstImageUrl = allImages[0]?.url ? xmlEncode(allImages[0].url) : '';
   const additionalImageTags = allImages
@@ -115,10 +110,10 @@ function renderProductVariantItem(product, variant, baseUrl) {
     })
     .join('');
 
-  // Example availability, condition, etc.
   return `
     <item>
-      <g:id>${xmlEncode(combinedId)}</g:id>
+      <g:id>${xmlEncode(variantId)}</g:id>
+      <g:item_group_id>${xmlEncode(productId)}</g:item_group_id>
       <g:title>${xmlEncode(product.title)}</g:title>
       <g:description>${xmlEncode(product.description || '')}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(product.handle)}</g:link>
