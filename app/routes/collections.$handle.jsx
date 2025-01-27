@@ -1054,7 +1054,7 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
                 {/* Sold-out banner */}
                 <div
                   className="sold-out-ban"
-                  style={{display: isSoldOut ? 'block' : 'none'}} // Conditionally displayed
+                  style={{display: isSoldOut ? 'flex' : 'none'}} // Conditionally displayed
                 >
                   <p>Sold Out</p>
                 </div>
