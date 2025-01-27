@@ -91,11 +91,11 @@ function renderProductVariantItem(product, variant, baseUrl) {
   const productId = parseGid(product.id); // Product ID for grouping
   const variantId = parseGid(variant.id); // Variant ID for unique identification
 
-  // Example: price from variant
+  // Price from variant
   const price = variant?.priceV2?.amount || '0.00';
   const currencyCode = variant?.priceV2?.currencyCode || 'USD';
 
-  // Basic brand fallback
+  // Brand fallback
   const brand = product.vendor || 'MyBrand';
 
   // Use the variant image if available; otherwise, fallback to the first product image
@@ -103,10 +103,10 @@ function renderProductVariantItem(product, variant, baseUrl) {
   const fallbackImage = product?.images?.nodes?.[0]?.url || '';
   const imageUrl = xmlEncode(variantImage || fallbackImage);
 
-  // Additional images: exclude the primary image (variant or fallback)
+  // Additional images: exclude the main image (variant or fallback)
   const additionalImageTags =
     product?.images?.nodes
-      ?.filter((img) => img.url !== (variantImage || fallbackImage)) // Ensure primary image is excluded
+      ?.filter((img) => xmlEncode(img.url) !== imageUrl) // Exclude the primary image
       ?.map(
         (img) =>
           `<g:additional_image_link>${xmlEncode(
@@ -115,12 +115,11 @@ function renderProductVariantItem(product, variant, baseUrl) {
       )
       .join('') || '';
 
-  // Combine variant options into a readable format (e.g., "Color: Red / Size: Small")
-  const variantOptions = variant?.title || ''; // Title already includes option names in Shopify
-  const optionDetails =
+  // Variant options
+  const variantOptions =
     variant?.selectedOptions
-      ?.map((option) => `${option.name}: ${option.value}`)
-      ?.join(' / ') || '';
+      ?.map((opt) => `${opt.name}: ${opt.value}`)
+      .join(', ') || '';
 
   return `
     <item>
@@ -146,7 +145,6 @@ function renderProductVariantItem(product, variant, baseUrl) {
         <g:service>Standard</g:service>
         <g:price>5.00 USD</g:price>
       </g:shipping>
-      <g:variant_options>${xmlEncode(optionDetails)}</g:variant_options>
     </item>
   `;
 }
