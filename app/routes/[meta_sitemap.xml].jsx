@@ -98,29 +98,42 @@ function renderProductVariantItem(product, variant, baseUrl) {
   // Basic brand fallback
   const brand = product.vendor || 'MyBrand';
 
-  // Gather images: first is <g:image_link>, rest as <g:additional_image_link>
-  const allImages = product?.images?.nodes || [];
-  const firstImageUrl = allImages[0]?.url ? xmlEncode(allImages[0].url) : '';
-  const additionalImageTags = allImages
-    .slice(1)
-    .map(
-      (img) =>
-        `<g:additional_image_link>${xmlEncode(
-          img.url,
-        )}</g:additional_image_link>`,
-    )
-    .join('');
+  // Use the variant image if available; otherwise, fallback to the first product image
+  const variantImage = variant?.image?.url || null;
+  const fallbackImage = product?.images?.nodes?.[0]?.url || '';
+  const imageUrl = xmlEncode(variantImage || fallbackImage);
+
+  // Additional images: exclude the primary image (variant or fallback)
+  const additionalImageTags =
+    product?.images?.nodes
+      ?.filter((img) => img.url !== (variantImage || fallbackImage)) // Ensure primary image is excluded
+      ?.map(
+        (img) =>
+          `<g:additional_image_link>${xmlEncode(
+            img.url,
+          )}</g:additional_image_link>`,
+      )
+      .join('') || '';
+
+  // Combine variant options into a readable format (e.g., "Color: Red / Size: Small")
+  const variantOptions = variant?.title || ''; // Title already includes option names in Shopify
+  const optionDetails =
+    variant?.selectedOptions
+      ?.map((option) => `${option.name}: ${option.value}`)
+      ?.join(' / ') || '';
 
   return `
     <item>
       <g:id>${xmlEncode(variantId)}</g:id>
-      <g:item_group_id>${xmlEncode(
-        productId,
-      )}</g:item_group_id>
-      <g:title>${xmlEncode(product.title)}</g:title>
+      <g:item_group_id>${xmlEncode(productId)}</g:item_group_id>
+      <g:title>${xmlEncode(product.title)} - ${xmlEncode(
+    variantOptions,
+  )}</g:title>
       <g:description>${xmlEncode(product.description || '')}</g:description>
-      <g:link>${baseUrl}/products/${xmlEncode(product.handle)}</g:link>
-      ${firstImageUrl ? `<g:image_link>${firstImageUrl}</g:image_link>` : ''}
+      <g:link>${baseUrl}/products/${xmlEncode(
+    product.handle,
+  )}?variant=${xmlEncode(variantId)}</g:link>
+      ${imageUrl ? `<g:image_link>${imageUrl}</g:image_link>` : ''}
       ${additionalImageTags}
       <g:brand>${xmlEncode(brand)}</g:brand>
       <g:condition>new</g:condition>
@@ -133,9 +146,11 @@ function renderProductVariantItem(product, variant, baseUrl) {
         <g:service>Standard</g:service>
         <g:price>5.00 USD</g:price>
       </g:shipping>
+      <g:variant_options>${xmlEncode(optionDetails)}</g:variant_options>
     </item>
   `;
 }
+
 
 /**
  * Parse numeric ID out of the Shopify global ID (e.g. "gid://shopify/Product/12345" -> "12345").
