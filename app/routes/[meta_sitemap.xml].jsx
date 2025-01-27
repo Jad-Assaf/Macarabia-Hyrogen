@@ -215,13 +215,13 @@ const PRODUCTS_QUERY = `#graphql
         description
         vendor
         updatedAt
-        images(first: 3) {
+        images(first: 5) {
           nodes {
             url
             altText
           }
         }
-        variants(first: 10) {
+        variants(first: 30) {
           nodes {
             id
             title
