@@ -91,11 +91,11 @@ function renderProductVariantItem(product, variant, baseUrl) {
   const productId = parseGid(product.id); // Product ID for grouping
   const variantId = parseGid(variant.id); // Variant ID for unique identification
 
-  // Price from variant
+  // Example: price from variant
   const price = variant?.priceV2?.amount || '0.00';
   const currencyCode = variant?.priceV2?.currencyCode || 'USD';
 
-  // Brand fallback
+  // Basic brand fallback
   const brand = product.vendor || 'MyBrand';
 
   // Use the variant image if available; otherwise, fallback to the first product image
@@ -106,7 +106,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
   // Additional images: exclude the main image (variant or fallback)
   const additionalImageTags =
     product?.images?.nodes
-      ?.filter((img) => xmlEncode(img.url) !== imageUrl) // Exclude the primary image
+      ?.filter((img) => img.url !== imageUrl) // Exclude the primary image
       ?.map(
         (img) =>
           `<g:additional_image_link>${xmlEncode(
@@ -115,19 +115,19 @@ function renderProductVariantItem(product, variant, baseUrl) {
       )
       .join('') || '';
 
-  // Variant options
+  // Variant options (e.g., "Color: Red, Size: Small")
   const variantOptions =
     variant?.selectedOptions
-      ?.map((opt) => `${opt.name}: ${opt.value}`)
-      .join(', ') || '';
+      ?.map((option) => `${option.name}: ${option.value}`)
+      ?.join(', ') || '';
 
   return `
     <item>
       <g:id>${xmlEncode(variantId)}</g:id>
       <g:item_group_id>${xmlEncode(productId)}</g:item_group_id>
-      <g:title>${xmlEncode(product.title)} - ${xmlEncode(
-    variantOptions,
-  )}</g:title>
+      <g:title>${xmlEncode(
+        product.title,
+      )}</g:title>
       <g:description>${xmlEncode(product.description || '')}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(
     product.handle,
@@ -145,10 +145,12 @@ function renderProductVariantItem(product, variant, baseUrl) {
         <g:service>Standard</g:service>
         <g:price>5.00 USD</g:price>
       </g:shipping>
+      <g:variant_options>${xmlEncode(
+        variantOptions,
+      )}</g:variant_options>
     </item>
   `;
 }
-
 
 /**
  * Parse numeric ID out of the Shopify global ID (e.g. "gid://shopify/Product/12345" -> "12345").
