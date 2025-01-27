@@ -115,11 +115,40 @@ function renderProductVariantItem(product, variant, baseUrl) {
       )
       .join('') || '';
 
-  // Variant options (e.g., "Color: Red, Size: Small")
-  const variantOptions =
+  // Extract standard variant attributes
+  const color =
+    variant?.selectedOptions?.find(
+      (option) => option.name.toLowerCase() === 'color',
+    )?.value || '';
+  const size =
+    variant?.selectedOptions?.find(
+      (option) => option.name.toLowerCase() === 'size',
+    )?.value || '';
+  const material =
+    variant?.selectedOptions?.find(
+      (option) => option.name.toLowerCase() === 'material',
+    )?.value || '';
+  const pattern =
+    variant?.selectedOptions?.find(
+      (option) => option.name.toLowerCase() === 'pattern',
+    )?.value || '';
+
+  // Capture all other custom options as additional_variant_attribute
+  const additionalAttributes =
     variant?.selectedOptions
-      ?.map((option) => `${option.name}: ${option.value}`)
-      ?.join(', ') || 'No options available'; // Default fallback text if no options exist
+      ?.filter(
+        (option) =>
+          !['color', 'size', 'material', 'pattern'].includes(
+            option.name.toLowerCase(),
+          ),
+      )
+      ?.map(
+        (option) =>
+          `<g:additional_variant_attribute name="${xmlEncode(
+            option.name,
+          )}">${xmlEncode(option.value)}</g:additional_variant_attribute>`,
+      )
+      .join('') || '';
 
   return `
     <item>
@@ -138,12 +167,16 @@ function renderProductVariantItem(product, variant, baseUrl) {
         variant?.availableForSale ? 'in stock' : 'out of stock'
       }</g:availability>
       <g:price>${price} ${currencyCode}</g:price>
+      ${color ? `<g:color>${xmlEncode(color)}</g:color>` : ''}
+      ${size ? `<g:size>${xmlEncode(size)}</g:size>` : ''}
+      ${material ? `<g:material>${xmlEncode(material)}</g:material>` : ''}
+      ${pattern ? `<g:pattern>${xmlEncode(pattern)}</g:pattern>` : ''}
+      ${additionalAttributes}
       <g:shipping>
         <g:country>LB</g:country>
         <g:service>Standard</g:service>
         <g:price>5.00 USD</g:price>
       </g:shipping>
-      <g:variant_options>${xmlEncode(variantOptions)}</g:variant_options>
     </item>
   `;
 }
