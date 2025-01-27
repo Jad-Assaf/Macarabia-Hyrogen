@@ -17,10 +17,8 @@ export default async function handleRequest(
   remixContext,
   context,
 ) {
-  // Redirect logic for www.macarabia.me to macarabia.me
   const url = new URL(request.url);
   if (url.hostname === 'www.macarabia.me') {
-    // Redirect to macarabia.me with the same path and query params
     const redirectUrl = `https://macarabia.me${url.pathname}${url.search}`;
     return new Response(null, {
       status: 301,
@@ -40,28 +38,81 @@ export default async function handleRequest(
       "'self'", // Allow scripts from the same origin
       'https://www.clarity.ms', // Allow scripts from clarity.ms
       'https://*.clarity.ms', // Allow scripts from clarity.ms
+      'https://x.clarity.ms',
+      'https://c.clarity.ms',
+      'https://macarabia.me',
+      'https://macarabia.myshopify.com',
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
       'https://connect.facebook.net', // Required for Meta Pixel
-      'https://shown.io', // Required for Meta Pixel
+      'https://google.com',
+      'https://www.google.com',
+      'https://www.googletagmanager.com',
+      'https://www.googletagmanager.com/',
+      'https://www.google.com.lb',
+      'https://analytics.google.com/',
+      'https://td.doubleclick.net/',
+      'https://stats.g.doubleclick.net/',
+      'https://googleads.g.doubleclick.net',
     ],
     connectSrc: [
-      "'self'", // Allow connections to the same origin
-      'https://x.clarity.ms', // Allow connections to Clarity
-      'https://*.clarity.ms', // Allow connections to any subdomain of clarity.ms
-      'https://monorail-edge.shopifysvc.com', // Allow Shopify service connections
+      "'self'", // Allow scripts from the same origin
+      'https://www.clarity.ms', // Allow scripts from clarity.ms
+      'https://*.clarity.ms', // Allow scripts from clarity.ms
+      'https://x.clarity.ms',
+      'https://c.clarity.ms',
+      'https://macarabia.me',
+      'https://macarabia.myshopify.com',
+      'https://cdn.shopify.com', // Allow scripts from Shopify CDN
       'https://connect.facebook.net', // Required for Meta Pixel
-      'https://shown.io/', // Required for Meta Pixel
+      'https://google.com',
+      'https://www.google.com',
+      'https://www.googletagmanager.com',
+      'https://www.googletagmanager.com/',
+      'https://www.google.com.lb',
+      'https://analytics.google.com/',
+      'https://td.doubleclick.net/',
+      'https://stats.g.doubleclick.net/',
+      'https://googleads.g.doubleclick.net',
+    ],
+    frameSrc: [
+      "'self'", // Allow scripts from the same origin
+      'https://www.clarity.ms', // Allow scripts from clarity.ms
+      'https://*.clarity.ms', // Allow scripts from clarity.ms
+      'https://x.clarity.ms',
+      'https://c.clarity.ms',
+      'https://macarabia.me',
+      'https://macarabia.myshopify.com',
+      'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      'https://connect.facebook.net', // Required for Meta Pixel
+      'https://google.com',
+      'https://www.google.com',
+      'https://www.googletagmanager.com',
+      'https://www.googletagmanager.com/',
+      'https://www.google.com.lb',
+      'https://analytics.google.com/',
+      'https://td.doubleclick.net/',
+      'https://stats.g.doubleclick.net/',
+      'https://googleads.g.doubleclick.net',
     ],
     imgSrc: [
-      "'self'",
-      'data:',
-      'blob:',
-      'https://cdn.shopify.com',
-      'https://cdn.shopifycdn.com',
-      'https://*.shopifycdn.com',
+      "'self'", // Allow scripts from the same origin
+      'https://www.clarity.ms', // Allow scripts from clarity.ms
+      'https://*.clarity.ms', // Allow scripts from clarity.ms
+      'https://x.clarity.ms',
+      'https://c.clarity.ms',
       'https://macarabia.me',
-      'https://www.facebook.com', // if you need the FB Pixel 1x1
-      'https://shown.io/', // if you need the FB Pixel 1x1
+      'https://macarabia.myshopify.com',
+      'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      'https://connect.facebook.net', // Required for Meta Pixel
+      'https://google.com',
+      'https://www.google.com',
+      'https://www.googletagmanager.com',
+      'https://www.googletagmanager.com/',
+      'https://www.google.com.lb',
+      'https://analytics.google.com/',
+      'https://td.doubleclick.net/',
+      'https://stats.g.doubleclick.net/',
+      'https://googleads.g.doubleclick.net',
       // etc.
     ],
   });
