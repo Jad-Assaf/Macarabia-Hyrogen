@@ -88,9 +88,8 @@ function generateMetaXmlFeed({products, baseUrl}) {
  * Compare to your existing merchant feed to see what's different.
  */
 function renderProductVariantItem(product, variant, baseUrl) {
-  const productId = parseGid(product.id);
-  const variantId = parseGid(variant.id);
-  const combinedId = `${productId}_${variantId}`;
+  const productId = parseGid(product.id); // Product ID for grouping
+  const variantId = parseGid(variant.id); // Variant ID for unique identification
 
   // Example: price from variant
   const price = variant?.priceV2?.amount || '0.00';
@@ -112,14 +111,12 @@ function renderProductVariantItem(product, variant, baseUrl) {
     )
     .join('');
 
-  // Some extra fields that differ from your standard Merchant feed:
-  //  - Shipping
-  //  - google_product_category
-  //  - custom_label_0
-  // Modify or remove as needed.
   return `
     <item>
-      <g:id>${xmlEncode(combinedId)}</g:id>
+      <g:id>${xmlEncode(variantId)}</g:id>
+      <g:item_group_id>${xmlEncode(
+        productId,
+      )}</g:item_group_id>
       <g:title>${xmlEncode(product.title)}</g:title>
       <g:description>${xmlEncode(product.description || '')}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(product.handle)}</g:link>
