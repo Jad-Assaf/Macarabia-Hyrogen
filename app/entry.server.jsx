@@ -43,6 +43,7 @@ export default async function handleRequest(
       'https://macarabia.me',
       'https://macarabia.myshopify.com',
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      'https://www.facebook.com',
       'https://connect.facebook.net', // Required for Meta Pixel
       'https://google.com',
       'https://www.google.com',
@@ -63,6 +64,7 @@ export default async function handleRequest(
       'https://macarabia.me',
       'https://macarabia.myshopify.com',
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      'https://www.facebook.com',
       'https://connect.facebook.net', // Required for Meta Pixel
       'https://google.com',
       'https://www.google.com',
@@ -83,6 +85,7 @@ export default async function handleRequest(
       'https://macarabia.me',
       'https://macarabia.myshopify.com',
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      'https://www.facebook.com',
       'https://connect.facebook.net', // Required for Meta Pixel
       'https://google.com',
       'https://www.google.com',
@@ -103,6 +106,7 @@ export default async function handleRequest(
       'https://macarabia.me',
       'https://macarabia.myshopify.com',
       'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      'https://www.facebook.com',
       'https://connect.facebook.net', // Required for Meta Pixel
       'https://google.com',
       'https://www.google.com',
