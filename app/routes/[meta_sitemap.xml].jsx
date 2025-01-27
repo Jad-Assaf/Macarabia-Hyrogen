@@ -119,7 +119,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
   const variantOptions =
     variant?.selectedOptions
       ?.map((option) => `${option.name}: ${option.value}`)
-      ?.join(', ') || '';
+      ?.join(', ') || 'No options available'; // Default fallback text if no options exist
 
   return `
     <item>
