@@ -144,9 +144,10 @@ function renderProductVariantItem(product, variant, baseUrl) {
       )
       ?.map(
         (option) =>
-          `<g:additional_variant_attribute name="${xmlEncode(
-            option.name,
-          )}">${xmlEncode(option.value)}</g:additional_variant_attribute>`,
+          `<g:additional_variant_attribute>
+             <g:name>${xmlEncode(option.name)}</g:name>
+             <g:value>${xmlEncode(option.value)}</g:value>
+           </g:additional_variant_attribute>`,
       )
       .join('') || '';
 
