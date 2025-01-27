@@ -125,9 +125,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
     <item>
       <g:id>${xmlEncode(variantId)}</g:id>
       <g:item_group_id>${xmlEncode(productId)}</g:item_group_id>
-      <g:title>${xmlEncode(
-        product.title,
-      )}</g:title>
+      <g:title>${xmlEncode(product.title)}</g:title>
       <g:description>${xmlEncode(product.description || '')}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(
     product.handle,
@@ -145,9 +143,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
         <g:service>Standard</g:service>
         <g:price>5.00 USD</g:price>
       </g:shipping>
-      <g:variant_options>${xmlEncode(
-        variantOptions,
-      )}</g:variant_options>
+      <g:variant_options>${xmlEncode(variantOptions)}</g:variant_options>
     </item>
   `;
 }
@@ -170,10 +166,7 @@ function xmlEncode(string) {
 }
 
 /**
- * Example GraphQL query:
- *  - product id, handle, title, description, vendor
- *  - multiple images
- *  - variants (e.g. up to 100)
+ * Updated GraphQL query to include image and selectedOptions for each variant.
  */
 const PRODUCTS_QUERY = `#graphql
   query Products($first: Int!, $after: String) {
@@ -203,6 +196,13 @@ const PRODUCTS_QUERY = `#graphql
             priceV2 {
               amount
               currencyCode
+            }
+            image {
+              url
+            }
+            selectedOptions {
+              name
+              value
             }
           }
         }
