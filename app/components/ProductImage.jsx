@@ -1,11 +1,11 @@
 // ProductImages.jsx
-import { useEffect, useState } from 'react';
-import { Image } from '@shopify/hydrogen';
+import {useEffect, useState} from 'react';
+import {Image} from '@shopify/hydrogen';
 import Lightbox from 'yet-another-react-lightbox';
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
 import 'yet-another-react-lightbox/styles.css';
 import '../styles/ProductImage.css';
-import { useSwipeable } from 'react-swipeable';
+import {useSwipeable} from 'react-swipeable';
 
 const LeftArrowIcon = () => (
   <svg
@@ -39,18 +39,19 @@ const RightArrowIcon = () => (
  * Utility function to extract YouTube video ID from a URL
  * Supports both standard and shortened YouTube URLs
  * Returns null if not a YouTube URL
- * @param {string} url 
+ * @param {string} url
  * @returns {string|null}
  */
 function getYouTubeVideoId(url) {
-  const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const regex =
+    /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
   const match = url.match(regex);
   return match ? match[1] : null;
 }
 
 /**
  * Utility function to get YouTube thumbnail URL
- * @param {string} videoId 
+ * @param {string} videoId
  * @returns {string}
  */
 function getYouTubeThumbnail(videoId) {
@@ -60,11 +61,11 @@ function getYouTubeThumbnail(videoId) {
 /**
  * @param {{
  *   images: Array<{node: ProductFragment['images']['edges'][0]['node']}>;
- *   videos: Array<{url: string, id: string, altText?: string}>;
+ *   videos: Array<{mediaContentType: string, embedUrl?: string, url?: string, id: string, altText?: string}>;
  *   selectedVariantImage?: {id: string};
  * }}
  */
-export function ProductImages({ images, videos = [], selectedVariantImage }) {
+export function ProductImages({images, videos = [], selectedVariantImage}) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [mediaKey, setMediaKey] = useState(0);
@@ -73,20 +74,25 @@ export function ProductImages({ images, videos = [], selectedVariantImage }) {
 
   // Combine images and videos while maintaining their distinction
   const mediaItems = [
-    ...images.map(({ node }) => ({ type: 'image', node })),
-    ...videos.map(({ url, id, altText }) => {
-      const youtubeId = getYouTubeVideoId(url);
-      return {
-        type: youtubeId ? 'youtube' : 'video',
-        node: { url, id, altText, youtubeId },
-      };
-    }),
+    ...images.map(({node}) => ({type: 'image', node})),
+    ...videos
+      .map((video) => {
+        if (video.mediaContentType === 'EXTERNAL_VIDEO' && video.embedUrl) {
+          return {type: 'external_video', node: video};
+        } else if (video.mediaContentType === 'VIDEO' && video.url) {
+          return {type: 'video', node: video};
+        } else {
+          // Handle other mediaContentTypes or malformed media items if necessary
+          return null;
+        }
+      })
+      .filter(Boolean), // Remove any null entries
   ];
 
   useEffect(() => {
     if (selectedVariantImage) {
       const variantMediaIndex = images.findIndex(
-        ({ node }) => node.id === selectedVariantImage.id,
+        ({node}) => node.id === selectedVariantImage.id,
       );
       if (variantMediaIndex >= 0 && !isVariantSelected) {
         setSelectedMediaIndex(variantMediaIndex);
@@ -132,14 +138,15 @@ export function ProductImages({ images, videos = [], selectedVariantImage }) {
       {/* Thumbnails */}
       <div className="thumbContainer">
         <div className="thumbnails">
-          {mediaItems.map(({ type, node: media }, index) => {
+          {mediaItems.map(({type, node: media}, index) => {
             // Determine thumbnail content
             let thumbnailContent;
-            if (type === 'youtube') {
+            if (type === 'external_video') {
               // Use YouTube thumbnail
+              const youtubeId = getYouTubeVideoId(media.embedUrl);
               thumbnailContent = (
                 <img
-                  src={getYouTubeThumbnail(media.youtubeId)}
+                  src={getYouTubeThumbnail(youtubeId)}
                   alt={media.altText || 'YouTube Video Thumbnail'}
                   width={80}
                   height={80}
@@ -180,27 +187,12 @@ export function ProductImages({ images, videos = [], selectedVariantImage }) {
                   index === selectedMediaIndex ? 'active' : ''
                 }`}
                 onClick={() => setSelectedMediaIndex(index)}
-                style={{ position: 'relative' }}
+                style={{position: 'relative'}}
               >
                 {thumbnailContent}
-                {type === 'youtube' && (
+                {(type === 'external_video' || type === 'video') && (
                   <div className="play-icon-overlay">
-                    {/* Play Icon Overlay for YouTube Videos */}
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="white"
-                      stroke="none"
-                      width="24"
-                      height="24"
-                    >
-                      <polygon points="5,3 19,12 5,21" />
-                    </svg>
-                  </div>
-                )}
-                {type === 'video' && (
-                  <div className="play-icon-overlay">
-                    {/* Play Icon Overlay for Direct Videos */}
+                    {/* Play Icon Overlay for Videos */}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 24 24"
@@ -223,15 +215,18 @@ export function ProductImages({ images, videos = [], selectedVariantImage }) {
       <div
         className="main-image"
         onClick={() => setIsLightboxOpen(true)}
-        style={{ cursor: 'grab' }}
+        style={{cursor: 'grab'}}
         {...swipeHandlers}
       >
-        {mediaItems[selectedMediaIndex]?.type === 'youtube' ? (
-          <div className="youtube-iframe-container" style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+        {selectedMedia?.type === 'external_video' ? (
+          <div
+            className="youtube-iframe-container"
+            style={{position: 'relative', paddingBottom: '56.25%', height: 0}}
+          >
             <iframe
               key={mediaKey}
               title={selectedMedia.altText || 'YouTube Video'}
-              src={`https://www.youtube.com/embed/${selectedMedia.youtubeId}`}
+              src={selectedMedia.embedUrl}
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -247,7 +242,7 @@ export function ProductImages({ images, videos = [], selectedVariantImage }) {
               onLoad={() => setIsMediaLoaded(true)}
             ></iframe>
           </div>
-        ) : mediaItems[selectedMediaIndex]?.type === 'video' ? (
+        ) : selectedMedia?.type === 'video' ? (
           <video
             key={mediaKey}
             src={selectedMedia.url}
@@ -262,7 +257,7 @@ export function ProductImages({ images, videos = [], selectedVariantImage }) {
           >
             Sorry, your browser doesn't support embedded videos.
           </video>
-        ) : (
+        ) : selectedMedia?.type === 'image' ? (
           <div
             style={{
               filter: isMediaLoaded ? 'blur(0px)' : 'blur(10px)',
@@ -282,7 +277,7 @@ export function ProductImages({ images, videos = [], selectedVariantImage }) {
               }}
             />
           </div>
-        )}
+        ) : null}
         <div className="ImageArrows">
           <button
             className="prev-button"
@@ -313,54 +308,74 @@ export function ProductImages({ images, videos = [], selectedVariantImage }) {
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
           index={selectedMediaIndex}
-          slides={mediaItems.map(({ type, node }) => {
-            if (type === 'youtube') {
-              return {
-                type: 'html',
-                html: `
-                  <div style="position: relative; padding-bottom: 56.25%; height: 0;">
-                    <iframe 
-                      src="https://www.youtube.com/embed/${node.youtubeId}?autoplay=1" 
-                      frameborder="0" 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                      allowfullscreen 
-                      style="position:absolute; top:0; left:0; width:100%; height:100%;">
-                    </iframe>
-                  </div>
-                `,
-              };
-            } else if (type === 'video') {
-              return {
-                type: 'video',
-                src: node.url,
-                video: {
-                  attributes: {
-                    controls: true,
-                    autoPlay: true,
-                  },
-                },
-              };
-            } else {
-              return { src: node.url };
-            }
-          })}
+          slides={mediaItems
+            .map(({type, node}) => {
+              if (type === 'external_video') {
+                return {
+                  type: 'external_video',
+                  embedUrl: node.embedUrl,
+                  altText: node.altText || 'Product Video',
+                };
+              } else if (type === 'video') {
+                return {
+                  type: 'video',
+                  src: node.url,
+                  altText: node.altText || 'Product Video',
+                };
+              } else if (type === 'image') {
+                return {
+                  src: node.url,
+                  alt: node.altText || 'Product Image',
+                };
+              } else {
+                return null;
+              }
+            })
+            .filter(Boolean)} // Remove any null entries
           render={{
-            slide: ({ slide }) => {
-              if (slide.type === 'html') {
-                return <div dangerouslySetInnerHTML={{ __html: slide.html }} />;
+            slide: ({slide}) => {
+              if (slide.type === 'external_video') {
+                return (
+                  <div
+                    style={{
+                      position: 'relative',
+                      paddingBottom: '56.25%',
+                      height: 0,
+                    }}
+                  >
+                    <iframe
+                      src={`${slide.embedUrl}?autoplay=1`}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={slide.altText}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                      }}
+                    ></iframe>
+                  </div>
+                );
               } else if (slide.type === 'video') {
                 return (
                   <video
                     src={slide.src}
                     controls
                     autoPlay
-                    style={{ width: '100%', height: 'auto' }}
+                    style={{width: '100%', height: 'auto'}}
                   >
                     Sorry, your browser doesn't support embedded videos.
                   </video>
                 );
+              } else if (slide.src) {
+                return (
+                  <Image src={slide.src} alt={slide.alt || 'Product Image'} />
+                );
               } else {
-                return <Image src={slide.src} alt="" />;
+                return null;
               }
             },
           }}
