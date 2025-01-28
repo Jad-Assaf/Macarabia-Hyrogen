@@ -47,7 +47,11 @@ export function ProductImages({images, videos = [], selectedVariantImage}) {
   const [isMediaLoaded, setIsMediaLoaded] = useState(false);
   const [isVariantSelected, setIsVariantSelected] = useState(false);
 
-  const mediaItems = [...images, ...videos.map((video) => ({node: video}))];
+  // Combine images and videos while maintaining their distinction
+  const mediaItems = [
+    ...images.map((image) => ({type: 'image', node: image.node})),
+    ...videos.map((video) => ({type: 'video', node: video})),
+  ];
 
   useEffect(() => {
     if (selectedVariantImage) {
@@ -98,7 +102,7 @@ export function ProductImages({images, videos = [], selectedVariantImage}) {
       {/* Thumbnails */}
       <div className="thumbContainer">
         <div className="thumbnails">
-          {mediaItems.map(({node: media}, index) => (
+          {mediaItems.map(({type, node: media}, index) => (
             <div
               key={media.id}
               className={`thumbnail ${
@@ -106,7 +110,7 @@ export function ProductImages({images, videos = [], selectedVariantImage}) {
               }`}
               onClick={() => setSelectedMediaIndex(index)}
             >
-              {media.url ? (
+              {type === 'video' ? (
                 <video
                   src={media.url}
                   alt={media.altText || 'Thumbnail Video'}
@@ -139,7 +143,7 @@ export function ProductImages({images, videos = [], selectedVariantImage}) {
         style={{cursor: 'grab'}}
         {...swipeHandlers}
       >
-        {selectedMedia?.url ? (
+        {mediaItems[selectedMediaIndex]?.type === 'video' ? (
           <video
             key={mediaKey}
             src={selectedMedia.url}
@@ -200,8 +204,8 @@ export function ProductImages({images, videos = [], selectedVariantImage}) {
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
           index={selectedMediaIndex}
-          slides={mediaItems.map(({node}) =>
-            node.url ? {src: node.url, type: 'video'} : {src: node.url},
+          slides={mediaItems.map(({type, node}) =>
+            type === 'video' ? {src: node.url, type: 'video'} : {src: node.url},
           )}
           onIndexChange={setSelectedMediaIndex}
           plugins={[Fullscreen]}
