@@ -1013,6 +1013,20 @@ const PRODUCT_FRAGMENT = `#graphql
         }
       }
     }
+    media(first: 10) {
+      edges {
+        node {
+          mediaContentType
+          ... on Video {
+            id
+            sources {
+              url
+              format
+            }
+          }
+        }
+      }
+    }
     options {
       name
       values

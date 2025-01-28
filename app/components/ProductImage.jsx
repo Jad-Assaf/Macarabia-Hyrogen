@@ -37,22 +37,25 @@ const RightArrowIcon = () => (
 /**
  * @param {{
  *   images: Array<{node: ProductFragment['images']['edges'][0]['node']}>;
+ *   videos: Array<{url: string, id: string, altText?: string}>;
  * }}
  */
-export function ProductImages({images, selectedVariantImage}) {
+export function ProductImages({images, videos = [], selectedVariantImage}) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [imageKey, setImageKey] = useState(0);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [mediaKey, setMediaKey] = useState(0);
+  const [isMediaLoaded, setIsMediaLoaded] = useState(false);
   const [isVariantSelected, setIsVariantSelected] = useState(false);
+
+  const mediaItems = [...images, ...videos.map((video) => ({node: video}))];
 
   useEffect(() => {
     if (selectedVariantImage) {
-      const variantImageIndex = images.findIndex(
+      const variantMediaIndex = images.findIndex(
         ({node}) => node.id === selectedVariantImage.id,
       );
-      if (variantImageIndex >= 0 && !isVariantSelected) {
-        setSelectedImageIndex(variantImageIndex);
+      if (variantMediaIndex >= 0 && !isVariantSelected) {
+        setSelectedMediaIndex(variantMediaIndex);
         setIsVariantSelected(true);
       }
     }
@@ -62,31 +65,31 @@ export function ProductImages({images, selectedVariantImage}) {
     setIsVariantSelected(false);
   }, [selectedVariantImage]);
 
-  const selectedImage = images[selectedImageIndex]?.node;
+  const selectedMedia = mediaItems[selectedMediaIndex]?.node;
 
   useEffect(() => {
-    setImageKey((prevKey) => prevKey + 1);
-    setIsImageLoaded(false);
-  }, [selectedImageIndex]);
+    setMediaKey((prevKey) => prevKey + 1);
+    setIsMediaLoaded(false);
+  }, [selectedMediaIndex]);
 
-  const handlePrevImage = () => {
-    setSelectedImageIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1,
+  const handlePrevMedia = () => {
+    setSelectedMediaIndex((prevIndex) =>
+      prevIndex === 0 ? mediaItems.length - 1 : prevIndex - 1,
     );
     setIsVariantSelected(false);
   };
 
-  const handleNextImage = () => {
-    setSelectedImageIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1,
+  const handleNextMedia = () => {
+    setSelectedMediaIndex((prevIndex) =>
+      prevIndex === mediaItems.length - 1 ? 0 : prevIndex + 1,
     );
     setIsVariantSelected(false);
   };
 
   // Swipe Handlers
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: handleNextImage,
-    onSwipedRight: handlePrevImage,
+    onSwipedLeft: handleNextMedia,
+    onSwipedRight: handlePrevMedia,
     trackMouse: true, // Allows swiping with a mouse for desktops
   });
 
@@ -95,50 +98,74 @@ export function ProductImages({images, selectedVariantImage}) {
       {/* Thumbnails */}
       <div className="thumbContainer">
         <div className="thumbnails">
-          {images.map(({node: image}, index) => (
+          {mediaItems.map(({node: media}, index) => (
             <div
-              key={image.id}
+              key={media.id}
               className={`thumbnail ${
-                index === selectedImageIndex ? 'active' : ''
+                index === selectedMediaIndex ? 'active' : ''
               }`}
-              onClick={() => setSelectedImageIndex(index)}
+              onClick={() => setSelectedMediaIndex(index)}
             >
-              <Image
-                data={image}
-                alt={image.altText || 'Thumbnail Image'}
-                aspectRatio="1/1"
-                width={80}
-                height={80}
-                loading="lazy" // Thumbnails can load lazily
-                decoding="async"
-              />
+              {media.url ? (
+                <video
+                  src={media.url}
+                  alt={media.altText || 'Thumbnail Video'}
+                  width={80}
+                  height={80}
+                  muted
+                  loop
+                  preload="metadata"
+                />
+              ) : (
+                <Image
+                  data={media}
+                  alt={media.altText || 'Thumbnail Image'}
+                  aspectRatio="1/1"
+                  width={80}
+                  height={80}
+                  loading="lazy" // Thumbnails can load lazily
+                  decoding="async"
+                />
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Main Image */}
+      {/* Main Media */}
       <div
         className="main-image"
         onClick={() => setIsLightboxOpen(true)}
         style={{cursor: 'grab'}}
         {...swipeHandlers}
       >
-        {selectedImage && (
+        {selectedMedia?.url ? (
+          <video
+            key={mediaKey}
+            src={selectedMedia.url}
+            alt={selectedMedia.altText || 'Product Video'}
+            controls
+            style={{
+              filter: isMediaLoaded ? 'blur(0px)' : 'blur(10px)',
+              transition: 'filter 0.3s ease',
+            }}
+            onLoadedData={() => setIsMediaLoaded(true)}
+          />
+        ) : (
           <div
             style={{
-              filter: isImageLoaded ? 'blur(0px)' : 'blur(10px)',
+              filter: isMediaLoaded ? 'blur(0px)' : 'blur(10px)',
               transition: 'filter 0.3s ease',
             }}
           >
             <Image
-              key={imageKey}
-              data={selectedImage}
-              alt={selectedImage.altText || 'Product Image'}
+              key={mediaKey}
+              data={selectedMedia}
+              alt={selectedMedia.altText || 'Product Image'}
               sizes="(min-width: 45em) 50vw, 100vw"
               loading="eager"
               decoding="async"
-              onLoad={() => setIsImageLoaded(true)}
+              onLoad={() => setIsMediaLoaded(true)}
               loaderOptions={{
                 scale: 2, // or any scale factor
               }}
@@ -150,7 +177,7 @@ export function ProductImages({images, selectedVariantImage}) {
             className="prev-button"
             onClick={(e) => {
               e.stopPropagation();
-              handlePrevImage();
+              handlePrevMedia();
             }}
           >
             <LeftArrowIcon />
@@ -159,7 +186,7 @@ export function ProductImages({images, selectedVariantImage}) {
             className="next-button"
             onClick={(e) => {
               e.stopPropagation();
-              handleNextImage();
+              handleNextMedia();
             }}
           >
             <RightArrowIcon />
@@ -172,9 +199,11 @@ export function ProductImages({images, selectedVariantImage}) {
         <Lightbox
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
-          index={selectedImageIndex}
-          slides={images.map(({node}) => ({src: node.url}))}
-          onIndexChange={setSelectedImageIndex}
+          index={selectedMediaIndex}
+          slides={mediaItems.map(({node}) =>
+            node.url ? {src: node.url, type: 'video'} : {src: node.url},
+          )}
+          onIndexChange={setSelectedMediaIndex}
           plugins={[Fullscreen]}
         />
       )}
