@@ -224,11 +224,18 @@ async function loadCriticalData({context, params, request}) {
   const videos =
     product.media.edges
       .filter(({node}) => node.mediaContentType === 'VIDEO')
-      .map(({node}) => ({
-        id: node.id,
-        url: node.sources[0]?.url, // Use the first video source URL
-        altText: product.title || 'Product Video',
-      })) || [];
+      .map(({node}) => {
+        if (!node.sources || node.sources.length === 0) {
+          console.warn(`Video with ID ${node.id} has no sources.`);
+          return null;
+        }
+        return {
+          id: node.id,
+          url: node.sources[0]?.url, // Ensure this URL is valid
+          altText: product.title || 'Product Video',
+        };
+      })
+      .filter(Boolean) || []; // Remove null entries
 
   // Return necessary product data including SEO, first image, and variant price
   return {

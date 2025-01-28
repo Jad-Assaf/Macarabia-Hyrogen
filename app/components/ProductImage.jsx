@@ -48,9 +48,13 @@ export function ProductImages({images, videos = [], selectedVariantImage}) {
   const [isVariantSelected, setIsVariantSelected] = useState(false);
 
   // Combine images and videos while maintaining their distinction
+  // ProductImages.jsx
   const mediaItems = [
-    ...images.map((image) => ({type: 'image', node: image.node})),
-    ...videos.map((video) => ({type: 'video', node: video})),
+    ...images.map(({node}) => ({type: 'image', node})),
+    ...videos.map(({url, id, altText}) => ({
+      type: 'video',
+      node: {url, id, altText},
+    })),
   ];
 
   useEffect(() => {
@@ -147,14 +151,15 @@ export function ProductImages({images, videos = [], selectedVariantImage}) {
           <video
             key={mediaKey}
             src={selectedMedia.url}
-            alt={selectedMedia.altText || 'Product Video'}
             controls
             style={{
               filter: isMediaLoaded ? 'blur(0px)' : 'blur(10px)',
               transition: 'filter 0.3s ease',
             }}
             onLoadedData={() => setIsMediaLoaded(true)}
-          />
+          >
+            Sorry, your browser doesn't support embedded videos.
+          </video>
         ) : (
           <div
             style={{
@@ -171,7 +176,7 @@ export function ProductImages({images, videos = [], selectedVariantImage}) {
               decoding="async"
               onLoad={() => setIsMediaLoaded(true)}
               loaderOptions={{
-                scale: 2, // or any scale factor
+                scale: 2,
               }}
             />
           </div>

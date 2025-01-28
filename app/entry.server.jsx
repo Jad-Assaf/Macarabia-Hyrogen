@@ -127,6 +127,15 @@ export default async function handleRequest(
       'https://googleads.g.doubleclick.net',
       // etc.
     ],
+    mediaSrc: [
+      // Add this section
+      "'self'",
+      'https://cdn.shopify.com', // Example: Shopify CDN
+      'https://youtube.com', // Example: YouTube
+      'https://www.youtube.com', // Example: YouTube
+      'https://*.vimeo.com', // Example: Vimeo
+      // Add other domains as needed
+    ],
   });
 
   const body = await renderToReadableStream(
