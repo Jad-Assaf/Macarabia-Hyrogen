@@ -47,6 +47,7 @@ export default async function handleRequest(
       'https://connect.facebook.net', // Required for Meta Pixel
       'https://www.youtube.com',
       'https://youtube.com',
+      'https://img.icons8.com',
       'https://google.com',
       'https://www.google.com',
       'https://www.googletagmanager.com',
@@ -70,6 +71,7 @@ export default async function handleRequest(
       'https://connect.facebook.net', // Required for Meta Pixel
       'https://www.youtube.com',
       'https://youtube.com',
+      'https://img.icons8.com',
       'https://google.com',
       'https://www.google.com',
       'https://www.googletagmanager.com',
@@ -94,6 +96,7 @@ export default async function handleRequest(
       'https://www.youtube.com',
       'https://youtube.com',
       'https://www.youtube-nocookie.com', // Allow YouTube no-cookie domain
+      'https://img.icons8.com',
       'https://player.vimeo.com', // If you use Vimeo as well
       'https://google.com',
       'https://www.google.com',
@@ -120,6 +123,7 @@ export default async function handleRequest(
       'https://youtube.com',
       'https://img.youtube.com', // Allow YouTube thumbnails
       'https://i.ytimg.com', // Alternate YouTube thumbnail domains
+      'https://img.icons8.com',
       'https://google.com',
       'https://www.google.com',
       'https://www.googletagmanager.com',
@@ -138,6 +142,7 @@ export default async function handleRequest(
       'https://macarabia.myshopify.com',
       'https://www.youtube.com',
       'https://www.youtube-nocookie.com',
+      'https://img.icons8.com',
       'https://youtube.com',
       'https://youtu.be',
       // Add other media sources as needed
