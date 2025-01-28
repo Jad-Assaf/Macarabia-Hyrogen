@@ -21,7 +21,7 @@ import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import React, {Suspense, useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
-import {CustomAnalytics} from './modules/custom-analytics'
+import {CustomAnalytics} from './modules/custom-analytics';
 const MetaPixel = React.lazy(() => import('./components/MetaPixel'));
 
 /**
@@ -148,15 +148,6 @@ export function Layout({children}) {
   const navigation = useNavigation();
   const [nprogress, setNProgress] = useState(null); // Store NProgress instance
   const clarityId = 'pfyepst8v5'; // Replace with your Clarity project ID
-  const [isLinux, setIsLinux] = useState(false);
-
-  useEffect(() => {
-    // Detect the operating system using navigator.userAgent
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    if (userAgent.includes('linux')) {
-      setIsLinux(true); // Set true if the OS is Linux
-    }
-  }, []);
 
   useEffect(() => {
     // Load NProgress once and set it in the state
