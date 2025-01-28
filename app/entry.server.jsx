@@ -131,6 +131,9 @@ export default async function handleRequest(
       // Add this section
       "'self'",
       'https://cdn.shopify.com', // Example: Shopify CDN
+      'https://www.macarabia.me',
+      'https://macarabia.me',
+      'https://macarabia.myshopify.com',
       'https://youtube.com', // Example: YouTube
       'https://www.youtube.com', // Example: YouTube
       'https://*.vimeo.com', // Example: Vimeo
