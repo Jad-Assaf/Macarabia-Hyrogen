@@ -21,8 +21,8 @@ import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import React, {Suspense, useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
+import {CustomAnalytics} from './modules/custom-analytics'
 const MetaPixel = React.lazy(() => import('./components/MetaPixel'));
-import {CustomAnalytics} from ('./modules/custom-analytics')
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
