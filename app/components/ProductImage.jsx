@@ -122,7 +122,7 @@ export function ProductImages({media, selectedVariantImage}) {
 
             // Define inline styles conditionally for video thumbnails
             const thumbnailStyle = isVideo
-              ? {background: '#0c0c0c', padding: '9px'}
+              ? {background: '#232323', padding: '14px'}
               : {};
 
             return (
