@@ -33,6 +33,9 @@
     border: 1px solid transparent;
     border-radius: 3px;
     transition: border 0.3s, transform 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .thumbnail.active {
@@ -58,6 +61,42 @@
 
 .main-image:hover {
     transform: scale(1.01);
+}
+
+/* Container for YouTube iframe to maintain aspect ratio */
+.youtube-iframe-container {
+    position: relative;
+    padding-bottom: 56.25%;
+    /* 16:9 */
+    padding-top: 25px;
+    height: 0;
+}
+
+/* Play icon overlay on video thumbnails */
+.play-icon-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    /* Allows click through to the thumbnail */
+    opacity: 0.8;
+}
+
+/* Position the play icon container relative to thumbnail */
+.thumbnail {
+    position: relative;
+    cursor: pointer;
+}
+
+.thumbnail img,
+.thumbnail video,
+.thumbnail .play-icon-overlay svg {
+    display: block;
+}
+
+.thumbnail .play-icon-overlay {
+    /* Ensure the play icon is centered */
 }
 
 .prev-button,

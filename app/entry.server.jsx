@@ -1,7 +1,8 @@
-import {RemixServer} from '@remix-run/react';
+// entry.server.jsx
+import { RemixServer } from '@remix-run/react';
 import isbot from 'isbot';
-import {renderToReadableStream} from 'react-dom/server';
-import {createContentSecurityPolicy} from '@shopify/hydrogen';
+import { renderToReadableStream } from 'react-dom/server';
+import { createContentSecurityPolicy } from '@shopify/hydrogen';
 
 /**
  * @param {Request} request
@@ -15,7 +16,7 @@ export default async function handleRequest(
   responseStatusCode,
   responseHeaders,
   remixContext,
-  context,
+  context
 ) {
   const url = new URL(request.url);
   if (url.hostname === 'www.macarabia.me') {
@@ -33,7 +34,6 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
-    // Add your custom script sources here
     scriptSrc: [
       "'self'", // Allow scripts from the same origin
       'https://www.clarity.ms', // Allow scripts from clarity.ms
@@ -81,18 +81,20 @@ export default async function handleRequest(
       'https://googleads.g.doubleclick.net',
     ],
     frameSrc: [
-      "'self'", // Allow scripts from the same origin
-      'https://www.clarity.ms', // Allow scripts from clarity.ms
-      'https://*.clarity.ms', // Allow scripts from clarity.ms
+      "'self'", // Allow frames from the same origin
+      'https://www.clarity.ms',
+      'https://*.clarity.ms',
       'https://x.clarity.ms',
       'https://c.clarity.ms',
       'https://macarabia.me',
       'https://macarabia.myshopify.com',
-      'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      'https://cdn.shopify.com',
       'https://www.facebook.com',
-      'https://connect.facebook.net', // Required for Meta Pixel
+      'https://connect.facebook.net',
       'https://www.youtube.com',
       'https://youtube.com',
+      'https://www.youtube-nocookie.com', // Allow YouTube no-cookie domain
+      'https://player.vimeo.com', // If you use Vimeo as well
       'https://google.com',
       'https://www.google.com',
       'https://www.googletagmanager.com',
@@ -104,18 +106,20 @@ export default async function handleRequest(
       'https://googleads.g.doubleclick.net',
     ],
     imgSrc: [
-      "'self'", // Allow scripts from the same origin
-      'https://www.clarity.ms', // Allow scripts from clarity.ms
-      'https://*.clarity.ms', // Allow scripts from clarity.ms
+      "'self'", // Allow images from the same origin
+      'https://www.clarity.ms',
+      'https://*.clarity.ms',
       'https://x.clarity.ms',
       'https://c.clarity.ms',
       'https://macarabia.me',
       'https://macarabia.myshopify.com',
-      'https://cdn.shopify.com', // Allow scripts from Shopify CDN
+      'https://cdn.shopify.com',
       'https://www.facebook.com',
-      'https://connect.facebook.net', // Required for Meta Pixel
+      'https://connect.facebook.net',
       'https://www.youtube.com',
       'https://youtube.com',
+      'https://img.youtube.com', // Allow YouTube thumbnails
+      'https://i.ytimg.com', // Alternate YouTube thumbnail domains
       'https://google.com',
       'https://www.google.com',
       'https://www.googletagmanager.com',
@@ -125,19 +129,18 @@ export default async function handleRequest(
       'https://td.doubleclick.net/',
       'https://stats.g.doubleclick.net/',
       'https://googleads.g.doubleclick.net',
-      // etc.
     ],
     mediaSrc: [
-      // Add this section
       "'self'",
-      'https://cdn.shopify.com', // Example: Shopify CDN
+      'https://cdn.shopify.com', // Shopify CDN for direct videos
       'https://www.macarabia.me',
       'https://macarabia.me',
       'https://macarabia.myshopify.com',
-      'https://youtube.com', // Example: YouTube
-      'https://www.youtube.com', // Example: YouTube
-      'https://*.vimeo.com', // Example: Vimeo
-      // Add other domains as needed
+      'https://www.youtube.com',
+      'https://www.youtube-nocookie.com',
+      'https://youtube.com',
+      'https://youtu.be',
+      // Add other media sources as needed
     ],
   });
 
@@ -153,7 +156,7 @@ export default async function handleRequest(
         console.error(error);
         responseStatusCode = 500;
       },
-    },
+    }
   );
 
   if (isbot(request.headers.get('user-agent'))) {
