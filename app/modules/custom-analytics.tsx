@@ -1,7 +1,8 @@
 import { useRouteLoaderData } from "@remix-run/react";
 import { Script, useAnalytics, useNonce } from "@shopify/hydrogen";
+import React from "react";
 import { useEffect } from "react";
-import type { RootLoader } from "~/root";
+import type { RootLoader } from "../root";
 
 export function CustomAnalytics() {
   const { subscribe, canTrack } = useAnalytics();
