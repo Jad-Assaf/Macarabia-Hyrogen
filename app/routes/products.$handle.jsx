@@ -1,6 +1,6 @@
-import React, { Suspense, useEffect, useState } from 'react';
-import { defer, redirect } from '@shopify/remix-oxygen';
-import { Await, useLoaderData, useLocation } from '@remix-run/react';
+import React, {Suspense, useEffect, useState} from 'react';
+import {defer, redirect} from '@shopify/remix-oxygen';
+import {Await, useLoaderData, useLocation} from '@remix-run/react';
 import {
   getSelectedProductOptions,
   Analytics,
@@ -10,20 +10,21 @@ import {
   CartForm,
   VariantSelector,
 } from '@shopify/hydrogen';
-import { getVariantUrl } from '~/lib/variants';
-import { ProductPrice } from '~/components/ProductPrice';
-import { ProductImages } from '~/components/ProductImage';
-import { AddToCartButton } from '~/components/AddToCartButton';
-import { useAside } from '~/components/Aside';
+import {getVariantUrl} from '~/lib/variants';
+import {ProductPrice} from '~/components/ProductPrice';
+import {ProductImages} from '~/components/ProductImage'; // We'll update ProductImage.jsx to handle media.
+import {AddToCartButton} from '~/components/AddToCartButton';
+import {useAside} from '~/components/Aside';
 import '../styles/ProductPage.css';
-import { CSSTransition } from 'react-transition-group';
-import { RELATED_PRODUCTS_QUERY } from '~/lib/fragments';
+import {CSSTransition} from 'react-transition-group';
+import {RELATED_PRODUCTS_QUERY} from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
-import { ProductMetafields } from '~/components/Metafields';
+import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
-import { trackAddToCart, trackViewContent } from '~/lib/metaPixelEvents';
+import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
 
-export const meta = ({ data }) => {
+// ---------------- SEO & Meta
+export const meta = ({data}) => {
   const product = data?.product;
   const variants = product?.variants?.nodes || [];
   const currentVariant = variants[0] || {};
@@ -170,23 +171,24 @@ export const meta = ({ data }) => {
   });
 };
 
+// ---------------- Loader
 export async function loader(args) {
   const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
 
-  return defer({ ...deferredData, ...criticalData });
+  return defer({...deferredData, ...criticalData});
 }
 
-async function loadCriticalData({ context, params, request }) {
-  const { handle } = params;
-  const { storefront } = context;
+async function loadCriticalData({context, params, request}) {
+  const {handle} = params;
+  const {storefront} = context;
 
   if (!handle) {
     throw new Error('Expected product handle to be defined');
   }
 
   // Fetch product data
-  const { product } = await storefront.query(PRODUCT_QUERY, {
+  const {product} = await storefront.query(PRODUCT_QUERY, {
     variables: {
       handle,
       selectedOptions: getSelectedProductOptions(request) || [],
@@ -194,7 +196,7 @@ async function loadCriticalData({ context, params, request }) {
   });
 
   if (!product) {
-    throw new Response('Product not found', { status: 404 });
+    throw new Response('Product not found', {status: 404});
   }
 
   // Select the first variant as the default if applicable
@@ -215,8 +217,8 @@ async function loadCriticalData({ context, params, request }) {
 
   // Fetch related products
   const productType = product.productType || 'General';
-  const { products } = await storefront.query(RELATED_PRODUCTS_QUERY, {
-    variables: { productType },
+  const {products} = await storefront.query(RELATED_PRODUCTS_QUERY, {
+    variables: {productType},
   });
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
@@ -226,30 +228,30 @@ async function loadCriticalData({ context, params, request }) {
     product: {
       ...product,
       firstImage, // Add the first image URL
-      seoTitle: product.seo?.title || product.title, // Use SEO title or fallback
-      seoDescription: product.seo?.description || product.description, // Use SEO description or fallback
-      variantPrice: firstVariant?.price || product.priceRange?.minVariantPrice, // Variant price
+      seoTitle: product.seo?.title || product.title,
+      seoDescription: product.seo?.description || product.description,
+      variantPrice: firstVariant?.price || product.priceRange?.minVariantPrice,
     },
     relatedProducts,
   };
 }
 
-function loadDeferredData({ context, params }) {
-  const { storefront } = context;
+function loadDeferredData({context, params}) {
+  const {storefront} = context;
 
   const variants = storefront
     .query(VARIANTS_QUERY, {
-      variables: { handle: params.handle },
+      variables: {handle: params.handle},
     })
     .catch((error) => {
       console.error(error);
       return null;
     });
 
-  return { variants };
+  return {variants};
 }
 
-function redirectToFirstVariant({ product, request }) {
+function redirectToFirstVariant({product, request}) {
   const url = new URL(request.url);
   const firstVariant = product.variants.nodes[0];
 
@@ -260,14 +262,16 @@ function redirectToFirstVariant({ product, request }) {
       selectedOptions: firstVariant.selectedOptions,
       searchParams: new URLSearchParams(url.search),
     }),
-    { status: 302 },
+    {status: 302},
   );
 }
 
-// -------------- ProductForm --------------
+// -----------------------------------------------------
+//                   ProductForm
+// -----------------------------------------------------
 
 function isValueAvailable(allVariants, selectedOptions, optionName, val) {
-  const updated = { ...selectedOptions, [optionName]: val };
+  const updated = {...selectedOptions, [optionName]: val};
 
   // Find any in-stock variant that fully matches updated
   return Boolean(
@@ -280,12 +284,6 @@ function isValueAvailable(allVariants, selectedOptions, optionName, val) {
   );
 }
 
-/**
- * We attempt a perfect match for newOptions.
- * If that fails, we fallback to any in-stock variant
- * that has (optionName === chosenVal),
- * then override newOptions with that variant’s entire selection.
- */
 function pickOrSnapVariant(allVariants, newOptions, optionName, chosenVal) {
   // 1) Perfect match
   let found = allVariants.find(
@@ -315,14 +313,14 @@ export function ProductForm({
   quantity = 1,
 }) {
   const location = useLocation();
-  const { open } = useAside();
+  const {open} = useAside();
 
   // ------------------------------
   // Initialize local selectedOptions
   // ------------------------------
   const [selectedOptions, setSelectedOptions] = useState(() => {
     if (selectedVariant?.selectedOptions) {
-      return selectedVariant.selectedOptions.reduce((acc, { name, value }) => {
+      return selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
         acc[name] = value;
         return acc;
       }, {});
@@ -335,18 +333,16 @@ export function ProductForm({
   });
 
   const handleAddToCart = () => {
-    // Your add to cart logic
-    onAddToCart(product);
-
     // Track the AddToCart event
     trackAddToCart(product);
+    onAddToCart(product);
   };
 
   // Sync local state when the parent’s selectedVariant changes
   useEffect(() => {
     if (!selectedVariant?.selectedOptions) return;
     setSelectedOptions(
-      selectedVariant.selectedOptions.reduce((acc, { name, value }) => {
+      selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
         acc[name] = value;
         return acc;
       }, {}),
@@ -358,7 +354,7 @@ export function ProductForm({
   // ------------------------------
   function handleOptionChange(optionName, chosenVal) {
     setSelectedOptions((prev) => {
-      const newOptions = { ...prev, [optionName]: chosenVal };
+      const newOptions = {...prev, [optionName]: chosenVal};
 
       // Attempt to find or “snap” to a variant
       const found = pickOrSnapVariant(
@@ -370,7 +366,7 @@ export function ProductForm({
 
       if (found) {
         // Overwrite newOptions with found's entire set
-        found.selectedOptions.forEach(({ name, value }) => {
+        found.selectedOptions.forEach(({name, value}) => {
           newOptions[name] = value;
         });
         onVariantChange(found);
@@ -391,8 +387,8 @@ export function ProductForm({
   const safeQuantity = Math.max(Number(quantity) || 1, 1);
 
   // Subcomponent to render each option row
-  const ProductOptions = ({ option }) => {
-    const { name, values } = option;
+  const ProductOptions = ({option}) => {
+    const {name, values} = option;
     const currentValue = selectedOptions[name];
 
     return (
@@ -401,7 +397,7 @@ export function ProductForm({
           {name}: <span className="OptionValue">{currentValue}</span>
         </h5>
         <div className="product-options-grid">
-          {values.map(({ value, variant }) => {
+          {values.map(({value, variant}) => {
             // Check if picking this new val is possible
             const canPick = isValueAvailable(
               variants,
@@ -436,7 +432,7 @@ export function ProductForm({
                     alt={value}
                     width="50"
                     height="50"
-                    style={{ objectFit: 'cover' }}
+                    style={{objectFit: 'cover'}}
                   />
                 ) : (
                   value
@@ -456,7 +452,7 @@ export function ProductForm({
     `Hi, I'd like to buy ${product.title} https://macarabia.me${location.pathname}`,
   )}`;
 
-  // WhatsApp SVG icon (if you still want the share button)
+  // WhatsApp SVG icon
   const WhatsAppIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 175.216 175.552">
       <defs>
@@ -505,33 +501,30 @@ export function ProductForm({
 
   return (
     <>
-      {/* Renders the variant options (size, color, etc.) */}
       <VariantSelector
         handle={product.handle}
         options={product.options.filter((o) => o.values.length > 1)}
         variants={variants}
       >
-        {({ option }) => <ProductOptions key={option.name} option={option} />}
+        {({option}) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
 
       <div className="product-form">
-        {/* Add-to-Cart button with corrected onClick handler */}
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
           onClick={() => {
-            handleAddToCart(); // Track the AddToCart event
-            open('cart'); // Open the cart aside/modal
+            handleAddToCart();
+            open('cart'); // open cart aside
           }}
           lines={
             selectedVariant
-              ? [{ merchandiseId: selectedVariant.id, quantity: safeQuantity }]
+              ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
               : []
           }
         >
           {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
         </AddToCartButton>
 
-        {/* Optional WhatsApp share link */}
         {isProductPage && (
           <a
             href={whatsappShareUrl}
@@ -548,70 +541,18 @@ export function ProductForm({
   );
 }
 
-// function DirectCheckoutButton({selectedVariant, quantity}) {
-//   const [isAnimating, setIsAnimating] = useState(false);
-//   const [shouldRedirect, setShouldRedirect] = useState(false);
-
-//   const handleAnimation = () => {
-//     setIsAnimating(true);
-//     setTimeout(() => {
-//       setIsAnimating(false);
-//       setShouldRedirect(true);
-//     }, 300);
-//   };
-
-//   useEffect(() => {
-//     return () => {
-//       setShouldRedirect(false);
-//     };
-//   }, []);
-
-//   const isUnavailable = !selectedVariant?.availableForSale;
-
-//   return (
-//     <CartForm
-//       route="/cart"
-//       action={CartForm.ACTIONS.LinesAdd}
-//       inputs={{
-//         lines: [
-//           {
-//             merchandiseId: selectedVariant?.id,
-//             quantity: quantity,
-//             selectedOptions: selectedVariant?.selectedOptions,
-//           },
-//         ],
-//       }}
-//     >
-//       {(fetcher) => {
-//         if (shouldRedirect && fetcher.data?.cart?.checkoutUrl) {
-//           window.location.href = fetcher.data.cart.checkoutUrl;
-//         }
-
-//         return (
-//           <motion.button
-//             type="submit"
-//             disabled={isUnavailable || fetcher.state !== 'idle'}
-//             className={`buy-now-button ${isUnavailable ? 'disabled' : ''}`}
-//             onClick={handleAnimation}
-//             animate={isAnimating ? { scale: 1.05 } : { scale: 1 }}
-//             transition={{ duration: 0.3 }}
-//           >
-//             Buy Now
-//           </motion.button>
-//         );
-//       }}
-//     </CartForm>
-//   );
-// }
-// ─────────────────────────────────────────────────────────────────────────────
-
+// -----------------------------------------------------
+//                   Main Product
+// -----------------------------------------------------
 export default function Product() {
-  const { product, variants, relatedProducts } = useLoaderData();
-  const [selectedVariant, setSelectedVariant] = useState(product.selectedVariant);
+  const {product, variants, relatedProducts} = useLoaderData();
+  const [selectedVariant, setSelectedVariant] = useState(
+    product.selectedVariant,
+  );
 
   useEffect(() => {
     setSelectedVariant(product.selectedVariant);
-    setQuantity(1); // If you want to reset quantity to 1 for new product
+    setQuantity(1);
   }, [product]);
 
   useEffect(() => {
@@ -634,26 +575,22 @@ export default function Product() {
     }
   }, [quantity, selectedVariant]);
 
-  const { title, descriptionHtml, images } = product;
+  const {title, descriptionHtml} = product;
 
   const hasDiscount =
     selectedVariant?.compareAtPrice &&
     selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
 
-  // Define the onAddToCart function
-  const onAddToCart = (product) => {
-    // Existing add to cart logic (if any)
-    // Example: addItemToCart(selectedVariant.id, quantity);
-
-    // Track the AddToCart event
-    trackAddToCart(product);
+  const onAddToCart = (prod) => {
+    trackAddToCart(prod);
   };
 
   return (
     <div className="product">
       <div className="ProductPageTop">
+        {/* --- Replace images={product.images.edges} with media={product.media.edges} --- */}
         <ProductImages
-          images={product.images.edges}
+          media={product.media?.edges || []}
           selectedVariantImage={selectedVariant?.image}
         />
         <div className="product-main">
@@ -666,7 +603,7 @@ export default function Product() {
             </small>
             {hasDiscount && selectedVariant.compareAtPrice && (
               <small className="discountedPrice">
-                <Money data={selectedVariant?.compareAtPrice} />
+                <Money data={selectedVariant.compareAtPrice} />
               </small>
             )}
           </div>
@@ -705,16 +642,14 @@ export default function Product() {
               errorElement="There was a problem loading product variants"
             >
               {(data) => (
-                <>
-                  <ProductForm
-                    product={product}
-                    selectedVariant={selectedVariant}
-                    onVariantChange={setSelectedVariant}
-                    onAddToCart={onAddToCart}
-                    variants={data?.product?.variants?.nodes || []}
-                    quantity={quantity}
-                  />
-                </>
+                <ProductForm
+                  product={product}
+                  selectedVariant={selectedVariant}
+                  onVariantChange={setSelectedVariant}
+                  onAddToCart={onAddToCart}
+                  variants={data?.product?.variants?.nodes || []}
+                  quantity={quantity}
+                />
               )}
             </Await>
           </Suspense>
@@ -779,7 +714,7 @@ export default function Product() {
           unmountOnExit
         >
           <div className="product-section">
-            <div dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
+            <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
           </div>
         </CSSTransition>
 
@@ -864,7 +799,6 @@ export default function Product() {
               This warranty applies to All Products, purchased from Macarabia.
               The warranty covers defects in materials and workmanship under
               normal use for the period specified at the time of purchase.
-              Warranty periods vary based on the product category.
             </p>
             <h3>What is Covered</h3>
             <p>
@@ -941,6 +875,10 @@ export default function Product() {
   );
 }
 
+// -----------------------------------------------------
+//                   GraphQL
+// -----------------------------------------------------
+
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
   fragment ProductVariant on ProductVariant {
     availableForSale
@@ -999,6 +937,8 @@ const PRODUCT_FRAGMENT = `#graphql
     descriptionHtml
     description
     productType
+
+    # Fetch product images for SEO or fallback usage
     images(first: 30) {
       edges {
         node {
@@ -1011,6 +951,45 @@ const PRODUCT_FRAGMENT = `#graphql
         }
       }
     }
+
+    # Add media for images / video (YouTube) / 3D, etc.
+    media(first: 10) {
+      edges {
+        node {
+          __typename
+          mediaContentType
+          alt
+          ... on MediaImage {
+            id
+            image {
+              url
+              altText
+              width
+              height
+            }
+          }
+          ... on Video {
+            id
+            sources {
+              url
+              mimeType
+            }
+          }
+          ... on ExternalVideo {
+            id
+            embedUrl
+            host
+          }
+          ... on Model3d {
+            id
+            sources {
+              url
+            }
+          }
+        }
+      }
+    }
+
     options {
       name
       values

@@ -35,50 +35,56 @@ const RightArrowIcon = () => (
 );
 
 /**
- * @param {{
- *   images: Array<{node: ProductFragment['images']['edges'][0]['node']}>;
- * }}
+ * Renders a carousel for either images or external videos (e.g. YouTube).
+ * We still call it "ProductImages" for simplicity, but it handles multiple media types.
  */
-export function ProductImages({images, selectedVariantImage}) {
+export function ProductImages({media, selectedVariantImage}) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [imageKey, setImageKey] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isVariantSelected, setIsVariantSelected] = useState(false);
 
+  // If a specific variant image is chosen, find its index in the media array
   useEffect(() => {
     if (selectedVariantImage) {
-      const variantImageIndex = images.findIndex(
-        ({node}) => node.id === selectedVariantImage.id,
-      );
+      const variantImageIndex = media.findIndex(({node}) => {
+        // Check if it's a MediaImage and if IDs match
+        return (
+          node.__typename === 'MediaImage' &&
+          node.image?.id === selectedVariantImage.id
+        );
+      });
       if (variantImageIndex >= 0 && !isVariantSelected) {
-        setSelectedImageIndex(variantImageIndex);
+        setSelectedIndex(variantImageIndex);
         setIsVariantSelected(true);
       }
     }
-  }, [selectedVariantImage, images, isVariantSelected]);
+  }, [selectedVariantImage, media, isVariantSelected]);
 
+  // Reset the "variant selected" flag if selectedVariantImage changes
   useEffect(() => {
     setIsVariantSelected(false);
   }, [selectedVariantImage]);
 
-  const selectedImage = images[selectedImageIndex]?.node;
+  // Whenever selectedIndex changes, trigger a key change to re-render
+  const selectedMedia = media[selectedIndex]?.node;
 
   useEffect(() => {
     setImageKey((prevKey) => prevKey + 1);
     setIsImageLoaded(false);
-  }, [selectedImageIndex]);
+  }, [selectedIndex]);
 
   const handlePrevImage = () => {
-    setSelectedImageIndex((prevIndex) =>
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1,
+    setSelectedIndex((prevIndex) =>
+      prevIndex === 0 ? media.length - 1 : prevIndex - 1,
     );
     setIsVariantSelected(false);
   };
 
   const handleNextImage = () => {
-    setSelectedImageIndex((prevIndex) =>
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1,
+    setSelectedIndex((prevIndex) =>
+      prevIndex === media.length - 1 ? 0 : prevIndex + 1,
     );
     setIsVariantSelected(false);
   };
@@ -87,7 +93,7 @@ export function ProductImages({images, selectedVariantImage}) {
   const swipeHandlers = useSwipeable({
     onSwipedLeft: handleNextImage,
     onSwipedRight: handlePrevImage,
-    trackMouse: true, // Allows swiping with a mouse for desktops
+    trackMouse: true,
   });
 
   return (
@@ -95,56 +101,115 @@ export function ProductImages({images, selectedVariantImage}) {
       {/* Thumbnails */}
       <div className="thumbContainer">
         <div className="thumbnails">
-          {images.map(({node: image}, index) => (
-            <div
-              key={image.id}
-              className={`thumbnail ${
-                index === selectedImageIndex ? 'active' : ''
-              }`}
-              onClick={() => setSelectedImageIndex(index)}
-            >
-              <Image
-                data={image}
-                alt={image.altText || 'Thumbnail Image'}
-                aspectRatio="1/1"
-                width={80}
-                height={80}
-                loading="lazy" // Thumbnails can load lazily
-                decoding="async"
-              />
-            </div>
-          ))}
+          {media.map(({node}, index) => {
+            const isActive = index === selectedIndex;
+            let thumbSrc = '';
+            let altText = node.alt || 'Thumbnail';
+
+            if (node.__typename === 'MediaImage') {
+              thumbSrc = node.image?.url;
+              altText = node.image?.altText || altText;
+            } else if (node.__typename === 'ExternalVideo') {
+              // For a YouTube external video, there's no "thumbnail" by default in the Storefront API
+              // You could fetch it from node.embedUrl if you want a custom YT thumbnail
+              thumbSrc = 'https://img.icons8.com/color/48/youtube-play.png'; // a fallback icon
+            } else if (node.__typename === 'Video') {
+              thumbSrc = 'https://img.icons8.com/fluency/48/video.png'; // a fallback icon
+            }
+
+            return (
+              <div
+                key={node.id || index}
+                className={`thumbnail ${isActive ? 'active' : ''}`}
+                onClick={() => setSelectedIndex(index)}
+              >
+                {thumbSrc ? (
+                  <img
+                    src={thumbSrc}
+                    alt={altText}
+                    width={80}
+                    height={80}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div>Media</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Image */}
+      {/* Main Media */}
       <div
         className="main-image"
         onClick={() => setIsLightboxOpen(true)}
         style={{cursor: 'grab'}}
         {...swipeHandlers}
       >
-        {selectedImage && (
+        {selectedMedia && (
           <div
             style={{
               filter: isImageLoaded ? 'blur(0px)' : 'blur(10px)',
               transition: 'filter 0.3s ease',
             }}
           >
-            <Image
-              key={imageKey}
-              data={selectedImage}
-              alt={selectedImage.altText || 'Product Image'}
-              sizes="(min-width: 45em) 50vw, 100vw"
-              loading="eager"
-              decoding="async"
-              onLoad={() => setIsImageLoaded(true)}
-              loaderOptions={{
-                scale: 2, // or any scale factor
-              }}
-            />
+            {/* If it's an IMAGE */}
+            {selectedMedia.__typename === 'MediaImage' && (
+              <Image
+                key={imageKey}
+                data={selectedMedia.image}
+                alt={selectedMedia.image.altText || 'Product Image'}
+                sizes="(min-width: 45em) 50vw, 100vw"
+                loading="eager"
+                decoding="async"
+                onLoad={() => setIsImageLoaded(true)}
+                loaderOptions={{scale: 2}}
+              />
+            )}
+
+            {/* If it's an EXTERNAL VIDEO (YouTube, Vimeo, etc.) */}
+            {selectedMedia.__typename === 'ExternalVideo' && (
+              <iframe
+                key={imageKey}
+                width="560"
+                height="315"
+                src={selectedMedia.embedUrl}
+                title="YouTube video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onLoad={() => setIsImageLoaded(true)}
+              />
+            )}
+
+            {/* If it's a Video (hosted on Shopify) */}
+            {selectedMedia.__typename === 'Video' &&
+              selectedMedia.sources?.[0] && (
+                <video
+                  key={imageKey}
+                  width="100%"
+                  height="auto"
+                  controls
+                  onLoadedData={() => setIsImageLoaded(true)}
+                >
+                  <source
+                    src={selectedMedia.sources[0].url}
+                    type={selectedMedia.sources[0].mimeType || 'video/mp4'}
+                  />
+                  Your browser does not support the video tag.
+                </video>
+              )}
+
+            {/* If it's a 3D model or something else, handle as needed */}
+            {selectedMedia.__typename === 'Model3d' && (
+              <div style={{textAlign: 'center'}}>
+                <p>3D Model preview not implemented</p>
+              </div>
+            )}
           </div>
         )}
+        {/* Left/Right Arrows */}
         <div className="ImageArrows">
           <button
             className="prev-button"
@@ -167,14 +232,31 @@ export function ProductImages({images, selectedVariantImage}) {
         </div>
       </div>
 
-      {/* Lightbox */}
+      {/* Lightbox (click to enlarge) */}
       {isLightboxOpen && (
         <Lightbox
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
-          index={selectedImageIndex}
-          slides={images.map(({node}) => ({src: node.url}))}
-          onIndexChange={setSelectedImageIndex}
+          index={selectedIndex}
+          slides={media.map(({node}) => {
+            // For the Lightbox slides, we need a "src"
+            if (node.__typename === 'MediaImage') {
+              return {src: node.image.url};
+            } else if (node.__typename === 'ExternalVideo') {
+              // Lightbox typically expects images, but we can embed an iframe
+              // For an actual lightbox video experience, you'd use an inline embed or skip it
+              return {src: node.embedUrl};
+            } else if (node.__typename === 'Video') {
+              // Possibly just link the MP4
+              const vidSource = node.sources?.[0]?.url;
+              return {src: vidSource || ''};
+            } else if (node.__typename === 'Model3d') {
+              // Or you can skip
+              return {src: ''};
+            }
+            return {src: ''};
+          })}
+          onIndexChange={setSelectedIndex}
           plugins={[Fullscreen]}
         />
       )}
