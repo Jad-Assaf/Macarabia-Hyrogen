@@ -6,7 +6,6 @@ import 'yet-another-react-lightbox/styles.css';
 import '../styles/ProductImage.css';
 import {useSwipeable} from 'react-swipeable';
 
-// SVG Icons for navigation
 const LeftArrowIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -34,35 +33,6 @@ const RightArrowIcon = () => (
     <polyline points="9 18 15 12 9 6"></polyline>
   </svg>
 );
-
-/**
- * Helper function to customize YouTube embed URLs
- * @param {string} embedUrl - Original YouTube embed URL
- * @returns {string} - Customized YouTube embed URL with desired parameters
- */
-const customizeYouTubeEmbedUrl = (embedUrl) => {
-  try {
-    const url = new URL(embedUrl);
-    // Ensure it's a YouTube URL
-    if (
-      url.hostname.includes('youtube.com') ||
-      url.hostname.includes('youtu.be')
-    ) {
-      // Set desired parameters
-      url.searchParams.set('rel', '0'); // No related videos from other channels
-      url.searchParams.set('modestbranding', '1'); // Minimal YouTube branding
-      url.searchParams.set('controls', '1'); // Show player controls
-      url.searchParams.set('showinfo', '0'); // Hide video title and uploader (deprecated but still useful)
-      url.searchParams.set('fs', '0'); // Disable fullscreen button
-      // Add any other parameters as needed
-      return url.toString();
-    }
-    return embedUrl; // Return original if not YouTube
-  } catch (error) {
-    console.error('Invalid URL:', embedUrl);
-    return embedUrl; // Return original on error
-  }
-};
 
 /**
  * Renders a carousel for either images or external videos (e.g. YouTube).
@@ -204,7 +174,7 @@ export function ProductImages({media, selectedVariantImage}) {
                 key={imageKey}
                 width="100%"
                 height="auto"
-                src={customizeYouTubeEmbedUrl(selectedMedia.embedUrl)}
+                src={selectedMedia.embedUrl}
                 title="YouTube video"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -269,11 +239,15 @@ export function ProductImages({media, selectedVariantImage}) {
           close={() => setIsLightboxOpen(false)}
           index={selectedIndex}
           slides={media.map(({node}) => {
+            // For the Lightbox slides, we need a "src"
             if (node.__typename === 'MediaImage') {
               return {src: node.image.url};
             } else if (node.__typename === 'ExternalVideo') {
+              // Lightbox typically expects images, but we can embed an iframe
+              // For an actual lightbox video experience, you'd use an inline embed or skip it
               return {src: node.embedUrl};
             } else if (node.__typename === 'Video') {
+              // Possibly just link the MP4
               const vidSource = node.sources?.[0]?.url;
               return {src: vidSource || ''};
             } else if (node.__typename === 'Model3d') {
