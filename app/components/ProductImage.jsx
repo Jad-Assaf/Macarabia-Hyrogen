@@ -172,8 +172,8 @@ export function ProductImages({media, selectedVariantImage}) {
             {selectedMedia.__typename === 'ExternalVideo' && (
               <iframe
                 key={imageKey}
-                width="560"
-                height="315"
+                width="100%"
+                height="auto"
                 src={selectedMedia.embedUrl}
                 title="YouTube video"
                 frameBorder="0"
