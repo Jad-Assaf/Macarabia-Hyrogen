@@ -5,17 +5,13 @@ import { useEffect } from "react";
 import type { RootLoader } from "../root";
 
 export function CustomAnalytics() {
-  const { subscribe, canTrack } = useAnalytics();
+  const { subscribe } = useAnalytics();
   const nonce = useNonce();
 
   const data = useRouteLoaderData<RootLoader>("root");
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    setTimeout(() => {
-      let isTrackingAllowed = canTrack();
-      console.log("CustomAnalytics - isTrackingAllowed", isTrackingAllowed);
-    }, 1000);
     // Standard events
     subscribe("page_viewed", (data) => {
       console.log("CustomAnalytics - Page viewed:", data);
