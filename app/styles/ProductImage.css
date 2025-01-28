@@ -63,7 +63,7 @@
     transform: scale(1.01);
 }
 .main-image iframe{
-    height: 37.93vh;
+    aspect-ratio: 1028/1028;
 }
 
 /* Container for YouTube iframe to maintain aspect ratio */
