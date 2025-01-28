@@ -1,6 +1,6 @@
-import React, {Suspense, useEffect, useState} from 'react';
-import {defer, redirect} from '@shopify/remix-oxygen';
-import {Await, useLoaderData, useLocation} from '@remix-run/react';
+import React, { Suspense, useEffect, useState } from 'react';
+import { defer, redirect } from '@shopify/remix-oxygen';
+import { Await, useLoaderData, useLocation } from '@remix-run/react';
 import {
   getSelectedProductOptions,
   Analytics,
@@ -10,20 +10,20 @@ import {
   CartForm,
   VariantSelector,
 } from '@shopify/hydrogen';
-import {getVariantUrl} from '~/lib/variants';
-import {ProductPrice} from '~/components/ProductPrice';
-import {ProductImages} from '~/components/ProductImage';
-import {AddToCartButton} from '~/components/AddToCartButton';
-import {useAside} from '~/components/Aside';
+import { getVariantUrl } from '~/lib/variants';
+import { ProductPrice } from '~/components/ProductPrice';
+import { ProductImages } from '~/components/ProductImage';
+import { AddToCartButton } from '~/components/AddToCartButton';
+import { useAside } from '~/components/Aside';
 import '../styles/ProductPage.css';
-import {CSSTransition} from 'react-transition-group';
-import {RELATED_PRODUCTS_QUERY} from '~/lib/fragments';
+import { CSSTransition } from 'react-transition-group';
+import { RELATED_PRODUCTS_QUERY } from '~/lib/fragments';
 import RelatedProductsRow from '~/components/RelatedProducts';
-import {ProductMetafields} from '~/components/Metafields';
+import { ProductMetafields } from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
-import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
+import { trackAddToCart, trackViewContent } from '~/lib/metaPixelEvents';
 
-export const meta = ({data}) => {
+export const meta = ({ data }) => {
   const product = data?.product;
   const variants = product?.variants?.nodes || [];
   const currentVariant = variants[0] || {};
@@ -174,19 +174,19 @@ export async function loader(args) {
   const deferredData = loadDeferredData(args);
   const criticalData = await loadCriticalData(args);
 
-  return defer({...deferredData, ...criticalData});
+  return defer({ ...deferredData, ...criticalData });
 }
 
-async function loadCriticalData({context, params, request}) {
-  const {handle} = params;
-  const {storefront} = context;
+async function loadCriticalData({ context, params, request }) {
+  const { handle } = params;
+  const { storefront } = context;
 
   if (!handle) {
     throw new Error('Expected product handle to be defined');
   }
 
   // Fetch product data
-  const {product} = await storefront.query(PRODUCT_QUERY, {
+  const { product } = await storefront.query(PRODUCT_QUERY, {
     variables: {
       handle,
       selectedOptions: getSelectedProductOptions(request) || [],
@@ -194,7 +194,7 @@ async function loadCriticalData({context, params, request}) {
   });
 
   if (!product) {
-    throw new Response('Product not found', {status: 404});
+    throw new Response('Product not found', { status: 404 });
   }
 
   // Select the first variant as the default if applicable
@@ -215,33 +215,16 @@ async function loadCriticalData({context, params, request}) {
 
   // Fetch related products
   const productType = product.productType || 'General';
-  const {products} = await storefront.query(RELATED_PRODUCTS_QUERY, {
-    variables: {productType},
+  const { products } = await storefront.query(RELATED_PRODUCTS_QUERY, {
+    variables: { productType },
   });
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
-
-  const videos =
-    product.media.edges
-      .filter(({node}) => node.mediaContentType === 'VIDEO')
-      .map(({node}) => {
-        if (!node.sources || node.sources.length === 0) {
-          console.warn(`Video with ID ${node.id} has no sources.`);
-          return null;
-        }
-        return {
-          id: node.id,
-          url: node.sources[0]?.url, // Ensure this URL is valid
-          altText: product.title || 'Product Video',
-        };
-      })
-      .filter(Boolean) || []; // Remove null entries
 
   // Return necessary product data including SEO, first image, and variant price
   return {
     product: {
       ...product,
-      videos,
       firstImage, // Add the first image URL
       seoTitle: product.seo?.title || product.title, // Use SEO title or fallback
       seoDescription: product.seo?.description || product.description, // Use SEO description or fallback
@@ -251,22 +234,22 @@ async function loadCriticalData({context, params, request}) {
   };
 }
 
-function loadDeferredData({context, params}) {
-  const {storefront} = context;
+function loadDeferredData({ context, params }) {
+  const { storefront } = context;
 
   const variants = storefront
     .query(VARIANTS_QUERY, {
-      variables: {handle: params.handle},
+      variables: { handle: params.handle },
     })
     .catch((error) => {
       console.error(error);
       return null;
     });
 
-  return {variants};
+  return { variants };
 }
 
-function redirectToFirstVariant({product, request}) {
+function redirectToFirstVariant({ product, request }) {
   const url = new URL(request.url);
   const firstVariant = product.variants.nodes[0];
 
@@ -277,14 +260,14 @@ function redirectToFirstVariant({product, request}) {
       selectedOptions: firstVariant.selectedOptions,
       searchParams: new URLSearchParams(url.search),
     }),
-    {status: 302},
+    { status: 302 },
   );
 }
 
 // -------------- ProductForm --------------
 
 function isValueAvailable(allVariants, selectedOptions, optionName, val) {
-  const updated = {...selectedOptions, [optionName]: val};
+  const updated = { ...selectedOptions, [optionName]: val };
 
   // Find any in-stock variant that fully matches updated
   return Boolean(
@@ -332,14 +315,14 @@ export function ProductForm({
   quantity = 1,
 }) {
   const location = useLocation();
-  const {open} = useAside();
+  const { open } = useAside();
 
   // ------------------------------
   // Initialize local selectedOptions
   // ------------------------------
   const [selectedOptions, setSelectedOptions] = useState(() => {
     if (selectedVariant?.selectedOptions) {
-      return selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
+      return selectedVariant.selectedOptions.reduce((acc, { name, value }) => {
         acc[name] = value;
         return acc;
       }, {});
@@ -363,7 +346,7 @@ export function ProductForm({
   useEffect(() => {
     if (!selectedVariant?.selectedOptions) return;
     setSelectedOptions(
-      selectedVariant.selectedOptions.reduce((acc, {name, value}) => {
+      selectedVariant.selectedOptions.reduce((acc, { name, value }) => {
         acc[name] = value;
         return acc;
       }, {}),
@@ -375,7 +358,7 @@ export function ProductForm({
   // ------------------------------
   function handleOptionChange(optionName, chosenVal) {
     setSelectedOptions((prev) => {
-      const newOptions = {...prev, [optionName]: chosenVal};
+      const newOptions = { ...prev, [optionName]: chosenVal };
 
       // Attempt to find or “snap” to a variant
       const found = pickOrSnapVariant(
@@ -387,7 +370,7 @@ export function ProductForm({
 
       if (found) {
         // Overwrite newOptions with found's entire set
-        found.selectedOptions.forEach(({name, value}) => {
+        found.selectedOptions.forEach(({ name, value }) => {
           newOptions[name] = value;
         });
         onVariantChange(found);
@@ -408,8 +391,8 @@ export function ProductForm({
   const safeQuantity = Math.max(Number(quantity) || 1, 1);
 
   // Subcomponent to render each option row
-  const ProductOptions = ({option}) => {
-    const {name, values} = option;
+  const ProductOptions = ({ option }) => {
+    const { name, values } = option;
     const currentValue = selectedOptions[name];
 
     return (
@@ -418,7 +401,7 @@ export function ProductForm({
           {name}: <span className="OptionValue">{currentValue}</span>
         </h5>
         <div className="product-options-grid">
-          {values.map(({value, variant}) => {
+          {values.map(({ value, variant }) => {
             // Check if picking this new val is possible
             const canPick = isValueAvailable(
               variants,
@@ -453,7 +436,7 @@ export function ProductForm({
                     alt={value}
                     width="50"
                     height="50"
-                    style={{objectFit: 'cover'}}
+                    style={{ objectFit: 'cover' }}
                   />
                 ) : (
                   value
@@ -528,7 +511,7 @@ export function ProductForm({
         options={product.options.filter((o) => o.values.length > 1)}
         variants={variants}
       >
-        {({option}) => <ProductOptions key={option.name} option={option} />}
+        {({ option }) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
 
       <div className="product-form">
@@ -541,7 +524,7 @@ export function ProductForm({
           }}
           lines={
             selectedVariant
-              ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
+              ? [{ merchandiseId: selectedVariant.id, quantity: safeQuantity }]
               : []
           }
         >
@@ -623,10 +606,8 @@ export function ProductForm({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Product() {
-  const {product, variants, relatedProducts} = useLoaderData();
-  const [selectedVariant, setSelectedVariant] = useState(
-    product.selectedVariant,
-  );
+  const { product, variants, relatedProducts } = useLoaderData();
+  const [selectedVariant, setSelectedVariant] = useState(product.selectedVariant);
 
   useEffect(() => {
     setSelectedVariant(product.selectedVariant);
@@ -653,7 +634,7 @@ export default function Product() {
     }
   }, [quantity, selectedVariant]);
 
-  const {title, descriptionHtml, images} = product;
+  const { title, descriptionHtml, images } = product;
 
   const hasDiscount =
     selectedVariant?.compareAtPrice &&
@@ -673,7 +654,6 @@ export default function Product() {
       <div className="ProductPageTop">
         <ProductImages
           images={product.images.edges}
-          videos={product.videos} // Pass the videos to the component
           selectedVariantImage={selectedVariant?.image}
         />
         <div className="product-main">
@@ -799,7 +779,7 @@ export default function Product() {
           unmountOnExit
         >
           <div className="product-section">
-            <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
+            <div dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
           </div>
         </CSSTransition>
 
@@ -1028,20 +1008,6 @@ const PRODUCT_FRAGMENT = `#graphql
           altText
           width
           height
-        }
-      }
-    }
-    media(first: 10) {
-      edges {
-        node {
-          mediaContentType
-          ... on Video {
-            id
-            sources {
-              url
-              format
-            }
-          }
         }
       }
     }
