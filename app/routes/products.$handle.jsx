@@ -221,10 +221,20 @@ async function loadCriticalData({context, params, request}) {
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
 
+  const videos =
+    product.media.edges
+      .filter(({node}) => node.mediaContentType === 'VIDEO')
+      .map(({node}) => ({
+        id: node.id,
+        url: node.sources[0]?.url, // Use the first video source URL
+        altText: product.title || 'Product Video',
+      })) || [];
+
   // Return necessary product data including SEO, first image, and variant price
   return {
     product: {
       ...product,
+      videos,
       firstImage, // Add the first image URL
       seoTitle: product.seo?.title || product.title, // Use SEO title or fallback
       seoDescription: product.seo?.description || product.description, // Use SEO description or fallback
@@ -656,6 +666,7 @@ export default function Product() {
       <div className="ProductPageTop">
         <ProductImages
           images={product.images.edges}
+          videos={product.videos} // Pass the videos to the component
           selectedVariantImage={selectedVariant?.image}
         />
         <div className="product-main">
