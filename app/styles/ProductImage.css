@@ -31,7 +31,7 @@
     height: auto;
     cursor: pointer;
     border: 1px solid transparent;
-    border-radius: 3px;
+    border-radius: 6px;
     transition: border 0.3s, transform 0.2s;
     display: flex;
     justify-content: center;

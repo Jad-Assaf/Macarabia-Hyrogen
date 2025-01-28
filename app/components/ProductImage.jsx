@@ -105,6 +105,7 @@ export function ProductImages({media, selectedVariantImage}) {
             const isActive = index === selectedIndex;
             let thumbSrc = '';
             let altText = node.alt || 'Thumbnail';
+            let isVideo = false; // Flag to determine if the media is a video
 
             if (node.__typename === 'MediaImage') {
               thumbSrc = node.image?.url;
@@ -112,15 +113,23 @@ export function ProductImages({media, selectedVariantImage}) {
             } else if (node.__typename === 'ExternalVideo') {
               // For a YouTube external video, there's no "thumbnail" by default in the Storefront API
               // You could fetch it from node.embedUrl if you want a custom YT thumbnail
-              thumbSrc = 'https://img.icons8.com/color/48/youtube-play.png'; // a fallback icon
+              thumbSrc = 'https://img.icons8.com/color/480/youtube-play.png'; // a fallback icon
+              isVideo = true;
             } else if (node.__typename === 'Video') {
-              thumbSrc = 'https://img.icons8.com/fluency/48/video.png'; // a fallback icon
+              thumbSrc = 'https://img.icons8.com/fluency/480/video.png'; // a fallback icon
+              isVideo = true;
             }
+
+            // Define inline styles conditionally for video thumbnails
+            const thumbnailStyle = isVideo
+              ? {background: '#0c0c0c', padding: '9px'}
+              : {};
 
             return (
               <div
                 key={node.id || index}
                 className={`thumbnail ${isActive ? 'active' : ''}`}
+                style={thumbnailStyle} // Apply styles here
                 onClick={() => setSelectedIndex(index)}
               >
                 {thumbSrc ? (
