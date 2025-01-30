@@ -44,6 +44,7 @@ export function CustomAnalytics() {
     <>
       {/* Initialize GTM container */}
       <script
+        async
         nonce={nonce}
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
