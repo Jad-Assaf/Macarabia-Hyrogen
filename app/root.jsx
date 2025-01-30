@@ -194,32 +194,35 @@ export function Layout({children}) {
         <script
           dangerouslySetInnerHTML={{
             __html: `
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+              event: "gtm.init_consent",
+              'analytics_storage': 'granted',
+              'ad_storage': 'granted'
+            });
+          `,
+          }}
+        />
+
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
+        ></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
               window.dataLayer = window.dataLayer || [];
-              window.dataLayer.push({
-                event: "gtm.init_consent",
-                'analytics_storage': 'granted',
-                'ad_storage': 'granted'
+              function gtag(){window.dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-3PZN80E9FJ', { 'debug_mode': true });
+              
+              // Fire a test pageview event
+              gtag('event', 'page_view', { 
+                page_path: window.location.pathname
               });
             `,
           }}
         />
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
-          onLoad={() => {
-            window.dataLayer = window.dataLayer || [];
-            function gtag() {
-              window.dataLayer.push(arguments);
-            }
-            gtag('js', new Date());
-            gtag('config', 'G-3PZN80E9FJ', {debug_mode: true});
-
-            // Fire a test pageview event
-            gtag('event', 'page_view', {
-              page_path: window.location.pathname,
-            });
-          }}
-        ></script>
         <Suspense fallback={null}>
           <MetaPixel pixelId={PIXEL_ID} />
         </Suspense>
