@@ -198,6 +198,17 @@ export function Layout({children}) {
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              window.dataLayer = window.dataLayer || [];
+              window.dataLayer.push({
+                event: "gtm.init_consent",
+                'analytics_storage': 'granted'
+              });
+            `,
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
             window.dataLayer = window.dataLayer || [];
             function gtag(){window.dataLayer.push(arguments);}
             gtag('js', new Date());
