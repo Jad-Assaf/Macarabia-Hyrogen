@@ -190,9 +190,7 @@ export function Layout({children}) {
           name="facebook-domain-verification"
           content="ca1idnp1x728fhk6zouywowcqgb2xt"
         />
-        <Suspense fallback={null}>
-          <CustomAnalytics />
-        </Suspense>
+        <CustomAnalytics />
         <Suspense fallback={null}>
           <MetaPixel pixelId={PIXEL_ID} />
         </Suspense>
