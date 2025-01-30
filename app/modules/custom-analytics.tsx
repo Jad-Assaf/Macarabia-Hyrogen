@@ -44,7 +44,6 @@ export function CustomAnalytics() {
     <>
       {/* Initialize GTM container */}
       <script
-        async
         nonce={nonce}
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
@@ -63,7 +62,7 @@ export function CustomAnalytics() {
       />
 
       {/* Load GTM script */}
-      <Script async src={`https://www.googletagmanager.com/gtm.js?id=${id}`} />
+      <Script src={`https://www.googletagmanager.com/gtm.js?id=${id}`} />
     </>
   );
 }

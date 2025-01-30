@@ -76,7 +76,7 @@ export async function loader(args) {
         country: args.context.storefront.i18n.country,
         language: args.context.storefront.i18n.language,
       },
-      googleGtmID: 'G-3PZN80E9FJ',
+      googleGtmID: "G-3PZN80E9FJ",
     });
   } catch (error) {
     console.error('Loader error:', error);
@@ -186,6 +186,8 @@ export function Layout({children}) {
           name="google-site-verification"
           content="tGAcrZ3TpRDtQqmjqfYOuQpdBqsLCTr5YzcG7syVPEk"
         />
+        <Meta />
+        <Links />
         <meta
           name="facebook-domain-verification"
           content="ca1idnp1x728fhk6zouywowcqgb2xt"
@@ -194,8 +196,6 @@ export function Layout({children}) {
         <Suspense fallback={null}>
           <MetaPixel pixelId={PIXEL_ID} />
         </Suspense>
-        <Links />
-        <Meta />
       </head>
       <body>
         <ClarityTracker clarityId={clarityId} />
