@@ -21,6 +21,7 @@ import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import React, {Suspense, useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
+import {CustomAnalytics} from './modules/custom-analytics';
 const MetaPixel = React.lazy(() => import('./components/MetaPixel'));
 
 /**
@@ -75,6 +76,7 @@ export async function loader(args) {
         country: args.context.storefront.i18n.country,
         language: args.context.storefront.i18n.language,
       },
+      googleGtmID: "G-3PZN80E9FJ",
     });
   } catch (error) {
     console.error('Loader error:', error);
@@ -146,15 +148,6 @@ export function Layout({children}) {
   const navigation = useNavigation();
   const [nprogress, setNProgress] = useState(null); // Store NProgress instance
   const clarityId = 'pfyepst8v5'; // Replace with your Clarity project ID
-  const [isLinux, setIsLinux] = useState(false);
-
-  useEffect(() => {
-    // Detect the operating system using navigator.userAgent
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    if (userAgent.includes('linux')) {
-      setIsLinux(true); // Set true if the OS is Linux
-    }
-  }, []);
 
   useEffect(() => {
     // Load NProgress once and set it in the state
@@ -199,24 +192,7 @@ export function Layout({children}) {
           name="facebook-domain-verification"
           content="ca1idnp1x728fhk6zouywowcqgb2xt"
         />
-        <script
-          nonce={nonce}
-          src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
-        ></script>
-
-        {/* 2. Inline GA Initialization Script */}
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-
-              gtag('config', 'G-3PZN80E9FJ');
-            `,
-          }}
-        ></script>
+        <CustomAnalytics />
         <Suspense fallback={null}>
           <MetaPixel pixelId={PIXEL_ID} />
         </Suspense>
