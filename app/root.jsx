@@ -76,7 +76,6 @@ export async function loader(args) {
         country: args.context.storefront.i18n.country,
         language: args.context.storefront.i18n.language,
       },
-      googleGtmID: "G-3PZN80E9FJ",
     });
   } catch (error) {
     console.error('Loader error:', error);
@@ -192,7 +191,24 @@ export function Layout({children}) {
           name="facebook-domain-verification"
           content="ca1idnp1x728fhk6zouywowcqgb2xt"
         />
-        <CustomAnalytics />
+        <script
+          nonce={nonce}
+          src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
+        ></script>
+
+        {/* 2. Inline GA Initialization Script */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+
+              gtag('config', 'G-3PZN80E9FJ');
+            `,
+          }}
+        ></script>
         <Suspense fallback={null}>
           <MetaPixel pixelId={PIXEL_ID} />
         </Suspense>
