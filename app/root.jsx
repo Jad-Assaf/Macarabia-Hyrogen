@@ -1,5 +1,5 @@
 // src/root.jsx
-import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
+import {useNonce, getShopAnalytics, Analytics, Script} from '@shopify/hydrogen';
 import {defer} from '@shopify/remix-oxygen';
 import {
   Links,
@@ -192,23 +192,19 @@ export function Layout({children}) {
           content="ca1idnp1x728fhk6zouywowcqgb2xt"
         />
         <script
-          nonce={nonce}
+          async
           src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
         ></script>
-
-        {/* 2. Inline GA Initialization Script */}
         <script
-          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-
-              gtag('config', 'G-3PZN80E9FJ');
-            `,
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){window.dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-3PZN80E9FJ');
+          `,
           }}
-        ></script>
+        />
         <Suspense fallback={null}>
           <MetaPixel pixelId={PIXEL_ID} />
         </Suspense>
