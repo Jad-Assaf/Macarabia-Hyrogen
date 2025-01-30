@@ -195,13 +195,29 @@ export function Layout({children}) {
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('consent', 'default', {
+
+              window.dataLayer.push({
+                event: "gtm.init_consent",
+                'analytics_storage': 'granted',
+                'ad_storage': 'granted',
+                'functionality_storage': 'granted',
+                'security_storage': 'granted'
+              });
+
+              function gtag(){ window.dataLayer.push(arguments); }
+
+              gtag('consent', 'update', {
                 'analytics_storage': 'granted',
                 'ad_storage': 'granted'
               });
+
               gtag('js', new Date());
+
               gtag('config', 'G-3PZN80E9FJ', { debug_mode: true });
+
+              gtag('event', 'page_view', { 
+                page_path: window.location.pathname 
+              });
             `,
           }}
         />
@@ -209,6 +225,7 @@ export function Layout({children}) {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
         />
+
         {/* <Suspense fallback={null}>
           <MetaPixel pixelId={PIXEL_ID} />
         </Suspense> */}
