@@ -209,9 +209,9 @@ export function Layout({children}) {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
         />
-        <Suspense fallback={null}>
+        {/* <Suspense fallback={null}>
           <MetaPixel pixelId={PIXEL_ID} />
-        </Suspense>
+        </Suspense> */}
       </head>
       <body>
         <ClarityTracker clarityId={clarityId} />
