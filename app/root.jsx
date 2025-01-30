@@ -1,5 +1,5 @@
 // src/root.jsx
-import {useNonce, getShopAnalytics, Analytics, Script} from '@shopify/hydrogen';
+import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
 import {defer} from '@shopify/remix-oxygen';
 import {
   Links,
@@ -21,7 +21,6 @@ import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import React, {Suspense, useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
-import {CustomAnalytics} from './modules/custom-analytics';
 const MetaPixel = React.lazy(() => import('./components/MetaPixel'));
 
 /**
@@ -192,43 +191,25 @@ export function Layout({children}) {
           content="ca1idnp1x728fhk6zouywowcqgb2xt"
         />
         <script
+          nonce={nonce}
+          src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
+        ></script>
+
+        <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
-
-              window.dataLayer.push({
-                event: "gtm.init_consent",
-                'analytics_storage': 'granted',
-                'ad_storage': 'granted',
-                'functionality_storage': 'granted',
-                'security_storage': 'granted'
-              });
-
-              function gtag(){ window.dataLayer.push(arguments); }
-
-              gtag('consent', 'update', {
-                'analytics_storage': 'granted',
-                'ad_storage': 'granted'
-              });
-
+              function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
 
-              gtag('config', 'G-3PZN80E9FJ', { debug_mode: true });
-
-              gtag('event', 'page_view', { 
-                page_path: window.location.pathname 
-              });
+              gtag('config', 'G-3PZN80E9FJ');
             `,
           }}
-        />
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
-        />
-
-        {/* <Suspense fallback={null}>
+        ></script>
+        <Suspense fallback={null}>
           <MetaPixel pixelId={PIXEL_ID} />
-        </Suspense> */}
+        </Suspense>
       </head>
       <body>
         <ClarityTracker clarityId={clarityId} />
