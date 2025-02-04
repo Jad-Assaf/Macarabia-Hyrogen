@@ -5,7 +5,10 @@ import {flattenConnection} from '@shopify/hydrogen';
  * @param {import('@shopify/remix-oxygen').LoaderFunctionArgs} args
  */
 export async function loader({request, context: {storefront}}) {
-  const baseUrl = new URL(request.url).origin;
+  let baseUrl = new URL(request.url).origin;
+
+  // Remove "www." from the base URL if it exists
+  baseUrl = baseUrl.replace(/\/\/www\./, '//');
 
   // Fetch all products you want in your feed:
   const products = await fetchAllResources({
@@ -55,7 +58,6 @@ async function fetchAllResources({storefront, query, field}) {
       : null;
   } while (nextPageCursor && allNodes.length < GOOGLE_SITEMAP_LIMIT);
 
-  // Return the limited array if needed
   return allNodes.slice(0, GOOGLE_SITEMAP_LIMIT);
 }
 
