@@ -49,7 +49,7 @@ export const meta = ({data}) => {
   const truncate = (text, maxLength) =>
     text?.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
   return getSeoMeta({
-    title: data?.title || 'Default Title',
+    title: 'MacArabia',
     description: truncate(
       data?.description || 'Default description for this page.',
       150,
