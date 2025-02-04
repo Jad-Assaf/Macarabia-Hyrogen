@@ -151,12 +151,15 @@ function renderProductVariantItem(product, variant, baseUrl) {
       )
       .join('') || '';
 
+  // Remove <img> tags from the product description
+  const cleanDescription = stripImgTags(product.description || '');
+
   return `
     <item>
       <g:id>${xmlEncode(variantId)}</g:id>
       <g:item_group_id>${xmlEncode(productId)}</g:item_group_id>
       <g:title>${xmlEncode(product.title)}</g:title>
-      <g:description>${xmlEncode(product.description || '')}</g:description>
+      <g:description>${xmlEncode(cleanDescription)}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(
     product.handle,
   )}?variant=${xmlEncode(variantId)}</g:link>
@@ -197,6 +200,15 @@ function xmlEncode(string) {
     /[&<>'"]/g,
     (char) => `&#${char.charCodeAt(0)};`,
   );
+}
+
+/**
+ * Removes any <img> elements from a given HTML string.
+ * @param {string} html - The HTML string to process.
+ * @returns {string} - The HTML string without any <img> tags.
+ */
+function stripImgTags(html) {
+  return html.replace(/<img\b[^>]*>/gi, '');
 }
 
 /**
