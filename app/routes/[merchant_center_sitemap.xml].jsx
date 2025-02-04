@@ -120,10 +120,17 @@ function renderProductVariantItem(product, variant, baseUrl) {
   // Remove <img> tags from the product description if they exist
   const cleanDescription = stripImgTags(product.description || '');
 
+  // COMBINED TITLE MODIFICATION: If the variant has a distinct title, append it.
+  let combinedTitle = product.title;
+  if (variant.title && variant.title !== product.title) {
+    combinedTitle += ` - ${variant.title}`;
+  }
+
   return `
     <item>
       <g:id>${xmlEncode(combinedId)}</g:id>
-      <g:title>${xmlEncode(product.title)}</g:title>
+      <!-- Updated <g:title> to reflect combined title -->
+      <g:title>${xmlEncode(combinedTitle)}</g:title>
       <g:description>${xmlEncode(cleanDescription)}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(product.handle)}</g:link>
       ${firstImageUrl ? `<g:image_link>${firstImageUrl}</g:image_link>` : ''}
