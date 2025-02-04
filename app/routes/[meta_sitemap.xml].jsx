@@ -85,7 +85,7 @@ function generateMetaXmlFeed({products, baseUrl}) {
 
 /**
  * Renders an individual <item> with whatever fields you need.
- * Compare to your existing merchant feed to see what's different.
+ * The variant options are now rendered in a loop so that all available options and their values are passed.
  */
 function renderProductVariantItem(product, variant, baseUrl) {
   const productId = parseGid(product.id); // Product ID for grouping
@@ -106,7 +106,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
   // Additional images: exclude the main image (variant or fallback)
   const additionalImageTags =
     product?.images?.nodes
-      ?.filter((img) => img.url !== imageUrl) // Exclude the primary image
+      ?.filter((img) => img.url !== imageUrl)
       ?.map(
         (img) =>
           `<g:additional_image_link>${xmlEncode(
@@ -115,44 +115,21 @@ function renderProductVariantItem(product, variant, baseUrl) {
       )
       .join('') || '';
 
-  // Extract standard variant attributes
-  const color =
-    variant?.selectedOptions?.find(
-      (option) => option.name.toLowerCase() === 'color',
-    )?.value || '';
-  const size =
-    variant?.selectedOptions?.find(
-      (option) => option.name.toLowerCase() === 'size',
-    )?.value || '';
-  const material =
-    variant?.selectedOptions?.find(
-      (option) => option.name.toLowerCase() === 'material',
-    )?.value || '';
-  const pattern =
-    variant?.selectedOptions?.find(
-      (option) => option.name.toLowerCase() === 'pattern',
-    )?.value || '';
-
-  // Capture all other custom options as additional_variant_attribute
-  const additionalAttributes =
-    variant?.selectedOptions
-      ?.filter(
-        (option) =>
-          !['color', 'size', 'material', 'pattern'].includes(
-            option.name.toLowerCase(),
-          ),
-      )
-      ?.map(
-        (option) =>
-          `<g:additional_variant_attribute>
-             <g:name>${xmlEncode(option.name)}</g:name>
-             <g:value>${xmlEncode(option.value)}</g:value>
-           </g:additional_variant_attribute>`,
-      )
-      .join('') || '';
-
   // Remove <img> tags from the product description
   const cleanDescription = stripImgTags(product.description || '');
+
+  // Loop over all selected options and output each one
+  const optionsXml =
+    variant?.selectedOptions
+      ?.map(
+        (option) => `
+      <g:variant_option>
+        <g:name>${xmlEncode(option.name)}</g:name>
+        <g:value>${xmlEncode(option.value)}</g:value>
+      </g:variant_option>
+      `,
+      )
+      .join('') || '';
 
   return `
     <item>
@@ -171,11 +148,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
         variant?.availableForSale ? 'in stock' : 'out of stock'
       }</g:availability>
       <g:price>${price} ${currencyCode}</g:price>
-      ${color ? `<g:color>${xmlEncode(color)}</g:color>` : ''}
-      ${size ? `<g:size>${xmlEncode(size)}</g:size>` : ''}
-      ${material ? `<g:material>${xmlEncode(material)}</g:material>` : ''}
-      ${pattern ? `<g:pattern>${xmlEncode(pattern)}</g:pattern>` : ''}
-      ${additionalAttributes}
+      ${optionsXml}
       <g:shipping>
         <g:country>LB</g:country>
         <g:service>Standard</g:service>
