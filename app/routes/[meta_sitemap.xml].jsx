@@ -119,18 +119,39 @@ function renderProductVariantItem(product, variant, baseUrl) {
     stripTableTags(stripImgTags(product.description || '')),
   );
 
-  // Loop over all selected options and output each one
-  const optionsXml =
-    variant?.selectedOptions
-      ?.map(
-        (option) => `
-      <g:variant_option>
-        <g:name>${xmlEncode(option.name)}</g:name>
-        <g:value>${xmlEncode(option.value)}</g:value>
-      </g:variant_option>
-      `,
-      )
-      .join('') || '';
+  // Define the option names that should be output as-is
+  const expectedAttributes = ['color', 'size', 'material', 'pattern'];
+
+  // Output tags for expected attributes if they exist on the variant.
+  // We do a case-insensitive comparison.
+  let expectedOptionsXml = '';
+  expectedAttributes.forEach((attr) => {
+    const option = variant.selectedOptions?.find(
+      (o) => o.name.toLowerCase() === attr,
+    );
+    if (option) {
+      // Output using the lower-case tag as defined in expectedAttributes
+      expectedOptionsXml += `<g:${attr}>${xmlEncode(option.value)}</g:${attr}>`;
+    }
+  });
+
+  // For any other selected options, combine them into a single additional attribute.
+  const additionalOptions = variant.selectedOptions?.filter(
+    (o) => !expectedAttributes.includes(o.name.toLowerCase()),
+  );
+  let additionalOptionsXml = '';
+  if (additionalOptions && additionalOptions.length) {
+    // Format each additional attribute as "Name: Value"
+    const additionalString = additionalOptions
+      .map((opt) => `${opt.name}: ${opt.value}`)
+      .join('; ');
+    additionalOptionsXml = `<g:additional_variant_attribute>${xmlEncode(
+      additionalString,
+    )}</g:additional_variant_attribute>`;
+  }
+
+  // Combine all option tags.
+  const optionsXml = expectedOptionsXml + additionalOptionsXml;
 
   return `
     <item>
