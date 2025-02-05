@@ -85,7 +85,6 @@ function generateMetaXmlFeed({products, baseUrl}) {
 
 /**
  * Renders an individual <item> with whatever fields you need.
- * The variant options are now rendered in a loop so that all available options and their values are passed.
  */
 function renderProductVariantItem(product, variant, baseUrl) {
   const productId = parseGid(product.id); // Product ID for grouping
@@ -115,8 +114,10 @@ function renderProductVariantItem(product, variant, baseUrl) {
       )
       .join('') || '';
 
-  // Remove <img> tags from the product description
-  const cleanDescription = stripImgTags(product.description || '');
+  // Clean up description: remove images and convert tables to text
+  const cleanDescription = xmlEncode(
+    stripTableTags(stripImgTags(product.description || '')),
+  );
 
   // Loop over all selected options and output each one
   const optionsXml =
@@ -136,7 +137,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
       <g:id>${xmlEncode(variantId)}</g:id>
       <g:item_group_id>${xmlEncode(productId)}</g:item_group_id>
       <g:title>${xmlEncode(product.title)}</g:title>
-      <g:description>${xmlEncode(cleanDescription)}</g:description>
+      <g:description>${cleanDescription}</g:description>
       <g:link>${baseUrl}/products/${xmlEncode(
     product.handle,
   )}?variant=${xmlEncode(variantId)}</g:link>
@@ -177,11 +178,20 @@ function xmlEncode(string) {
 
 /**
  * Removes any <img> elements from a given HTML string.
- * @param {string} html - The HTML string to process.
- * @returns {string} - The HTML string without any <img> tags.
  */
 function stripImgTags(html) {
   return html.replace(/<img\b[^>]*>/gi, '');
+}
+
+/**
+ * Converts <table> elements into readable plain text.
+ */
+function stripTableTags(html) {
+  return html
+    .replace(/<tr>/gi, '\n') // New line for each row
+    .replace(/<\/td><td>/gi, ': ') // Convert table cells into readable text
+    .replace(/<\/?(table|tr|td)>/gi, '') // Remove all table tags
+    .trim();
 }
 
 /**
