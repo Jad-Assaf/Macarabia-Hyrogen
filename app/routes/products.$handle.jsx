@@ -549,9 +549,6 @@ export default function Product() {
   const [selectedVariant, setSelectedVariant] = useState(
     product.selectedVariant,
   );
-  const [quantity, setQuantity] = useState(1);
-  const [subtotal, setSubtotal] = useState(0);
-  const [activeTab, setActiveTab] = useState('description');
 
   useEffect(() => {
     setSelectedVariant(product.selectedVariant);
@@ -562,16 +559,21 @@ export default function Product() {
     trackViewContent(product);
   }, [product]);
 
+  const [quantity, setQuantity] = useState(1);
+  const [subtotal, setSubtotal] = useState(0);
+
+  const incrementQuantity = () => setQuantity((prev) => prev + 1);
+  const decrementQuantity = () =>
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+
+  const [activeTab, setActiveTab] = useState('description');
+
   useEffect(() => {
     if (selectedVariant && selectedVariant.price) {
       const price = parseFloat(selectedVariant.price.amount);
       setSubtotal(price * quantity);
     }
   }, [quantity, selectedVariant]);
-
-  const incrementQuantity = () => setQuantity((prev) => prev + 1);
-  const decrementQuantity = () =>
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
   const {title, descriptionHtml} = product;
 
@@ -583,19 +585,12 @@ export default function Product() {
     trackAddToCart(prod);
   };
 
-  // Determine which image to show – use the variant image if available,
-  // otherwise fall back to the product's first image.
-  const variantImage =
-    (selectedVariant && selectedVariant.image) ||
-    (product.firstImage && {url: product.firstImage});
-
   return (
     <div className="product">
       <div className="ProductPageTop">
-        {/* --- Use the determined variantImage for display --- */}
         <ProductImages
-          media={product.media?.edges || []}
-          selectedVariantImage={variantImage}
+          images={product.images.edges}
+          selectedVariantImage={selectedVariant?.image}
         />
         <div className="product-main">
           <h1>{title}</h1>
@@ -678,7 +673,7 @@ export default function Product() {
               </li>
             </ul>
           </div>
-          <hr className="productPage-hr" />
+          <hr className="productPage-hr"></hr>
           <ProductMetafields
             metafieldCondition={product.metafieldCondition}
             metafieldWarranty={product.metafieldWarranty}
@@ -762,6 +757,30 @@ export default function Product() {
               an exchange shipping label along with comprehensive instructions
               for package return. Please note that exchanges initiated without
               prior authorization will not be accepted.
+            </p>
+            <p>
+              Should you encounter any damages or issues upon receiving your
+              order, please inspect the item immediately and notify us promptly.
+              We will swiftly address any defects, damages, or incorrect
+              shipments to ensure your satisfaction.
+            </p>
+            <h5>Exceptions / Non-exchangeable Items</h5>
+            <p>
+              Certain items are exempt from our exchange policy, including
+              perishable goods (such as headsets, earphones, and network card
+              wifi routers), custom-made products (such as special orders or
+              personalized items), and pre-ordered goods. For queries regarding
+              specific items, please reach out to us.
+            </p>
+            <p>
+              Unfortunately, we are unable to accommodate exchanges for sale
+              items or gift cards.
+            </p>
+            <h5>Exchanges</h5>
+            <p>
+              The most efficient method to secure the item you desire is to
+              exchange the original item, and upon acceptance of your exchange,
+              proceed with a separate purchase for the desired replacement.
             </p>
           </div>
         </CSSTransition>
