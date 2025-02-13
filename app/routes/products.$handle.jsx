@@ -546,11 +546,21 @@ export function ProductForm({
 // -----------------------------------------------------
 export default function Product() {
   const {product, variants, relatedProducts} = useLoaderData();
+
+  // Safeguard: If `product` is unexpectedly undefined for any reason, bail out early.
+  if (!product) {
+    return <div>Loading product data...</div>;
+  }
+
   const [selectedVariant, setSelectedVariant] = useState(
     product.selectedVariant,
   );
+  const [quantity, setQuantity] = useState(1);
+  const [subtotal, setSubtotal] = useState(0);
+  const [activeTab, setActiveTab] = useState('description');
 
   useEffect(() => {
+    // Reset when the product changes
     setSelectedVariant(product.selectedVariant);
     setQuantity(1);
   }, [product]);
@@ -559,27 +569,22 @@ export default function Product() {
     trackViewContent(product);
   }, [product]);
 
-  const [quantity, setQuantity] = useState(1);
-  const [subtotal, setSubtotal] = useState(0);
-
-  const incrementQuantity = () => setQuantity((prev) => prev + 1);
-  const decrementQuantity = () =>
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
-
-  const [activeTab, setActiveTab] = useState('description');
-
   useEffect(() => {
-    if (selectedVariant && selectedVariant.price) {
+    if (selectedVariant?.price) {
       const price = parseFloat(selectedVariant.price.amount);
       setSubtotal(price * quantity);
     }
   }, [quantity, selectedVariant]);
 
+  const incrementQuantity = () => setQuantity((prev) => prev + 1);
+  const decrementQuantity = () =>
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+
   const {title, descriptionHtml} = product;
 
   const hasDiscount =
     selectedVariant?.compareAtPrice &&
-    selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
+    selectedVariant?.price?.amount !== selectedVariant?.compareAtPrice?.amount;
 
   const onAddToCart = (prod) => {
     trackAddToCart(prod);
@@ -588,11 +593,15 @@ export default function Product() {
   return (
     <div className="product">
       <div className="ProductPageTop">
-        {/* --- Replace images={product.images.edges} with media={product.media.edges} --- */}
+        {/* 
+          Replace media={product.media.edges} with images={product.images?.edges || []} 
+          and rely on selectedVariantImage to update when variant changes.
+        */}
         <ProductImages
-          media={product.media?.edges || []}
+          images={product.images?.edges || []} // <-- Safely handle missing images
           selectedVariantImage={selectedVariant?.image}
         />
+
         <div className="product-main">
           <h1>{title}</h1>
           <div className="price-container">
@@ -601,7 +610,7 @@ export default function Product() {
             >
               <Money data={selectedVariant?.price} />
             </small>
-            {hasDiscount && selectedVariant.compareAtPrice && (
+            {hasDiscount && selectedVariant?.compareAtPrice && (
               <small className="discountedPrice">
                 <Money data={selectedVariant.compareAtPrice} />
               </small>
@@ -674,7 +683,7 @@ export default function Product() {
               </li>
             </ul>
           </div>
-          <hr className="productPage-hr"></hr>
+          <hr className="productPage-hr" />
           <ProductMetafields
             metafieldCondition={product.metafieldCondition}
             metafieldWarranty={product.metafieldWarranty}
@@ -683,6 +692,7 @@ export default function Product() {
           />
         </div>
       </div>
+
       <div className="ProductPageBottom">
         <div className="tabs">
           <button
@@ -714,7 +724,8 @@ export default function Product() {
           unmountOnExit
         >
           <div className="product-section">
-            <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
+            {/* Safeguard if descriptionHtml is missing */}
+            <div dangerouslySetInnerHTML={{__html: descriptionHtml || ''}} />
           </div>
         </CSSTransition>
 
@@ -758,30 +769,6 @@ export default function Product() {
               an exchange shipping label along with comprehensive instructions
               for package return. Please note that exchanges initiated without
               prior authorization will not be accepted.
-            </p>
-            <p>
-              Should you encounter any damages or issues upon receiving your
-              order, please inspect the item immediately and notify us promptly.
-              We will swiftly address any defects, damages, or incorrect
-              shipments to ensure your satisfaction.
-            </p>
-            <h5>Exceptions / Non-exchangeable Items</h5>
-            <p>
-              Certain items are exempt from our exchange policy, including
-              perishable goods (such as headsets, earphones, and network card
-              wifi routers), custom-made products (such as special orders or
-              personalized items), and pre-ordered goods. For queries regarding
-              specific items, please reach out to us.
-            </p>
-            <p>
-              Unfortunately, we are unable to accommodate exchanges for sale
-              items or gift cards.
-            </p>
-            <h5>Exchanges</h5>
-            <p>
-              The most efficient method to secure the item you desire is to
-              exchange the original item, and upon acceptance of your exchange,
-              proceed with a separate purchase for the desired replacement.
             </p>
           </div>
         </CSSTransition>
@@ -845,13 +832,14 @@ export default function Product() {
             </p>
           </div>
         </CSSTransition>
+
         <Analytics.ProductView
           data={{
             products: [
               {
                 id: product.id,
                 title: product.title,
-                price: selectedVariant?.price.amount || '0',
+                price: selectedVariant?.price?.amount || '0',
                 vendor: product.vendor,
                 variantId: selectedVariant?.id || '',
                 variantTitle: selectedVariant?.title || '',
@@ -861,6 +849,7 @@ export default function Product() {
           }}
         />
       </div>
+
       <div className="related-products-row">
         <div className="related-products">
           <h2>Related Products</h2>
