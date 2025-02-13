@@ -89,18 +89,24 @@ export function ProductImages({images, selectedVariantImage}) {
 
   // Keyboard: left arrow => prev, right arrow => next
   useEffect(() => {
-    function handleKeyDown(e) {
-      if (e.key === 'ArrowLeft') {
-        handlePrevImage();
-        setShowKeyIndicator(false); // Hide indicator once used
-      } else if (e.key === 'ArrowRight') {
-        handleNextImage();
-        setShowKeyIndicator(false); // Hide indicator once used
-      }
+  function handleKeyDown(e) {
+    // If the lightbox is open, ignore global arrow events:
+    if (isLightboxOpen) return;
+
+    if (e.key === 'ArrowLeft') {
+      handlePrevImage();
+      setShowKeyIndicator(false);
+    } else if (e.key === 'ArrowRight') {
+      handleNextImage();
+      setShowKeyIndicator(false);
     }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [images]);
+  }
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+}, [images, isLightboxOpen]); 
 
   const handlePrevImage = () => {
     setSelectedImageIndex((prevIndex) =>
