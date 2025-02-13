@@ -625,18 +625,7 @@ export default function Product() {
             })}
           </div>
 
-          <Suspense
-            fallback={
-              <ProductForm
-                product={product}
-                selectedVariant={selectedVariant}
-                onVariantChange={setSelectedVariant}
-                onAddToCart={onAddToCart}
-                variants={[]}
-                quantity={Number(quantity)}
-              />
-            }
-          >
+          <Suspense fallback={<div>Loading product options...</div>}>
             <Await
               resolve={variants}
               errorElement="There was a problem loading product variants"
