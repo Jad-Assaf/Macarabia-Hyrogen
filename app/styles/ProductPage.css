@@ -350,7 +350,7 @@
     padding: 15px;
     border: 1px solid #e0e0e0;
     border-radius: 5px;
-    background-color: #f9f9f9 !important;
+    background-color: #f9f9f9;
 }
 
 .ProductPageBottom {
@@ -432,9 +432,4 @@ strong {
 
 .collection-products-row {
     gap: 5px !important;
-}
-
-.collection-section {
-    min-height: 400px !important;
-    max-height: 434px !important;
 }

@@ -21,7 +21,7 @@ export default function RecentlyViewedProducts({currentProductId}) {
       // Add the current product ID to the beginning of the array
       viewedProducts.unshift(currentProductId);
 
-      // Limit the array to the last 10 viewed products
+      // Limit the array to the last 20 viewed products
       viewedProducts = viewedProducts.slice(0, 20);
 
       // Save back to localStorage
@@ -42,6 +42,8 @@ export default function RecentlyViewedProducts({currentProductId}) {
       fetchProducts(productIds).then((fetchedProducts) => {
         setProducts(fetchedProducts);
       });
+    } else {
+      setProducts([]); // Ensure products state is empty if no product IDs
     }
   }, [currentProductId]);
 
@@ -70,13 +72,13 @@ export default function RecentlyViewedProducts({currentProductId}) {
     `;
 
     const response = await fetch(
-      `https://d40293-4.myshopify.com/api/2023-07/graphql.json`,
+      `https://971souq.myshopify.com/api/2023-07/graphql.json`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Shopify-Storefront-Access-Token':
-            'c34c6525896450dac5813b07d50e97f1',
+            '4a6888a1225616e0ed01bf21e3c10d0a',
         },
         body: JSON.stringify({
           query,
@@ -119,36 +121,41 @@ export default function RecentlyViewedProducts({currentProductId}) {
     rowRef.current.scrollBy({left: distance, behavior: 'smooth'});
   };
 
-  if (products.length === 0) {
-    return null; // Don't render the component if there are no recently viewed products
-  }
+  // Removed the early return that hides the component when there are no products
 
   return (
     <div className="collection-section">
-      <div className="product-row-container">
-        <button className="home-prev-button" onClick={() => scrollRow(-600)}>
-          <LeftArrowIcon />
-        </button>
-        <div
-          className="collection-products-row"
-          ref={rowRef}
-          onMouseDown={handleMouseDown}
-          onMouseLeave={handleMouseLeave}
-          onMouseUp={handleMouseUp}
-          onMouseMove={handleMouseMove}
-        >
-          {products.map((product, index) => (
-            <RecentlyViewedProductItem
-              key={product.id}
-              product={product}
-              index={index}
-            />
-          ))}
+      <h2>Recently Viewed Products</h2>
+      {products.length === 0 ? (
+        <div className="no-recently-viewed">
+          <p>No Recently Viewed Products</p>
         </div>
-        <button className="home-next-button" onClick={() => scrollRow(600)}>
-          <RightArrowIcon />
-        </button>
-      </div>
+      ) : (
+        <div className="product-row-container">
+          <button className="home-prev-button" onClick={() => scrollRow(-600)}>
+            <LeftArrowIcon />
+          </button>
+          <div
+            className="collection-products-row"
+            ref={rowRef}
+            onMouseDown={handleMouseDown}
+            onMouseLeave={handleMouseLeave}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+          >
+            {products.map((product, index) => (
+              <RecentlyViewedProductItem
+                key={product.id}
+                product={product}
+                index={index}
+              />
+            ))}
+          </div>
+          <button className="home-next-button" onClick={() => scrollRow(600)}>
+            <RightArrowIcon />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -183,19 +190,19 @@ function RecentlyViewedProductItem({product, index}) {
         <Link to={`/products/${encodeURIComponent(product.handle)}`}>
           <Image
             data={product.featuredImage}
-            aspectRatio="1/1"
+            aspectratio="1/1"
             sizes="(min-width: 45em) 20vw, 40vw"
             srcSet={`${product.featuredImage.url}?width=300&quality=30 300w,
-                                 ${product.featuredImage.url}?width=600&quality=30 600w,
-                                 ${product.featuredImage.url}?width=1200&quality=30 1200w`}
+                     ${product.featuredImage.url}?width=600&quality=30 600w,
+                     ${product.featuredImage.url}?width=1200&quality=30 1200w`}
             alt={product.featuredImage.altText || product.title}
             width="150px"
             height="150px"
           />
           <div className="product-title">{product.title}</div>
           <div className="product-price">
+            {product.priceRange.minVariantPrice.currencyCode}&nbsp;
             {product.priceRange.minVariantPrice.amount}{' '}
-            {product.priceRange.minVariantPrice.currencyCode}
           </div>
         </Link>
       </div>

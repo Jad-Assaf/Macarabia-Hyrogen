@@ -31,6 +31,7 @@ export default function RelatedProductsRow({products}) {
 
   return (
     <div className="collection-section">
+      <h2>Related Products</h2>
       <div className="product-row-container">
         <button className="home-prev-button" onClick={() => scrollRow(-600)}>
           <LeftArrowIcon />
@@ -90,7 +91,7 @@ function RelatedProductItem({product, index}) {
         <Link to={`/products/${encodeURIComponent(product.handle)}`}>
           <Image
             data={product.images.edges[0]?.node}
-            aspectRatio="1/1"
+            aspectratio="1/1"
             sizes="(min-width: 45em) 20vw, 40vw"
             srcSet={`${product.images.edges[0]?.node.url}?width=300&quality=10 300w,
                                  ${product.images.edges[0]?.node.url}?width=600&quality=10 600w,
@@ -101,8 +102,8 @@ function RelatedProductItem({product, index}) {
           />
           <div className="product-title">{product.title}</div>
           <div className="product-price">
+            {product.priceRange.minVariantPrice.currencyCode}&nbsp;
             {product.priceRange.minVariantPrice.amount}{' '}
-            {product.priceRange.minVariantPrice.currencyCode}
           </div>
         </Link>
       </div>

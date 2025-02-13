@@ -1,5 +1,5 @@
 import {Link} from '@remix-run/react';
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 // Reusable Component for CollectionItem
 const CollectionItem = ({collection, index}) => {
@@ -150,7 +150,7 @@ export const gamingMenu = [
     url: '/collections/gaming-consoles',
   },
   {
-    id: 4,
+    id: 5,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Handhled-Gaming-Consoles-Collection.jpg?v=1714657197',
       altText: 'Handheld Consoles',
@@ -159,7 +159,7 @@ export const gamingMenu = [
     url: '/collections/handheld-consoles',
   },
   {
-    id: 5,
+    id: 6,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Console-Games-Collection.jpg?v=1714657198',
       altText: 'Console Games',
@@ -168,7 +168,7 @@ export const gamingMenu = [
     url: '/collections/console-games',
   },
   {
-    id: 6,
+    id: 7,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Virtual-Reality-Collection.jpg?v=1714657200',
       altText: 'Virutal Reality',
@@ -177,7 +177,7 @@ export const gamingMenu = [
     url: '/collections/virtual-reality',
   },
   {
-    id: 7,
+    id: 8,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/razer-blackwidow-2019-left-side.webp?v=1714657154',
       altText: 'Gaming Accessories',
@@ -186,7 +186,7 @@ export const gamingMenu = [
     url: '/collections/gaming-accessories',
   },
   {
-    id: 8,
+    id: 9,
     image: {
       url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/dead-skull.webp?v=1714657488',
       altText: 'Playstation Accessories',
@@ -302,78 +302,78 @@ export const desktopsMenu = [
 ];
 
 export const partsMenu = [
-    {
-        id: 1,
-        image: {
-            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/mother-boards.jpg?v=1714657124',
-            altText: 'Motherboards',
-        },
-        title: 'Branded Motherboards',
-        url: '/collections/motherboards',
+  {
+    id: 1,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/mother-boards.jpg?v=1714657124',
+      altText: 'Motherboards',
     },
-    {
-        id: 2,
-        image: {
-            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/CPU_s.jpg?v=1714657125',
-            altText: 'CPUs',
-        },
-        title: 'CPUs',
-        url: '/collections/cpus',
+    title: 'Branded Motherboards',
+    url: '/collections/motherboards',
+  },
+  {
+    id: 2,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/CPU_s.jpg?v=1714657125',
+      altText: 'CPUs',
     },
-    {
-        id: 3,
-        image: {
-            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/CPU-Coolers.jpg?v=1714657122',
-            altText: 'CPU Coolers',
-        },
-        title: 'CPU Coolers',
-        url: '/collections/cpu-coolers',
+    title: 'CPUs',
+    url: '/collections/cpus',
+  },
+  {
+    id: 3,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/CPU-Coolers.jpg?v=1714657122',
+      altText: 'CPU Coolers',
     },
-    {
-        id: 4,
-        image: {
-            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/GPU.jpg?v=1714657128',
-            altText: 'GPUs',
-        },
-        title: 'GPUs',
-        url: '/collections/GPU',
+    title: 'CPU Coolers',
+    url: '/collections/cpu-coolers',
+  },
+  {
+    id: 4,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/GPU.jpg?v=1714657128',
+      altText: 'GPUs',
     },
-    {
-        id: 5,
-        image: {
-            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/RAMS.jpg?v=1714657127',
-            altText: 'RAM',
-        },
-        title: 'RAM',
-        url: '/collections/ram',
+    title: 'GPUs',
+    url: '/collections/GPU',
+  },
+  {
+    id: 5,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/RAMS.jpg?v=1714657127',
+      altText: 'RAM',
     },
-    {
-        id: 6,
-        image: {
-            url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/ssd.jpg?v=1714657118',
+    title: 'RAM',
+    url: '/collections/ram',
+  },
+  {
+    id: 6,
+    image: {
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/ssd.jpg?v=1714657118',
       altText: 'Storage',
     },
     title: 'Storage',
     url: '/collections/storage',
-},
-{
+  },
+  {
     id: 7,
     image: {
-        url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Power-Supply.jpg?v=1714657005',
-        altText: 'Power Supplies',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/Power-Supply.jpg?v=1714657005',
+      altText: 'Power Supplies',
     },
     title: 'Power Supplies',
     url: '/collections/power-supplies',
-},
-{
+  },
+  {
     id: 8,
     image: {
-        url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/813d80b0b251c24004edfdc06bd71d99_7dc23fcb-2256-427d-a171-d45e906d9cc7.jpg?v=1714657092',
-        altText: 'Desktop Cases',
+      url: 'https://cdn.shopify.com/s/files/1/0858/6821/6639/collections/813d80b0b251c24004edfdc06bd71d99_7dc23fcb-2256-427d-a171-d45e906d9cc7.jpg?v=1714657092',
+      altText: 'Desktop Cases',
     },
     title: 'Desktop Cases',
     url: '/collections/cases',
-},
+  },
 ];
 
 export const networkingMenu = [
@@ -1071,6 +1071,23 @@ export const homeAppliancesMenu = [
 
 export const CollectionCircles = ({collections}) => {
   const sliderRef = useRef(null); // Reference for the slider container
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (sliderRef.current) {
+        setHasOverflow(
+          sliderRef.current.scrollWidth > sliderRef.current.clientWidth,
+        );
+      }
+    };
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+
+    return () => {
+      window.removeEventListener('resize', checkOverflow);
+    };
+  }, [collections]);
 
   const scrollSlider = (distance) => {
     if (sliderRef.current) {
@@ -1081,46 +1098,54 @@ export const CollectionCircles = ({collections}) => {
   return (
     <div className="menu-slider-container" style={{position: 'relative'}}>
       {/* Previous Button */}
-      <button
-        className="circle-prev-button"
-        onClick={() => scrollSlider(-600)}
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '0',
-          transform: 'translateY(-50%)',
-        }}
-      >
-        <CustomLeftArrow />
-      </button>
+      {collections.length > 0 && hasOverflow && (
+        <button
+          className="circle-prev-button"
+          onClick={() => scrollSlider(-600)}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '0',
+            transform: 'translateY(-50%)',
+          }}
+        >
+          <CustomLeftArrow />
+        </button>
+      )}
 
       <div
         className="animated-menu-item"
         ref={sliderRef}
         style={{overflowX: 'auto', display: 'flex'}}
       >
-        {collections.map((collection, collectionIndex) => (
-          <CollectionItem
-            collection={collection}
-            index={collectionIndex}
-            key={collection.id}
-          />
-        ))}
+        {collections.length > 0 ? (
+          collections.map((collection, collectionIndex) => (
+            <CollectionItem
+              collection={collection}
+              index={collectionIndex}
+              key={collection.id}
+            />
+          ))
+        ) : (
+          <p>No collections available.</p>
+        )}
       </div>
 
       {/* Next Button */}
-      <button
-        className="circle-next-button"
-        onClick={() => scrollSlider(600)}
-        style={{
-          position: 'absolute',
-          top: '50%',
-          right: '0',
-          transform: 'translateY(-50%)',
-        }}
-      >
-        <CustomRightArrow />
-      </button>
+      {collections.length > 0 && hasOverflow && (
+        <button
+          className="circle-next-button"
+          onClick={() => scrollSlider(600)}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            right: '0',
+            transform: 'translateY(-50%)',
+          }}
+        >
+          <CustomRightArrow />
+        </button>
+      )}
     </div>
   );
 };
