@@ -598,10 +598,9 @@ export default function Product() {
           and rely on selectedVariantImage to update when variant changes.
         */}
         <ProductImages
-          images={product.images?.edges || []} // <-- Safely handle missing images
+          media={product.media?.edges || []}
           selectedVariantImage={selectedVariant?.image}
         />
-
         <div className="product-main">
           <h1>{title}</h1>
           <div className="price-container">

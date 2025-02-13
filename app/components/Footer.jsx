@@ -120,7 +120,7 @@ export const Footer = ({ shopMenu, policiesMenu }) => {
               </ul>
               {/* Social Media Links */}
               <div className="social-links">
-                <a href="https://www.facebook.com/971Souqme" target="_blank">
+                <a href="https://www.facebook.com/macarabiame" target="_blank">
                   <svg
                     aria-hidden="true"
                     focusable="false"
