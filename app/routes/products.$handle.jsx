@@ -546,6 +546,12 @@ export function ProductForm({
 // -----------------------------------------------------
 export default function Product() {
   const {product, variants, relatedProducts} = useLoaderData();
+
+  // Safeguard: If `product` is unexpectedly undefined for any reason, bail out early.
+  if (!product) {
+    return <div>Loading product data...</div>;
+  }
+
   const [selectedVariant, setSelectedVariant] = useState(
     product.selectedVariant,
   );
@@ -554,6 +560,7 @@ export default function Product() {
   const [activeTab, setActiveTab] = useState('description');
 
   useEffect(() => {
+    // Reset when the product changes
     setSelectedVariant(product.selectedVariant);
     setQuantity(1);
   }, [product]);
@@ -563,7 +570,7 @@ export default function Product() {
   }, [product]);
 
   useEffect(() => {
-    if (selectedVariant && selectedVariant.price) {
+    if (selectedVariant?.price) {
       const price = parseFloat(selectedVariant.price.amount);
       setSubtotal(price * quantity);
     }
@@ -577,7 +584,7 @@ export default function Product() {
 
   const hasDiscount =
     selectedVariant?.compareAtPrice &&
-    selectedVariant.price.amount !== selectedVariant.compareAtPrice.amount;
+    selectedVariant?.price?.amount !== selectedVariant?.compareAtPrice?.amount;
 
   const onAddToCart = (prod) => {
     trackAddToCart(prod);
@@ -586,11 +593,15 @@ export default function Product() {
   return (
     <div className="product">
       <div className="ProductPageTop">
-        {/* FIX: Use the original images prop with a safe fallback */}
+        {/* 
+          Replace media={product.media.edges} with images={product.images?.edges || []} 
+          and rely on selectedVariantImage to update when variant changes.
+        */}
         <ProductImages
-          images={product.images?.edges || []}
+          images={product.images?.edges || []} // <-- Safely handle missing images
           selectedVariantImage={selectedVariant?.image}
         />
+
         <div className="product-main">
           <h1>{title}</h1>
           <div className="price-container">
@@ -599,7 +610,7 @@ export default function Product() {
             >
               <Money data={selectedVariant?.price} />
             </small>
-            {hasDiscount && selectedVariant.compareAtPrice && (
+            {hasDiscount && selectedVariant?.compareAtPrice && (
               <small className="discountedPrice">
                 <Money data={selectedVariant.compareAtPrice} />
               </small>
@@ -681,6 +692,7 @@ export default function Product() {
           />
         </div>
       </div>
+
       <div className="ProductPageBottom">
         <div className="tabs">
           <button
@@ -712,7 +724,8 @@ export default function Product() {
           unmountOnExit
         >
           <div className="product-section">
-            <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
+            {/* Safeguard if descriptionHtml is missing */}
+            <div dangerouslySetInnerHTML={{__html: descriptionHtml || ''}} />
           </div>
         </CSSTransition>
 
@@ -819,13 +832,14 @@ export default function Product() {
             </p>
           </div>
         </CSSTransition>
+
         <Analytics.ProductView
           data={{
             products: [
               {
                 id: product.id,
                 title: product.title,
-                price: selectedVariant?.price.amount || '0',
+                price: selectedVariant?.price?.amount || '0',
                 vendor: product.vendor,
                 variantId: selectedVariant?.id || '',
                 variantTitle: selectedVariant?.title || '',
@@ -835,6 +849,7 @@ export default function Product() {
           }}
         />
       </div>
+
       <div className="related-products-row">
         <div className="related-products">
           <h2>Related Products</h2>
