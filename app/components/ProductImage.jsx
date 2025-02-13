@@ -36,7 +36,7 @@ const RightArrowIcon = () => (
 
 /**
  * @param {{
- *   images: Array<{node: ProductFragment['images']['edges'][0]['node']}>;
+ *   images: Array<{node: {id: string; url: string; altText?: string; width?: number; height?: number}}>;
  *   selectedVariantImage?: {id: string; url: string;} | null;
  * }}
  */
@@ -47,17 +47,16 @@ export function ProductImages({images, selectedVariantImage}) {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isVariantSelected, setIsVariantSelected] = useState(false);
 
-  // Step 1: Create refs for each thumbnail
+  // Refs to scroll the active thumbnail into view
   const thumbnailRefs = useRef([]);
   thumbnailRefs.current = [];
 
-  // When the variant changes, find its image index, if available
+  // Whenever variant's image changes, locate & display it
   useEffect(() => {
     if (selectedVariantImage) {
       const variantImageIndex = images.findIndex(
         ({node}) => node.id === selectedVariantImage.id,
       );
-      // If found and we haven't already selected it, set it
       if (variantImageIndex >= 0 && !isVariantSelected) {
         setSelectedImageIndex(variantImageIndex);
         setIsVariantSelected(true);
@@ -65,20 +64,17 @@ export function ProductImages({images, selectedVariantImage}) {
     }
   }, [selectedVariantImage, images, isVariantSelected]);
 
-  // Reset the "variant selection" flag once we've switched images
   useEffect(() => {
     setIsVariantSelected(false);
   }, [selectedVariantImage]);
 
-  const selectedImage = images[selectedImageIndex]?.node;
-
-  // Invalidate imageKey so the <Image> re-renders, triggering onLoad
+  // Re-render the image on index change
   useEffect(() => {
     setImageKey((prevKey) => prevKey + 1);
     setIsImageLoaded(false);
   }, [selectedImageIndex]);
 
-  // Step 2: Scroll the container so the new thumbnail is in view
+  // Scroll the thumbnails so the active one is visible
   useEffect(() => {
     if (thumbnailRefs.current[selectedImageIndex]) {
       thumbnailRefs.current[selectedImageIndex].scrollIntoView({
@@ -88,6 +84,22 @@ export function ProductImages({images, selectedVariantImage}) {
       });
     }
   }, [selectedImageIndex]);
+
+  // Keyboard events: left arrow => prev, right arrow => next
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [images]); // No need for a wide dependency list; images reference won't change often
 
   const handlePrevImage = () => {
     setSelectedImageIndex((prevIndex) =>
@@ -107,8 +119,10 @@ export function ProductImages({images, selectedVariantImage}) {
   const swipeHandlers = useSwipeable({
     onSwipedLeft: handleNextImage,
     onSwipedRight: handlePrevImage,
-    trackMouse: true, // Allows swiping with a mouse for desktops
+    trackMouse: true,
   });
+
+  const selectedImage = images[selectedImageIndex]?.node;
 
   return (
     <div className="product-images-container">
@@ -121,7 +135,6 @@ export function ProductImages({images, selectedVariantImage}) {
               className={`thumbnail ${
                 index === selectedImageIndex ? 'active' : ''
               }`}
-              // Step 1b: Assign the ref for each thumbnail
               ref={(el) => (thumbnailRefs.current[index] = el)}
               onClick={() => setSelectedImageIndex(index)}
             >
@@ -131,7 +144,7 @@ export function ProductImages({images, selectedVariantImage}) {
                 aspectratio="1/1"
                 width={80}
                 height={80}
-                loading="lazy" // Thumbnails can load lazily
+                loading="lazy"
                 decoding="async"
               />
             </div>
