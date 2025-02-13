@@ -72,7 +72,7 @@ export default function RecentlyViewedProducts({currentProductId}) {
     `;
 
     const response = await fetch(
-      `https://971souq.myshopify.com/api/2023-07/graphql.json`,
+      `https://macarabia.myshopify.com/api/2023-07/graphql.json`,
       {
         method: 'POST',
         headers: {

@@ -59,13 +59,13 @@ export const Footer = ({ shopMenu, policiesMenu }) => {
                   <a
                     href="https://maps.app.goo.gl/iW7qXAw4j5fZFGxK8"
                     target="_blank"
-                    title="971Souq Store Location"
+                    title="Macarabia Store Location"
                   >
-                    971 Souq FZE, Business Centre, Sharjah Publishing City Free
-                    Zone, Sharjah, United Arab Emirates
+                    Macarabia - Zalka High Way Facing white Tower hotel Ground
+                    Floor, Zalka, Lebanon.
                   </a>
                 </li>
-                {/* <li>
+                <li>
                   <i className="fas fa-phone-alt">
                     <svg
                       aria-hidden="true"
@@ -82,7 +82,7 @@ export const Footer = ({ shopMenu, policiesMenu }) => {
                     </svg>
                   </i>{' '}
                   <a href="tel:+9611888031">+961 1 888 031</a>
-                </li> */}
+                </li>
                 <li>
                   <i className="fab fa-whatsapp">
                     <svg
@@ -93,7 +93,7 @@ export const Footer = ({ shopMenu, policiesMenu }) => {
                     </svg>
                   </i>{' '}
                   <a href="https://wa.me/971504659971" target="_blank">
-                    +971 50 465 9971
+                    +961 3 020 030
                   </a>
                 </li>
                 <li>
@@ -113,8 +113,8 @@ export const Footer = ({ shopMenu, policiesMenu }) => {
                       ></path>
                     </svg>
                   </i>{' '}
-                  <a href="mailto:admin@971souq.ae" target="_blank">
-                    admin@971souq.ae
+                  <a href="mailto:admin@macarabia.me" target="_blank">
+                    admin@macarabia.me
                   </a>
                 </li>
               </ul>
@@ -131,7 +131,7 @@ export const Footer = ({ shopMenu, policiesMenu }) => {
                     <path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"></path>
                   </svg>
                 </a>
-                <a href="https://instagram.com/971souq.ae" target="_blank">
+                <a href="https://instagram.com/macarabia.me" target="_blank">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -151,7 +151,7 @@ export const Footer = ({ shopMenu, policiesMenu }) => {
           </div>
         </div>
         <div className="copyright">
-          <p>© 2025, 971souq.ae All rights reserved.</p>
+          <p>© 2025, macarabia.me All rights reserved.</p>
           <div>
             <svg
               className="icon icon--full-color"
