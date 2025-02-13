@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useRef} from 'react';
 import {Image} from '@shopify/hydrogen';
 import Lightbox from 'yet-another-react-lightbox';
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
@@ -37,6 +37,7 @@ const RightArrowIcon = () => (
 /**
  * @param {{
  *   images: Array<{node: ProductFragment['images']['edges'][0]['node']}>;
+ *   selectedVariantImage?: {id: string; url: string;} | null;
  * }}
  */
 export function ProductImages({images, selectedVariantImage}) {
@@ -46,11 +47,17 @@ export function ProductImages({images, selectedVariantImage}) {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isVariantSelected, setIsVariantSelected] = useState(false);
 
+  // Step 1: Create refs for each thumbnail
+  const thumbnailRefs = useRef([]);
+  thumbnailRefs.current = [];
+
+  // When the variant changes, find its image index, if available
   useEffect(() => {
     if (selectedVariantImage) {
       const variantImageIndex = images.findIndex(
         ({node}) => node.id === selectedVariantImage.id,
       );
+      // If found and we haven't already selected it, set it
       if (variantImageIndex >= 0 && !isVariantSelected) {
         setSelectedImageIndex(variantImageIndex);
         setIsVariantSelected(true);
@@ -58,15 +65,28 @@ export function ProductImages({images, selectedVariantImage}) {
     }
   }, [selectedVariantImage, images, isVariantSelected]);
 
+  // Reset the "variant selection" flag once we've switched images
   useEffect(() => {
     setIsVariantSelected(false);
   }, [selectedVariantImage]);
 
   const selectedImage = images[selectedImageIndex]?.node;
 
+  // Invalidate imageKey so the <Image> re-renders, triggering onLoad
   useEffect(() => {
     setImageKey((prevKey) => prevKey + 1);
     setIsImageLoaded(false);
+  }, [selectedImageIndex]);
+
+  // Step 2: Scroll the container so the new thumbnail is in view
+  useEffect(() => {
+    if (thumbnailRefs.current[selectedImageIndex]) {
+      thumbnailRefs.current[selectedImageIndex].scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
   }, [selectedImageIndex]);
 
   const handlePrevImage = () => {
@@ -101,6 +121,8 @@ export function ProductImages({images, selectedVariantImage}) {
               className={`thumbnail ${
                 index === selectedImageIndex ? 'active' : ''
               }`}
+              // Step 1b: Assign the ref for each thumbnail
+              ref={(el) => (thumbnailRefs.current[index] = el)}
               onClick={() => setSelectedImageIndex(index)}
             >
               <Image
