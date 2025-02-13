@@ -549,6 +549,9 @@ export default function Product() {
   const [selectedVariant, setSelectedVariant] = useState(
     product.selectedVariant,
   );
+  const [quantity, setQuantity] = useState(1);
+  const [subtotal, setSubtotal] = useState(0);
+  const [activeTab, setActiveTab] = useState('description');
 
   useEffect(() => {
     setSelectedVariant(product.selectedVariant);
@@ -559,21 +562,16 @@ export default function Product() {
     trackViewContent(product);
   }, [product]);
 
-  const [quantity, setQuantity] = useState(1);
-  const [subtotal, setSubtotal] = useState(0);
-
-  const incrementQuantity = () => setQuantity((prev) => prev + 1);
-  const decrementQuantity = () =>
-    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
-
-  const [activeTab, setActiveTab] = useState('description');
-
   useEffect(() => {
     if (selectedVariant && selectedVariant.price) {
       const price = parseFloat(selectedVariant.price.amount);
       setSubtotal(price * quantity);
     }
   }, [quantity, selectedVariant]);
+
+  const incrementQuantity = () => setQuantity((prev) => prev + 1);
+  const decrementQuantity = () =>
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
   const {title, descriptionHtml} = product;
 
@@ -588,6 +586,7 @@ export default function Product() {
   return (
     <div className="product">
       <div className="ProductPageTop">
+        {/* FIX: Use images prop (not media) to allow proper variant image switching */}
         <ProductImages
           images={product.images.edges}
           selectedVariantImage={selectedVariant?.image}
@@ -673,7 +672,7 @@ export default function Product() {
               </li>
             </ul>
           </div>
-          <hr className="productPage-hr"></hr>
+          <hr className="productPage-hr" />
           <ProductMetafields
             metafieldCondition={product.metafieldCondition}
             metafieldWarranty={product.metafieldWarranty}
