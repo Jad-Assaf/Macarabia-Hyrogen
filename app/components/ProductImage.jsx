@@ -47,11 +47,13 @@ export function ProductImages({images, selectedVariantImage}) {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isVariantSelected, setIsVariantSelected] = useState(false);
 
-  // Refs to scroll the active thumbnail into view
+  // This controls the “use arrow keys” indicator
+  const [showKeyIndicator, setShowKeyIndicator] = useState(false);
+
   const thumbnailRefs = useRef([]);
   thumbnailRefs.current = [];
 
-  // Whenever variant's image changes, locate & display it
+  // Find the variant’s image index, if any
   useEffect(() => {
     if (selectedVariantImage) {
       const variantImageIndex = images.findIndex(
@@ -68,13 +70,13 @@ export function ProductImages({images, selectedVariantImage}) {
     setIsVariantSelected(false);
   }, [selectedVariantImage]);
 
-  // Re-render the image on index change
+  // Re-render image on index change
   useEffect(() => {
     setImageKey((prevKey) => prevKey + 1);
     setIsImageLoaded(false);
   }, [selectedImageIndex]);
 
-  // Scroll the thumbnails so the active one is visible
+  // Scroll thumbnail container so the active thumbnail is visible
   useEffect(() => {
     if (thumbnailRefs.current[selectedImageIndex]) {
       thumbnailRefs.current[selectedImageIndex].scrollIntoView({
@@ -85,21 +87,20 @@ export function ProductImages({images, selectedVariantImage}) {
     }
   }, [selectedImageIndex]);
 
-  // Keyboard events: left arrow => prev, right arrow => next
+  // Keyboard: left arrow => prev, right arrow => next
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'ArrowLeft') {
         handlePrevImage();
+        setShowKeyIndicator(false); // Hide indicator once used
       } else if (e.key === 'ArrowRight') {
         handleNextImage();
+        setShowKeyIndicator(false); // Hide indicator once used
       }
     }
-
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [images]); // No need for a wide dependency list; images reference won't change often
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [images]);
 
   const handlePrevImage = () => {
     setSelectedImageIndex((prevIndex) =>
@@ -123,6 +124,14 @@ export function ProductImages({images, selectedVariantImage}) {
   });
 
   const selectedImage = images[selectedImageIndex]?.node;
+
+  // We fade in the arrow-keys hint on mouse enter,
+  // fade out immediately when the user clicks an arrow or uses keyboard
+  const handleMouseEnter = () => setShowKeyIndicator(true);
+  const handleArrowClick = (callback) => {
+    callback();
+    setShowKeyIndicator(false);
+  };
 
   return (
     <div className="product-images-container">
@@ -178,20 +187,33 @@ export function ProductImages({images, selectedVariantImage}) {
           </div>
         )}
         <div className="ImageArrows">
+          {/* INDICATOR for Arrow Keys */}
+          {showKeyIndicator && (
+            <div className="key-indicator">
+              <div className="arrow-icons">
+                <span>⇦</span>
+                <span>⇨</span>
+              </div>
+              <p>Use arrow keys</p>
+            </div>
+          )}
+
           <button
             className="prev-button"
+            onMouseEnter={handleMouseEnter}
             onClick={(e) => {
               e.stopPropagation();
-              handlePrevImage();
+              handleArrowClick(handlePrevImage);
             }}
           >
             <LeftArrowIcon />
           </button>
           <button
             className="next-button"
+            onMouseEnter={handleMouseEnter}
             onClick={(e) => {
               e.stopPropagation();
-              handleNextImage();
+              handleArrowClick(handleNextImage);
             }}
           >
             <RightArrowIcon />
