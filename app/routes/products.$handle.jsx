@@ -304,9 +304,6 @@ function pickOrSnapVariant(allVariants, newOptions, optionName, chosenVal) {
   return found || null;
 }
 
-// -----------------------------------------------------
-//                   ProductForm
-// -----------------------------------------------------
 export function ProductForm({
   product,
   onAddToCart,
@@ -336,8 +333,8 @@ export function ProductForm({
   });
 
   const handleAddToCart = () => {
-    // Removed duplicate tracking here.
-    // Previously: trackAddToCart(product);
+    // Track the AddToCart event
+    trackAddToCart(product);
     onAddToCart(product);
   };
 
@@ -549,7 +546,9 @@ export function ProductForm({
 // -----------------------------------------------------
 export default function Product() {
   const {product, variants, relatedProducts} = useLoaderData();
-  const [selectedVariant, setSelectedVariant] = useState(product.selectedVariant);
+  const [selectedVariant, setSelectedVariant] = useState(
+    product.selectedVariant,
+  );
   const [quantity, setQuantity] = useState(1);
   const [subtotal, setSubtotal] = useState(0);
   const [activeTab, setActiveTab] = useState('description');
@@ -584,13 +583,19 @@ export default function Product() {
     trackAddToCart(prod);
   };
 
+  // Determine which image to show – use the variant image if available,
+  // otherwise fall back to the product's first image.
+  const variantImage =
+    (selectedVariant && selectedVariant.image) ||
+    (product.firstImage && {url: product.firstImage});
+
   return (
     <div className="product">
       <div className="ProductPageTop">
-        {/* --- Replace images={product.images.edges} with media={product.media.edges} --- */}
+        {/* --- Use the determined variantImage for display --- */}
         <ProductImages
           media={product.media?.edges || []}
-          selectedVariantImage={selectedVariant?.image}
+          selectedVariantImage={variantImage}
         />
         <div className="product-main">
           <h1>{title}</h1>
@@ -624,8 +629,18 @@ export default function Product() {
             })}
           </div>
 
-          {/* --- Delayed Rendering of Interactive Options --- */}
-          <Suspense fallback={<div>Loading product options...</div>}>
+          <Suspense
+            fallback={
+              <ProductForm
+                product={product}
+                selectedVariant={selectedVariant}
+                onVariantChange={setSelectedVariant}
+                onAddToCart={onAddToCart}
+                variants={[]}
+                quantity={Number(quantity)}
+              />
+            }
+          >
             <Await
               resolve={variants}
               errorElement="There was a problem loading product variants"
@@ -654,7 +669,9 @@ export default function Product() {
               </li>
               <li>
                 <strong>Availability:</strong>{' '}
-                {selectedVariant?.availableForSale ? 'In Stock' : 'Out of Stock'}
+                {selectedVariant?.availableForSale
+                  ? 'In Stock'
+                  : 'Out of Stock'}
               </li>
               <li>
                 <strong>Product Type:</strong> {product.productType || 'N/A'}
