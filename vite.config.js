@@ -1,3 +1,4 @@
+// vite.config.js
 import { defineConfig } from 'vite';
 import { hydrogen } from '@shopify/hydrogen/vite';
 import { oxygen } from '@shopify/mini-oxygen/vite';
@@ -45,13 +46,12 @@ export default defineConfig({
   },
   build: {
     assetsInlineLimit: 0,
-    rollupOptions: {
-      // Mark Node.js built-in modules as external so they aren’t bundled.
-      // external: ['crypto'],
-    },
+    // Remove crypto from here:
+    // rollupOptions: { external: ['crypto'] },
   },
   ssr: {
-    noExternal: [],
+    external: ['crypto'],  // This tells Vite to treat Node's "crypto" as external during SSR
+    noExternal: [], // Ensure crypto is not listed here
     optimizeDeps: {
       include: [
         'react-lazy-load-image-component',
