@@ -1,4 +1,3 @@
-// facebookConversions.js
 import crypto from 'crypto';
 
 /**
