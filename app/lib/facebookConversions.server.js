@@ -1,10 +1,9 @@
-import crypto from 'crypto';
+// facebookConversions.server.js
+let crypto;
+if (typeof window === 'undefined') {
+  crypto = require('crypto');
+}
 
-/**
- * Helper to hash sensitive data with SHA-256.
- * @param {string} data - The data to hash.
- * @returns {string|null} - The hashed string in hex or null if no data.
- */
 function hashData(data) {
   if (!data) return null;
   return crypto.createHash('sha256').update(data.trim().toLowerCase()).digest('hex');

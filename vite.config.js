@@ -1,10 +1,10 @@
-import {defineConfig} from 'vite';
-import {hydrogen} from '@shopify/hydrogen/vite';
-import {oxygen} from '@shopify/mini-oxygen/vite';
-import {vitePlugin as remix} from '@remix-run/dev';
+import { defineConfig } from 'vite';
+import { hydrogen } from '@shopify/hydrogen/vite';
+import { oxygen } from '@shopify/mini-oxygen/vite';
+import { vitePlugin as remix } from '@remix-run/dev';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
-import path from 'path'; // Import path for alias resolution
+import path from 'path';
 
 export default defineConfig({
   plugins: [
@@ -40,33 +40,19 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '~': path.resolve(__dirname, 'app'), // or 'src' if that’s your main directory
+      '~': path.resolve(__dirname, 'app'),
     },
   },
   build: {
-    // rollupOptions: {
-    //   external: [
-    //     '~/components/icons',
-    //     '~/components/checkbox',
-    //     '~/lib/const',
-    //     '~/lib/cn',
-    //     '~/lib/filter',
-    //   ],
-    // },
     assetsInlineLimit: 0,
+    rollupOptions: {
+      // Mark Node.js built-in modules as external so they aren’t bundled.
+      external: ['crypto'],
+    },
   },
   ssr: {
+    noExternal: [],
     optimizeDeps: {
-      /**
-       * Include dependencies here if they throw CJS<>ESM errors.
-       * For example, for the following error:
-       *
-       * > ReferenceError: module is not defined
-       * >   at /Users/.../node_modules/example-dep/index.js:1:1
-       *
-       * Include 'example-dep' in the array below.
-       * @see https://vitejs.dev/config/dep-optimization-options
-       */
       include: [
         'react-lazy-load-image-component',
         'prop-types',
