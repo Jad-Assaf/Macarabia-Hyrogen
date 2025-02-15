@@ -25,6 +25,8 @@ import {getAppliedFilterLink} from '../lib/filter';
 import {AddToCartButton} from '../components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 import '../styles/CollectionSlider.css';
+import { trackAddToCart } from '~/lib/metaPixelEvents';
+import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
 
 function truncateText(text, maxWords) {
   if (!text || typeof text !== 'string') {
