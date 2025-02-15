@@ -1,6 +1,6 @@
 import {Await, useRouteLoaderData} from '@remix-run/react';
 import {Suspense} from 'react';
-import {CartForm} from '@shopify/hydrogen';
+import {CartForm, useOptimisticCart} from '@shopify/hydrogen';
 import {json} from '@shopify/remix-oxygen';
 import {CartMain} from '~/components/CartMain';
 
@@ -40,25 +40,15 @@ export async function action({request, context}) {
       break;
     case CartForm.ACTIONS.DiscountCodesUpdate: {
       const formDiscountCode = inputs.discountCode;
-
-      // User inputted discount code
       const discountCodes = formDiscountCode ? [formDiscountCode] : [];
-
-      // Combine discount codes already applied on cart
       discountCodes.push(...inputs.discountCodes);
-
       result = await cart.updateDiscountCodes(discountCodes);
       break;
     }
     case CartForm.ACTIONS.GiftCardCodesUpdate: {
       const formGiftCardCode = inputs.giftCardCode;
-
-      // User inputted gift card code
       const giftCardCodes = formGiftCardCode ? [formGiftCardCode] : [];
-
-      // Combine gift card codes already applied on cart
       giftCardCodes.push(...inputs.giftCardCodes);
-
       result = await cart.updateGiftCardCodes(giftCardCodes);
       break;
     }
@@ -99,17 +89,33 @@ export default function Cart() {
   const rootData = useRouteLoaderData('root');
   if (!rootData) return null;
 
+  // Initialize the optimistic cart using the server-provided cart
+  const {
+    cart: optimisticCart,
+    updateLines,
+    addLines,
+    removeLines,
+    isUpdating,
+  } = useOptimisticCart(rootData.cart);
+
   return (
     <div className="cart">
       <h1>Cart</h1>
       <Suspense fallback={<p>Loading cart ...</p>}>
         <Await
-          resolve={rootData.cart}
+          resolve={optimisticCart}
           errorElement={<div>An error occurred</div>}
         >
-          {(cart) => {
-            return <CartMain layout="page" cart={cart} />;
-          }}
+          {(cart) => (
+            <CartMain
+              layout="page"
+              cart={cart}
+              updateLines={updateLines}
+              addLines={addLines}
+              removeLines={removeLines}
+              isUpdating={isUpdating}
+            />
+          )}
         </Await>
       </Suspense>
     </div>
