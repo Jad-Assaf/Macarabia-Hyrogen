@@ -21,6 +21,7 @@ import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import React, {Suspense, useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
+import CustomAnalyticsIntegration from './components/CustomAnalyticsIntegration';
 const MetaPixel = React.lazy(() => import('./components/MetaPixel'));
 
 /**
@@ -219,6 +220,7 @@ export function Layout({children}) {
             shop={data.shop}
             consent={data.consent}
           >
+            <CustomAnalyticsIntegration/>
             <PageLayout {...data}>{children}</PageLayout>
           </Analytics.Provider>
         ) : (
