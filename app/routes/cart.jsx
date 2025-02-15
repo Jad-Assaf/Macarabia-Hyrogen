@@ -1,6 +1,6 @@
 import {Await, useRouteLoaderData} from '@remix-run/react';
 import {Suspense} from 'react';
-import {CartForm} from '@shopify/hydrogen';
+import {CartForm, useOptimisticCart} from '@shopify/hydrogen';
 import {json} from '@shopify/remix-oxygen';
 import {CartMain} from '~/components/CartMain';
 
@@ -14,8 +14,8 @@ export const meta = () => {
 /**
  * @param {ActionFunctionArgs}
  */
-export async function action({request, context}) {
-  const {cart} = context;
+export async function action({request, cart: originalCart}) {
+  const cart = useOptimisticCart(originalCart);
 
   const formData = await request.formData();
 
