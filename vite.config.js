@@ -47,7 +47,7 @@ export default defineConfig({
     assetsInlineLimit: 0,
     rollupOptions: {
       // Mark Node.js built-in modules as external so they aren’t bundled.
-      external: ['crypto'],
+      // external: ['crypto'],
     },
   },
   ssr: {

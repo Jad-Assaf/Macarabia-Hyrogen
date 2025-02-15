@@ -1,3 +1,4 @@
+// facebookConversions.server.js
 import crypto from 'crypto';
 
 /**
@@ -16,38 +17,33 @@ export async function sendFacebookEvent(eventName, eventData) {
   const testEventCode = process.env.TEST_EVENT_CODE; // optional for testing
 
   if (!pixelId || !accessToken) {
-    throw new Error("Meta Pixel ID or Access Token is missing");
+    throw new Error('Meta Pixel ID or Access Token is missing');
   }
 
   const endpoint = `https://graph.facebook.com/v22.0/${pixelId}/events?access_token=${accessToken}`;
 
-  // Build user_data: hash sensitive data but leave others in plain text.
-  const userData = {
-    // Plain text (do not hash)
-    client_ip_address: eventData.client_ip_address || '',
-    client_user_agent: eventData.client_user_agent || '',
-    fbp: eventData.fbp || '',
-    fbc: eventData.fbc || '',
-    // Must be hashed
-    em: hashData(eventData.email),
-    ph: hashData(eventData.phone),
-    fb_login_id: hashData(eventData.facebookLoginId),
-    external_id: hashData(eventData.externalId),
-  };
-
   const payload = {
     data: [
       {
-        event_name, // e.g., "PageView", "ViewContent", "Search", "AddToCart"
+        event_name, // e.g., "PageView", "ViewContent", etc.
         event_time: Math.floor(Date.now() / 1000),
         event_source_url: eventData.event_source_url,
         action_source: "website",
-        user_data: userData,
+        user_data: {
+          // In production, hash sensitive data using SHA-256
+          em: hashData(eventData.email),
+          // ... add other fields as needed
+          client_ip_address: eventData.client_ip_address || '',
+          client_user_agent: eventData.client_user_agent || '',
+          fbp: eventData.fbp || '',
+          fbc: eventData.fbc || '',
+          fb_login_id: hashData(eventData.facebookLoginId),
+          external_id: hashData(eventData.externalId),
+        },
         custom_data: {
           value: eventData.value,
           currency: eventData.currency,
-          content_ids: eventData.product_ids, // array of product IDs
-          // ... add any other parameters as needed
+          content_ids: eventData.product_ids,
         },
       },
     ],
