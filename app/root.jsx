@@ -21,7 +21,6 @@ import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import React, {Suspense, useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
-import CustomAnalyticsIntegration from './components/CustomAnalyticsIntegration';
 const MetaPixel = React.lazy(() => import('./components/MetaPixel'));
 
 /**
@@ -148,6 +147,7 @@ export function Layout({children}) {
   const [nprogress, setNProgress] = useState(null); // Store NProgress instance
   const clarityId = 'pfyepst8v5'; // Replace with your Clarity project ID
 
+
   useEffect(() => {
     // Load NProgress once and set it in the state
     const loadNProgress = async () => {
@@ -220,7 +220,6 @@ export function Layout({children}) {
             shop={data.shop}
             consent={data.consent}
           >
-            <CustomAnalyticsIntegration/>
             <PageLayout {...data}>{children}</PageLayout>
           </Analytics.Provider>
         ) : (
