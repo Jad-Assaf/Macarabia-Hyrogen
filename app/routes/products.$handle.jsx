@@ -22,6 +22,7 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
+import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
 
 // ---------------- SEO & Meta
 export const meta = ({data}) => {
@@ -335,6 +336,7 @@ export function ProductForm({
   const handleAddToCart = () => {
     // Track the AddToCart event
     trackAddToCart(product);
+    trackAddToCartGA(product);
     onAddToCart(product);
   };
 
