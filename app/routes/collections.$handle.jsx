@@ -1116,12 +1116,18 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
 function ProductForm({product, selectedVariant, setSelectedVariant}) {
   const {open} = useAside();
   const hasVariants = product.variants.nodes.length > 1;
+  const handleAddToCart = () => {
+    // Track the AddToCart event
+    trackAddToCart(product);
+    trackAddToCartGA(product);
+  };
 
   return (
     <div className="product-form">
       <AddToCartButton
         disabled={!selectedVariant || !selectedVariant.availableForSale}
         onClick={() => {
+          handleAddToCart();
           if (hasVariants) {
             // Navigate to product page
             window.location.href = `/products/${encodeURIComponent(
