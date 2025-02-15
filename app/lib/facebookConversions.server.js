@@ -1,14 +1,17 @@
 // facebookConversions.server.js
-import crypto from 'crypto';
 
 /**
- * Helper to hash sensitive data with SHA-256.
+ * Helper to hash sensitive data with SHA-256 using the Web Crypto API.
  * @param {string} data - The data to hash.
- * @returns {string|null} - The hashed string in hex or null if no data.
+ * @returns {Promise<string|null>} - A promise that resolves to the hashed string in hex, or null if no data.
  */
-function hashData(data) {
+async function hashData(data) {
   if (!data) return null;
-  return crypto.createHash('sha256').update(data.trim().toLowerCase()).digest('hex');
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data.trim().toLowerCase());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 export async function sendFacebookEvent(eventName, eventData) {
@@ -22,6 +25,11 @@ export async function sendFacebookEvent(eventName, eventData) {
 
   const endpoint = `https://graph.facebook.com/v22.0/${pixelId}/events?access_token=${accessToken}`;
 
+  // Await hashing for sensitive fields
+  const hashedEmail = await hashData(eventData.email);
+  const hashedFbLoginId = await hashData(eventData.facebookLoginId);
+  const hashedExternalId = await hashData(eventData.externalId);
+
   const payload = {
     data: [
       {
@@ -30,15 +38,14 @@ export async function sendFacebookEvent(eventName, eventData) {
         event_source_url: eventData.event_source_url,
         action_source: "website",
         user_data: {
-          // In production, hash sensitive data using SHA-256
-          em: hashData(eventData.email),
-          // ... add other fields as needed
+          // Send sensitive data hashed using Web Crypto.
+          em: hashedEmail,
           client_ip_address: eventData.client_ip_address || '',
           client_user_agent: eventData.client_user_agent || '',
           fbp: eventData.fbp || '',
           fbc: eventData.fbc || '',
-          fb_login_id: hashData(eventData.facebookLoginId),
-          external_id: hashData(eventData.externalId),
+          fb_login_id: hashedFbLoginId,
+          external_id: hashedExternalId,
         },
         custom_data: {
           value: eventData.value,
