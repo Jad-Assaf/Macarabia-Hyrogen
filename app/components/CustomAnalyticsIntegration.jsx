@@ -13,101 +13,80 @@ export function CustomAnalyticsIntegration() {
     const unsubscribe = analytics.subscribe((event) => {
       console.log('Analytics event received:', event);
 
-      // -----------------------------
-      // Send event to Google Analytics (GA4)
-      // -----------------------------
+      // Forward event to Google Analytics (GA4)
       if (typeof window.gtag === 'function' && GA_TRACKING_ID) {
-        // You might want to map event names if necessary;
-        // here we send the event name directly along with its payload.
         window.gtag('event', event.event_name, event.payload);
       }
 
-      // -----------------------------
-      // Send event to Meta Pixel
-      // -----------------------------
+      // Forward event to Meta Pixel
       if (typeof fbq === 'function' && META_PIXEL_ID) {
-        // Map Hydrogen event names to Meta Pixel standard event names.
-        let metaEvent = null;
-        let metaParams = {};
+        // Map Hydrogen event names to Meta Pixel event names if necessary.
+        let mappedEventName = null;
+        let mappedParams = {};
 
         switch (event.event_name) {
           case 'page_viewed':
           case 'page_view':
-            metaEvent = 'PageView';
+            mappedEventName = 'PageView';
             break;
           case 'product_viewed':
           case 'view_item':
-            metaEvent = 'ViewContent';
-            metaParams = {
-              content_ids: event.payload.product_ids, // Expect an array of product IDs
+            mappedEventName = 'ViewContent';
+            mappedParams = {
+              content_ids: event.payload.product_ids,
               value: event.payload.value,
               currency: event.payload.currency,
               ...event.payload,
             };
             break;
           case 'search':
-            metaEvent = 'Search';
-            metaParams = {
+            mappedEventName = 'Search';
+            mappedParams = {
               search_string: event.payload.query || event.payload.search_query,
-              ...event.payload,
             };
             break;
           case 'add_to_cart':
-            metaEvent = 'AddToCart';
-            metaParams = {
+            mappedEventName = 'AddToCart';
+            mappedParams = {
               content_ids: event.payload.product_ids,
               value: event.payload.value,
               currency: event.payload.currency,
-              ...event.payload,
             };
             break;
           case 'begin_checkout':
-            metaEvent = 'InitiateCheckout';
-            metaParams = {
+            mappedEventName = 'InitiateCheckout';
+            mappedParams = {
               value: event.payload.value,
               currency: event.payload.currency,
-              ...event.payload,
             };
             break;
           case 'add_payment_info':
-            metaEvent = 'AddPaymentInfo';
-            metaParams = {
+            mappedEventName = 'AddPaymentInfo';
+            mappedParams = {
               value: event.payload.value,
               currency: event.payload.currency,
-              ...event.payload,
             };
             break;
           case 'purchase':
-            metaEvent = 'Purchase';
-            metaParams = {
+            mappedEventName = 'Purchase';
+            mappedParams = {
               content_ids: event.payload.product_ids,
               value: event.payload.value,
               currency: event.payload.currency,
-              ...event.payload,
             };
             break;
-          // For other events such as "click", "first_visit", "form_start", "form_submit",
-          // "scroll", "session_start", "view_search_results", etc., you can choose to ignore them
-          // for Meta Pixel or handle them as custom events.
           default:
-            // Optionally, send as a custom event (or do nothing)
-            // metaEvent = event.event_name;
-            // metaParams = event.payload;
+            // For events you don’t want to forward, do nothing.
             break;
         }
-
-        if (metaEvent) {
-          fbq('track', metaEvent, metaParams);
+        if (mappedEventName) {
+          fbq('track', mappedEventName, mappedParams);
         }
       }
     });
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [analytics]);
 
   return null;
 }
-
-export default CustomAnalyticsIntegration;
