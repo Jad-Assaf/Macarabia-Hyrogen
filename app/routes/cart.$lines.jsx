@@ -5,42 +5,86 @@ import {redirect} from '@shopify/remix-oxygen';
  * Expected URL structure:
  * ```js
  * /cart/<variant_id>:<quantity>
- *
  * ```
  *
- * More than one `<variant_id>:<quantity>` separated by a comma, can be supplied in the URL, for
- * carts with more than one product variant.
+ * More than one `<variant_id>:<quantity>` separated by a comma, can be supplied in the URL,
+ * for carts with more than one product variant.
  *
  * @example
- * Example path creating a cart with two product variants, different quantities, and a discount code in the querystring:
- * ```js
  * /cart/41007289663544:1,41007289696312:2?discount=HYDROBOARD
  *
- * ```
  * @param {LoaderFunctionArgs}
  */
 export async function loader({request, context, params}) {
-  const {cart} = context;
+  const {cart, storefront} = context;
   const {lines} = params;
   if (!lines) return redirect('/cart');
-  const linesMap = lines.split(',').map((line) => {
-    const lineDetails = line.split(':');
-    const variantId = lineDetails[0];
-    const quantity = parseInt(lineDetails[1], 10);
+
+  // Parse the URL lines into an array of variantId and quantity
+  const lineEntries = lines.split(',').map((line) => {
+    const [variantId, quantityStr] = line.split(':');
+    const quantity = parseInt(quantityStr, 10);
+    return { variantId, quantity };
+  });
+
+  // Build the array of full variant GIDs
+  const variantGIDs = lineEntries.map(
+    ({variantId}) => `gid://shopify/ProductVariant/${variantId}`
+  );
+
+  // Query the storefront API to get variant details
+  const query = `#graphql
+    query VariantDetails($ids: [ID!]!) {
+      nodes(ids: $ids) {
+        ... on ProductVariant {
+          id
+          title
+          priceV2 {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  `;
+
+  const data = await storefront.query(query, { ids: variantGIDs });
+
+  // Map variant details by their ID for quick lookup
+  const variantMap = new Map();
+  if (data && data.nodes) {
+    data.nodes.forEach((variant) => {
+      if (variant) {
+        variantMap.set(variant.id, variant);
+      }
+    });
+  }
+
+  // Map each line entry to the format needed by cart.create,
+  // including the dynamic variant details in selectedVariant
+  const linesMap = lineEntries.map(({variantId, quantity}) => {
+    const gid = `gid://shopify/ProductVariant/${variantId}`;
+    const variantDetails = variantMap.get(gid);
 
     return {
-      merchandiseId: `gid://shopify/ProductVariant/${variantId}`,
+      merchandiseId: gid,
       quantity,
+      selectedVariant: {
+        id: gid,
+        title: variantDetails ? variantDetails.title : 'Unknown Variant',
+        price: variantDetails ? parseFloat(variantDetails.priceV2.amount) : 0,
+        currencyCode: variantDetails ? variantDetails.priceV2.currencyCode : 'USD',
+      },
     };
   });
 
+  // Handle discount code from query params if available
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
-
   const discount = searchParams.get('discount');
   const discountArray = discount ? [discount] : [];
 
-  // create a cart
+  // Create the cart using the prepared linesMap and discount codes
   const result = await cart.create({
     lines: linesMap,
     discountCodes: discountArray,
@@ -57,7 +101,7 @@ export async function loader({request, context, params}) {
   // Update cart id in cookie
   const headers = cart.setCartId(cartResult.id);
 
-  // redirect to checkout
+  // Redirect to checkout if the URL exists
   if (cartResult.checkoutUrl) {
     return redirect(cartResult.checkoutUrl, {headers});
   } else {
@@ -68,6 +112,3 @@ export async function loader({request, context, params}) {
 export default function Component() {
   return null;
 }
-
-/** @typedef {import('@shopify/remix-oxygen').LoaderFunctionArgs} LoaderFunctionArgs */
-/** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */
