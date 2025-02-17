@@ -548,7 +548,7 @@ export function ProductForm({
 //                   Main Product
 // -----------------------------------------------------
 export default function Product() {
-  const {product, variants, relatedProducts, trackingData} = useLoaderData();
+  const {product, variants, relatedProducts} = useLoaderData();
 
   // Safeguard: If `product` is unexpectedly undefined for any reason, bail out early.
   if (!product) {
