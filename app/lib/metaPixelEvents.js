@@ -1,149 +1,140 @@
 /**
- * Example parse function for Shopify GID -> numeric ID
+ * Utility function to extract the numeric ID from Shopify's global ID (gid).
+ * Example: "gid://shopify/Product/123456789" => "123456789"
+ * @param {string} gid - The global ID from Shopify.
+ * @returns {string} - The extracted numeric ID.
  */
-function parseGid(gid) {
+const parseGid = (gid) => {
   if (!gid) return '';
   const parts = gid.split('/');
   return parts[parts.length - 1];
-}
+};
 
 /**
- * Generate a unique event ID for deduplication
+ * Helper function to generate unique event IDs.
+ * Uses crypto.randomUUID if available, otherwise falls back to a custom method.
+ * @returns {string} - A unique event ID.
  */
-function generateEventId() {
+const generateEventId = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
-  }
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-}
-
-/**
- * Hit our /facebookConversions route to trigger server-side CAPI.
- */
-async function sendToServerCapi(eventData) {
-  try {
-    const res = await fetch('/facebookConversions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(eventData),
-    });
-    console.log('[Client -> Server] /facebookConversions status:', res.status);
-    const data = await res.json();
-    console.log('[Client -> Server] /facebookConversions response:', data);
-    return data;
-  } catch (error) {
-    console.error('[Client -> Server] CAPI error:', error);
-  }
-}
-
-/**
- * 1) ViewContent
- */
-export function trackViewContent({ product, userEmail, userPhone }) {
-  if (!product || !product.selectedVariant) {
-    console.error(
-      "trackViewContent: product or product.selectedVariant is undefined",
-      product
+  } else {
+    return (
+      Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
     );
-    return;
   }
-  
-  const variantId = parseGid(product.selectedVariant.id);
-  const price = parseFloat(product.price?.amount) || 0;
+};
+
+/**
+ * Sends event data to our /facebookConversions endpoint (server-side).
+ * @param {Object} eventData - The event data payload.
+ */
+const sendToServerCapi = (eventData) => {
+  fetch('/facebookConversions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(eventData),
+  })
+    .then((res) => {
+      console.log('Response status from /facebookConversions:', res.status);
+      return res.json();
+    })
+    .then((data) => {
+      console.log('JSON returned from /facebookConversions:', data);
+    })
+    .catch((error) => {
+      console.error('Error calling /facebookConversions:', error);
+    });
+};
+
+/**
+ * Tracks a ViewContent event when a product is viewed.
+ * @param {Object} product - The product details.
+ */
+export const trackViewContent = (product) => {
+  const variantId = parseGid(product.selectedVariant?.id);
+  const price = product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
-  // Client-Side Pixel
+  // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'ViewContent', {
-      value: price,
-      currency,
+      value: parseFloat(price),
+      currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
       event_id: eventId,
     });
   }
 
-  // Server-Side CAPI
+  // Server-side Conversions API
   sendToServerCapi({
     action_source: 'website',
     event_name: 'ViewContent',
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail || '',
-      phone: userPhone || '',
-      // The server route will override IP/UA with real server data
-      client_ip_address: '0.0.0.0',
+      client_ip_address: '254.254.254.254', // replace with actual IP if available
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
-      value: price,
-      currency,
+      value: parseFloat(price),
+      currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
     },
   });
-}
+};
 
 /**
- * 2) AddToCart
+ * Tracks an AddToCart event when a product is added to the cart.
+ * @param {Object} product - The product details.
  */
-export function trackAddToCart({ product, userEmail, userPhone }) {
-  if (!product || !product.selectedVariant) {
-    console.error(
-      "trackAddToCart: product or product.selectedVariant is undefined",
-      product
-    );
-    return;
-  }
-  
-  const variantId = parseGid(product.selectedVariant.id);
-  const price = parseFloat(product.price?.amount) || 0;
+export const trackAddToCart = (product) => {
+  const variantId = parseGid(product.selectedVariant?.id);
+  const price = product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
+  // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'AddToCart', {
-      value: price,
-      currency,
+      value: parseFloat(price),
+      currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
       event_id: eventId,
     });
   }
 
+  // Server-side Conversions API
   sendToServerCapi({
     action_source: 'website',
     event_name: 'AddToCart',
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail || '',
-      phone: userPhone || '',
-      client_ip_address: '0.0.0.0',
+      client_ip_address: '254.254.254.254',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
-      value: price,
-      currency,
+      value: parseFloat(price),
+      currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
     },
   });
-}
+};
 
 /**
- * 3) Purchase
+ * Tracks a Purchase event after a successful purchase.
+ * @param {Object} order - The order details.
  */
-export function trackPurchase({ order, userEmail, userPhone }) {
-  if (!order || !order.items || !order.items.length) {
-    console.error("trackPurchase: order or order.items is undefined", order);
-    return;
-  }
-
+export const trackPurchase = (order) => {
   const eventId = generateEventId();
 
+  // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
       content_ids: order.items.map((item) => parseGid(item.variantId)),
@@ -160,15 +151,14 @@ export function trackPurchase({ order, userEmail, userPhone }) {
     });
   }
 
+  // Server-side Conversions API
   sendToServerCapi({
     action_source: 'website',
     event_name: 'Purchase',
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail || '',
-      phone: userPhone || '',
-      client_ip_address: '0.0.0.0',
+      client_ip_address: '254.254.254.254',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
@@ -184,19 +174,16 @@ export function trackPurchase({ order, userEmail, userPhone }) {
       })),
     },
   });
-}
+};
 
 /**
- * 4) Search
+ * Tracks a Search event when a user performs a search.
+ * @param {string} query - The search query.
  */
-export function trackSearch({ query, userEmail, userPhone }) {
-  if (!query) {
-    console.error("trackSearch: query is undefined");
-    return;
-  }
-  
+export const trackSearch = (query) => {
   const eventId = generateEventId();
 
+  // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'Search', {
       search_string: query,
@@ -205,81 +192,77 @@ export function trackSearch({ query, userEmail, userPhone }) {
     });
   }
 
+  // Server-side Conversions API
   sendToServerCapi({
     action_source: 'website',
     event_name: 'Search',
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail || '',
-      phone: userPhone || '',
-      client_ip_address: '0.0.0.0',
+      client_ip_address: '254.254.254.254',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
       search_string: query,
     },
   });
-}
+};
 
 /**
- * 5) InitiateCheckout
+ * Tracks an InitiateCheckout event when a user starts the checkout process.
+ * @param {Object} cart - The cart details.
  */
-export function trackInitiateCheckout({ cart, userEmail, userPhone }) {
-  if (!cart || !cart.items || !cart.items.length) {
-    console.error("trackInitiateCheckout: cart or cart.items is undefined", cart);
-    return;
-  }
-  
+export const trackInitiateCheckout = (cart) => {
   const eventId = generateEventId();
-  const variantIds = cart.items.map((item) => parseGid(item.variantId)) || [];
+  const variantIds = cart.items?.map((item) => parseGid(item.variantId)) || [];
   const value = parseFloat(cart.cost?.totalAmount?.amount) || 0;
   const currency = cart.cost?.totalAmount?.currencyCode || 'USD';
-  const numItems = cart.items.length;
+  const numItems = cart.items?.length || 0;
 
+  // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
-    fbq('track', 'InitiateCheckout', {
-      content_ids: variantIds,
-      content_type: 'product_variant',
-      value,
-      currency,
-      num_items: numItems,
-      event_id: eventId,
-    });
+    try {
+      fbq('track', 'InitiateCheckout', {
+        content_ids: variantIds,
+        content_type: 'product_variant',
+        value: value,
+        currency: currency,
+        num_items: numItems,
+        event_id: eventId,
+      });
+    } catch (error) {
+      console.error('Error tracking InitiateCheckout:', error);
+    }
   }
 
+  // Server-side Conversions API
   sendToServerCapi({
     action_source: 'website',
     event_name: 'InitiateCheckout',
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail || '',
-      phone: userPhone || '',
-      client_ip_address: '0.0.0.0',
+      client_ip_address: '254.254.254.254',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
       content_ids: variantIds,
       content_type: 'product_variant',
-      value,
-      currency,
+      value: value,
+      currency: currency,
       num_items: numItems,
     },
   });
-}
+};
 
 /**
- * 6) AddPaymentInfo
+ * Tracks an AddPaymentInfo event when a user adds payment information.
+ * @param {Object} order - The order details.
  */
-export function trackAddPaymentInfo({ order, userEmail, userPhone }) {
-  if (!order) {
-    console.error("trackAddPaymentInfo: order is undefined", order);
-    return;
-  }
-  
+export const trackAddPaymentInfo = (order) => {
   const eventId = generateEventId();
 
+  // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'AddPaymentInfo', {
       currency: 'USD',
@@ -288,15 +271,14 @@ export function trackAddPaymentInfo({ order, userEmail, userPhone }) {
     });
   }
 
+  // Server-side Conversions API
   sendToServerCapi({
     action_source: 'website',
     event_name: 'AddPaymentInfo',
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail || '',
-      phone: userPhone || '',
-      client_ip_address: '0.0.0.0',
+      client_ip_address: '254.254.254.254',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
@@ -304,4 +286,4 @@ export function trackAddPaymentInfo({ order, userEmail, userPhone }) {
       value: order.total,
     },
   });
-}
+};
