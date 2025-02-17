@@ -102,17 +102,26 @@ export const trackViewContent = (product, customerData = {}) => {
   const urlParams = new URLSearchParams(window.location.search);
   const fbclid = urlParams.get('fbclid') || '';
 
-  // Client-side Facebook Pixel
+  // New fields as per required naming
+  const URL = window.location.href;
+  const content_name = product.title || '';
+  const content_category = product.productType || '';
+
+  // Client-side Facebook Pixel with updated field names
   if (typeof fbq === 'function') {
     fbq(
       'track',
       'ViewContent',
       {
+        URL,
+        "Event id": eventId,
         value: parseFloat(price),
         currency: currency,
         content_ids: [variantId],
         content_type: 'product_variant',
-        // Additional customer info
+        content_name,
+        content_category,
+        // Additional customer info (unchanged)
         fbc,
         fbp,
         email,
@@ -125,7 +134,7 @@ export const trackViewContent = (product, customerData = {}) => {
     );
   }
 
-  // Server-side Conversions API
+  // Server-side Conversions API with updated field names
   sendToServerCapi({
     action_source: 'website',
     event_name: 'ViewContent',
@@ -134,19 +143,16 @@ export const trackViewContent = (product, customerData = {}) => {
     user_data: {
       client_ip_address: '', // Will be replaced with the real IP by sendToServerCapi
       client_user_agent: navigator.userAgent,
-      fbc,
-      fbp,
-      email,       // Consider hashing these on the server per Meta's requirements
-      phone,
-      external_id,
-      fb_login_id,
-      fbclid,
     },
     custom_data: {
+      URL,
+      "Event id": eventId,
       value: parseFloat(price),
       currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
+      content_name,
+      content_category,
     },
   });
 };
@@ -161,19 +167,33 @@ export const trackAddToCart = (product) => {
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
-  // Client-side Facebook Pixel
+  // New fields as per required naming
+  const URL = window.location.href;
+  const content_name = product.title || '';
+  const content_category = product.productType || '';
+  const num_items = product.quantity || 1; // default to 1 if quantity is not provided
+
+  // Client-side Facebook Pixel with updated field names
   if (typeof fbq === 'function') {
-    fbq('track', 'AddToCart', {
-      value: parseFloat(price),
-      currency: currency,
-      content_ids: [variantId],
-      content_type: 'product_variant'
-    }, {
-      eventID: eventId
-    });
+    fbq(
+      'track',
+      'AddToCart',
+      {
+        URL,
+        "Event id": eventId,
+        value: parseFloat(price),
+        currency: currency,
+        content_ids: [variantId],
+        content_type: 'product_variant',
+        content_name,
+        content_category,
+        num_items,
+      },
+      { eventID: eventId }
+    );
   }
 
-  // Server-side Conversions API
+  // Server-side Conversions API with updated field names
   sendToServerCapi({
     action_source: 'website',
     event_name: 'AddToCart',
@@ -184,10 +204,15 @@ export const trackAddToCart = (product) => {
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
+      URL,
+      "Event id": eventId,
       value: parseFloat(price),
       currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
+      content_name,
+      content_category,
+      num_items,
     },
   });
 };
@@ -284,26 +309,32 @@ export const trackInitiateCheckout = (cart) => {
   const variantIds = cart.items?.map((item) => parseGid(item.variantId)) || [];
   const value = parseFloat(cart.cost?.totalAmount?.amount) || 0;
   const currency = cart.cost?.totalAmount?.currencyCode || 'USD';
-  const numItems = cart.items?.length || 0;
+  const num_items = cart.items?.length || 0;
+  const URL = window.location.href;
 
-  // Client-side Facebook Pixel
+  // Client-side Facebook Pixel with updated field names
   if (typeof fbq === 'function') {
     try {
-      fbq('track', 'InitiateCheckout', {
-        content_ids: variantIds,
-        content_type: 'product_variant',
-        value: value,
-        currency: currency,
-        num_items: numItems
-      }, {
-        eventID: eventId
-      });
+      fbq(
+        'track',
+        'InitiateCheckout',
+        {
+          URL,
+          "Event id": eventId,
+          value,
+          currency,
+          content_ids: variantIds,
+          content_type: 'product_variant',
+          num_items,
+        },
+        { eventID: eventId }
+      );
     } catch (error) {
       console.error('Error tracking InitiateCheckout:', error);
     }
   }
 
-  // Server-side Conversions API
+  // Server-side Conversions API with updated field names
   sendToServerCapi({
     action_source: 'website',
     event_name: 'InitiateCheckout',
@@ -314,11 +345,13 @@ export const trackInitiateCheckout = (cart) => {
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
+      URL,
+      "Event id": eventId,
+      value,
+      currency,
       content_ids: variantIds,
       content_type: 'product_variant',
-      value: value,
-      currency: currency,
-      num_items: numItems,
+      num_items,
     },
   });
 };
