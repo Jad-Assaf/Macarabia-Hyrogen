@@ -47,7 +47,7 @@ export const trackViewContent = (product) => {
   }
 
   // Send server-side event
-  fetch('/api/meta-capi', {
+  fetch('/facebookConversions', {
   method: 'POST',
   headers: {'Content-Type': 'application/json'},
   body: JSON.stringify({
