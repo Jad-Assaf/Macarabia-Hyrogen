@@ -31,7 +31,7 @@ const generateEventId = () => {
  * @param {Object} product - The product details.
  */
 export const trackViewContent = (product) => {
-  const variantId = parseGid(product.selectedVariant?.id); // Extract Variant ID
+  const variantId = parseGid(product.selectedVariant?.id);
   const price = product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
@@ -40,11 +40,36 @@ export const trackViewContent = (product) => {
     fbq('track', 'ViewContent', {
       value: parseFloat(price),
       currency: currency,
-      content_ids: [variantId], // Use Variant ID directly
+      content_ids: [variantId],
       content_type: 'product_variant',
       event_id: eventId,
     });
   }
+
+  // Send server-side event
+  fetch('/api/meta-capi', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      action_source: 'website',
+      event_name: 'ViewContent',
+      event_id: eventId,
+      event_time: Math.floor(Date.now() / 1000), // or a future time if needed
+      user_data: {
+        // IP and User Agent can be picked up from the server route if needed
+        // If you're sending from client directly, you might pass them here:
+        client_ip_address: '254.254.254.254',
+        client_user_agent: navigator.userAgent,
+        // Or hashed email, phone, etc.
+      },
+      custom_data: {
+        value: parseFloat(price),
+        currency: currency,
+        content_ids: [variantId],
+        content_type: 'product_variant',
+      },
+    }),
+  });
 };
 
 /**

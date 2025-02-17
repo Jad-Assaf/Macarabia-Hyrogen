@@ -1,4 +1,4 @@
-import { sendFacebookEvent } from "../../lib/facebookConversions.server";
+import { sendFacebookEvent } from "./facebookConversions.server";
 
 export async function action({ request }) {
   try {
