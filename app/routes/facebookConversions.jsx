@@ -1,11 +1,11 @@
 import {json} from '@shopify/remix-oxygen';
-import {createHash} from 'crypto';
+import {sha256} from 'js-sha256';
 
+// Minimal helper to lowercase/trim before hashing
 function sha256Hash(value) {
   if (!value) return '';
-  return createHash('sha256')
-    .update(value.trim().toLowerCase())
-    .digest('hex');
+  const cleaned = value.trim().toLowerCase();
+  return sha256(cleaned);
 }
 
 export async function action({request}) {
@@ -14,10 +14,11 @@ export async function action({request}) {
   }
 
   try {
+    // 1. Get event data from the client
     const eventData = await request.json();
     console.log('[Server] Received from client:', eventData);
 
-    // --- Extract real IP & UA from server request headers ---
+    // 2. Attempt to get real IP/User-Agent from request headers
     const ipHeader =
       request.headers.get('x-forwarded-for') ||
       request.headers.get('client-ip') ||
@@ -25,35 +26,33 @@ export async function action({request}) {
       '';
     const userAgentHeader = request.headers.get('user-agent') || '';
 
-    // --- Hash sensitive data (email, phone) ---
+    // 3. Hash email/phone if present
     const userData = eventData.user_data || {};
-
-    // Overwrite with server-captured IP/UA
-    userData.client_ip_address = ipHeader || userData.client_ip_address;
-    userData.client_user_agent = userAgentHeader || userData.client_user_agent;
-
-    // Hash email if provided
     if (userData.email) {
       userData.em = sha256Hash(userData.email);
       delete userData.email; // remove plain text
     }
-    // Hash phone if provided
     if (userData.phone) {
       userData.ph = sha256Hash(userData.phone);
       delete userData.phone; // remove plain text
     }
 
+    // 4. Override IP/UA with server readings (recommended for best matching)
+    userData.client_ip_address = ipHeader || userData.client_ip_address;
+    userData.client_user_agent = userAgentHeader || userData.client_user_agent;
+
     eventData.user_data = userData;
 
-    // Prepare final payload
+    // 5. Final payload for Meta
     const payload = {
       data: [eventData],
-      test_event_code: 'TEST31560', // For debugging in Meta's Test Events
+      // You can remove or replace this test code in production
+      test_event_code: 'TEST31560',
     };
 
-    console.log('[Server] Final CAPI payload:', payload);
+    console.log('[Server] Final payload to Meta CAPI:', payload);
 
-    // Send to Meta
+    // 6. Send to Meta
     const pixelId = process.env.META_PIXEL_ID;
     const accessToken = process.env.META_ACCESS_TOKEN;
 
@@ -63,13 +62,13 @@ export async function action({request}) {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload),
-      }
+      },
     );
 
     const metaResult = await metaResponse.json();
-
     console.log('[Server] Meta response:', metaResult);
 
+    // 7. Respond to client
     return json({success: true, result: metaResult});
   } catch (err) {
     console.error('[Server] Error:', err);

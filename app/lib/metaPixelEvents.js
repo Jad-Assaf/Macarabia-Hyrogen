@@ -1,5 +1,5 @@
 /**
- * For example: parse the numeric variant ID from Shopify GID (gid://shopify/Variant/123456789).
+ * Example parse function for Shopify GID -> numeric ID
  */
 function parseGid(gid) {
   if (!gid) return '';
@@ -8,7 +8,7 @@ function parseGid(gid) {
 }
 
 /**
- * Generate an event_id for deduplication.
+ * Generate a unique event ID for deduplication
  */
 function generateEventId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -18,8 +18,7 @@ function generateEventId() {
 }
 
 /**
- * POST to our server endpoint (facebookConversions route).
- * This sends event data for the Meta Conversions API (server side).
+ * Hit our /facebookConversions route to trigger server-side CAPI.
  */
 async function sendToServerCapi(eventData) {
   try {
@@ -29,27 +28,27 @@ async function sendToServerCapi(eventData) {
       body: JSON.stringify(eventData),
     });
     console.log('[Client -> Server] /facebookConversions status:', res.status);
-    const jsonData = await res.json();
-    console.log('[Client -> Server] /facebookConversions result:', jsonData);
-    return jsonData;
+    const data = await res.json();
+    console.log('[Client -> Server] /facebookConversions response:', data);
+    return data;
   } catch (error) {
-    console.error('[Client -> Server] /facebookConversions error:', error);
+    console.error('[Client -> Server] CAPI error:', error);
   }
 }
 
 /**
- * ViewContent
+ * 1) ViewContent
  */
-export function trackViewContent({product, userEmail, userPhone}) {
+export function trackViewContent({ product, userEmail, userPhone }) {
   const variantId = parseGid(product.selectedVariant?.id);
-  const price = product.price?.amount || 0;
+  const price = parseFloat(product.price?.amount) || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
-  // 1) Client-Side Pixel
+  // Client Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'ViewContent', {
-      value: parseFloat(price),
+      value: price,
       currency,
       content_ids: [variantId],
       content_type: 'product_variant',
@@ -57,21 +56,21 @@ export function trackViewContent({product, userEmail, userPhone}) {
     });
   }
 
-  // 2) Server-Side
+  // Server CAPI
   sendToServerCapi({
     action_source: 'website',
     event_name: 'ViewContent',
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail, // real email from user
-      phone: userPhone, // real phone from user
-      // The server will override the IP/UA
+      email: userEmail || '',
+      phone: userPhone || '',
+      // The server route will override IP/UA with real server data
       client_ip_address: '0.0.0.0',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
-      value: parseFloat(price),
+      value: price,
       currency,
       content_ids: [variantId],
       content_type: 'product_variant',
@@ -80,17 +79,17 @@ export function trackViewContent({product, userEmail, userPhone}) {
 }
 
 /**
- * AddToCart
+ * 2) AddToCart
  */
-export function trackAddToCart({product, userEmail, userPhone}) {
+export function trackAddToCart({ product, userEmail, userPhone }) {
   const variantId = parseGid(product.selectedVariant?.id);
-  const price = product.price?.amount || 0;
+  const price = parseFloat(product.price?.amount) || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
   if (typeof fbq === 'function') {
     fbq('track', 'AddToCart', {
-      value: parseFloat(price),
+      value: price,
       currency,
       content_ids: [variantId],
       content_type: 'product_variant',
@@ -104,13 +103,13 @@ export function trackAddToCart({product, userEmail, userPhone}) {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail,
-      phone: userPhone,
+      email: userEmail || '',
+      phone: userPhone || '',
       client_ip_address: '0.0.0.0',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
-      value: parseFloat(price),
+      value: price,
       currency,
       content_ids: [variantId],
       content_type: 'product_variant',
@@ -119,11 +118,11 @@ export function trackAddToCart({product, userEmail, userPhone}) {
 }
 
 /**
- * Purchase
+ * 3) Purchase
  */
-export function trackPurchase({order, userEmail, userPhone}) {
+export function trackPurchase({ order, userEmail, userPhone }) {
   const eventId = generateEventId();
-
+  
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
       content_ids: order.items.map((item) => parseGid(item.variantId)),
@@ -146,8 +145,8 @@ export function trackPurchase({order, userEmail, userPhone}) {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail,
-      phone: userPhone,
+      email: userEmail || '',
+      phone: userPhone || '',
       client_ip_address: '0.0.0.0',
       client_user_agent: navigator.userAgent,
     },
@@ -167,9 +166,9 @@ export function trackPurchase({order, userEmail, userPhone}) {
 }
 
 /**
- * Search
+ * 4) Search
  */
-export function trackSearch({query, userEmail, userPhone}) {
+export function trackSearch({ query, userEmail, userPhone }) {
   const eventId = generateEventId();
 
   if (typeof fbq === 'function') {
@@ -186,8 +185,8 @@ export function trackSearch({query, userEmail, userPhone}) {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail,
-      phone: userPhone,
+      email: userEmail || '',
+      phone: userPhone || '',
       client_ip_address: '0.0.0.0',
       client_user_agent: navigator.userAgent,
     },
@@ -198,9 +197,9 @@ export function trackSearch({query, userEmail, userPhone}) {
 }
 
 /**
- * InitiateCheckout
+ * 5) InitiateCheckout
  */
-export function trackInitiateCheckout({cart, userEmail, userPhone}) {
+export function trackInitiateCheckout({ cart, userEmail, userPhone }) {
   const eventId = generateEventId();
 
   if (typeof fbq === 'function') {
@@ -225,25 +224,25 @@ export function trackInitiateCheckout({cart, userEmail, userPhone}) {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail,
-      phone: userPhone,
+      email: userEmail || '',
+      phone: userPhone || '',
       client_ip_address: '0.0.0.0',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
       content_ids: cart.items?.map((item) => parseGid(item.variantId)) || [],
       content_type: 'product_variant',
-      value: parseFloat(cart.cost?.totalAmount?.amount) || 0,
-      currency: cart.cost?.totalAmount?.currencyCode || 'USD',
-      num_items: cart.items?.length || 0,
+      value,
+      currency,
+      num_items: numItems,
     },
   });
 }
 
 /**
- * AddPaymentInfo
+ * 6) AddPaymentInfo
  */
-export function trackAddPaymentInfo({order, userEmail, userPhone}) {
+export function trackAddPaymentInfo({ order, userEmail, userPhone }) {
   const eventId = generateEventId();
 
   if (typeof fbq === 'function') {
@@ -260,8 +259,8 @@ export function trackAddPaymentInfo({order, userEmail, userPhone}) {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      email: userEmail,
-      phone: userPhone,
+      email: userEmail || '',
+      phone: userPhone || '',
       client_ip_address: '0.0.0.0',
       client_user_agent: navigator.userAgent,
     },
