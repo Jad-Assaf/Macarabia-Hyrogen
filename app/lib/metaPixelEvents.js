@@ -87,8 +87,9 @@ export const trackViewContent = (product) => {
       value: parseFloat(price),
       currency: currency,
       content_ids: [variantId],
-      content_type: 'product_variant',
-      eventID: eventId, // Changed parameter name to eventID (camelCase)
+      content_type: 'product_variant'
+    }, {
+      eventID: eventId
     });
   }
 
@@ -96,11 +97,11 @@ export const trackViewContent = (product) => {
   sendToServerCapi({
     action_source: 'website',
     event_name: 'ViewContent',
-    event_id: eventId, // CAPI uses event_id (snake_case)
+    event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
       // The real IP will be injected by sendToServerCapi
-      client_ip_address: '', 
+      client_ip_address: '',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
@@ -128,8 +129,9 @@ export const trackAddToCart = (product) => {
       value: parseFloat(price),
       currency: currency,
       content_ids: [variantId],
-      content_type: 'product_variant',
-      eventID: eventId, // Use eventID for Pixel
+      content_type: 'product_variant'
+    }, {
+      eventID: eventId
     });
   }
 
@@ -171,8 +173,9 @@ export const trackPurchase = (order) => {
         id: parseGid(item.variantId),
         quantity: item.quantity,
         item_price: item.price,
-      })),
-      eventID: eventId, // Use eventID for Pixel
+      }))
+    }, {
+      eventID: eventId
     });
   }
 
@@ -212,8 +215,9 @@ export const trackSearch = (query) => {
   if (typeof fbq === 'function') {
     fbq('track', 'Search', {
       search_string: query,
-      content_category: 'Search',
-      eventID: eventId, // Use eventID for Pixel
+      content_category: 'Search'
+    }, {
+      eventID: eventId
     });
   }
 
@@ -252,8 +256,9 @@ export const trackInitiateCheckout = (cart) => {
         content_type: 'product_variant',
         value: value,
         currency: currency,
-        num_items: numItems,
-        eventID: eventId, // Use eventID for Pixel
+        num_items: numItems
+      }, {
+        eventID: eventId
       });
     } catch (error) {
       console.error('Error tracking InitiateCheckout:', error);
@@ -291,8 +296,9 @@ export const trackAddPaymentInfo = (order) => {
   if (typeof fbq === 'function') {
     fbq('track', 'AddPaymentInfo', {
       currency: 'USD',
-      value: order.total,
-      eventID: eventId, // Use eventID for Pixel
+      value: order.total
+    }, {
+      eventID: eventId
     });
   }
 
