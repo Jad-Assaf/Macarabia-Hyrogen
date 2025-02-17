@@ -53,8 +53,8 @@ export async function action({request}) {
     console.log('[Server] Final payload to Meta CAPI:', payload);
 
     // 6. Send to Meta
-    const pixelId = process.env.META_PIXEL_ID;
-    const accessToken = process.env.META_ACCESS_TOKEN;
+    const pixelId = '321309553208857';
+    const accessToken = 'EAAbtKZAEu758BOZCpvs6XBxvEDH2k6347fSMxt7aYdlBV5zUwZAOXbFTL9WEX2TjZChGAOKaqw08qoihZCdYHCyOftlaieOT4Bgite7zRcCVnwfeojeZAZCCnRUpk0V1QZBwERiM3V5X6ZABWGZBfFqRjeV8WxH5TxMDSayZAgaGZBSNLSrMP1xAmSkaMH7gEZCbaJAt5cgZDZD';
 
     const metaResponse = await fetch(
       `https://graph.facebook.com/v12.0/${pixelId}/events?access_token=${accessToken}`,
