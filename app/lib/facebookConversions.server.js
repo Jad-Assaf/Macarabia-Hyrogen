@@ -30,6 +30,19 @@ export function parseGid(gid) {
  * Sends an event to Facebook's Conversions API.
  * @param {string} eventName - The name of the event (e.g., "ViewContent", "PageView", etc.)
  * @param {object} eventData - An object containing event details.
+ *   Expected properties include:
+ *     - event_source_url (string)
+ *     - client_ip_address (string, optional)
+ *     - client_user_agent (string, optional)
+ *     - fbp (string, optional)
+ *     - fbc (string, optional)
+ *     - email (string, optional)
+ *     - facebookLoginId (string, optional)
+ *     - externalId (string, optional)
+ *     - value (number, optional)
+ *     - currency (string, optional)
+ *     - product_ids (array, optional)
+ *     - event_id (string, optional) for deduplication
  * @returns {Promise<object>} - The JSON response from the Facebook API.
  */
 export async function sendFacebookEvent(eventName, eventData) {
@@ -58,7 +71,7 @@ export async function sendFacebookEvent(eventName, eventData) {
   if (eventData.fbc) {
     userData.fbc = eventData.fbc;
   }
-  // Only hash and include sensitive data if provided
+  // Hash and include sensitive data if provided
   if (eventData.email) {
     const hashedEmail = await hashData(eventData.email);
     if (hashedEmail) userData.em = hashedEmail;
@@ -72,34 +85,47 @@ export async function sendFacebookEvent(eventName, eventData) {
     if (hashedExternalId) userData.external_id = hashedExternalId;
   }
 
-  // Build the payload object
+  // Build the event payload
+  const eventPayload = {
+    event_name, // e.g., "ViewContent", "PageView", etc.
+    event_time: Math.floor(Date.now() / 1000),
+    event_source_url: eventData.event_source_url,
+    action_source: "website",
+    user_data: userData,
+    custom_data: {
+      value: eventData.value,
+      currency: eventData.currency,
+      content_ids: eventData.product_ids,
+    },
+  };
+
+  // Add deduplication event_id if provided
+  if (eventData.event_id) {
+    eventPayload.event_id = eventData.event_id;
+  }
+
+  // Build the full payload object
   const payload = {
-    data: [
-      {
-        event_name, // e.g., "ViewContent", "PageView", etc.
-        event_time: Math.floor(Date.now() / 1000),
-        event_source_url: eventData.event_source_url,
-        action_source: "website",
-        user_data,
-        custom_data: {
-          value: eventData.value,
-          currency: eventData.currency,
-          content_ids: eventData.product_ids,
-        },
-      },
-    ],
+    data: [eventPayload],
   };
 
   if (testEventCode) {
     payload.test_event_code = testEventCode;
   }
 
-  // Send the POST request to Facebook's Conversions API
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  return response.json();
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Facebook API error: ${response.status} - ${errorText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error sending Facebook event:", error);
+    throw error;
+  }
 }
