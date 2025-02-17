@@ -22,8 +22,7 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
-import {trackAddToCartGA} from '~/lib/googleAnalyticsEvents';
-import { useCustomerTrackingData } from '~/lib/useCustomerTrackingData';
+import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
 
 // ---------------- SEO & Meta
 export const meta = ({data}) => {
@@ -568,11 +567,9 @@ export default function Product() {
     setQuantity(1);
   }, [product]);
 
-  const trackingData = useCustomerTrackingData();
-
   useEffect(() => {
-    trackViewContent(product, trackingData);
-  }, [product, trackingData]);
+    trackViewContent(product);
+  }, [product]);
 
   useEffect(() => {
     if (selectedVariant?.price) {
