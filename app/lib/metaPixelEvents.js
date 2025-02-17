@@ -19,17 +19,36 @@ const generateEventId = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   } else {
-    return (
-      Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
-    );
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+  }
+};
+
+/**
+ * Fetches the real IP address using the ipify API.
+ * @returns {Promise<string>} The real IP address.
+ */
+const getRealIp = async () => {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    return data.ip;
+  } catch (error) {
+    console.error('Error fetching real IP:', error);
+    return '0.0.0.0';
   }
 };
 
 /**
  * Sends event data to our /facebookConversions endpoint (server-side).
+ * It fetches the real IP and injects it into the payload before sending.
  * @param {Object} eventData - The event data payload.
  */
-const sendToServerCapi = (eventData) => {
+const sendToServerCapi = async (eventData) => {
+  // Fetch the real IP and override the client_ip_address
+  const ip = await getRealIp();
+  eventData.user_data = eventData.user_data || {};
+  eventData.user_data.client_ip_address = ip;
+
   fetch('/facebookConversions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -49,9 +68,14 @@ const sendToServerCapi = (eventData) => {
 
 /**
  * Tracks a ViewContent event when a product is viewed.
+ * A guard prevents firing the same event multiple times on the same page load.
  * @param {Object} product - The product details.
  */
 export const trackViewContent = (product) => {
+  // Guard: Prevent multiple ViewContent events per page load.
+  if (window.__viewContentTracked) return;
+  window.__viewContentTracked = true;
+
   const variantId = parseGid(product.selectedVariant?.id);
   const price = product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
@@ -75,7 +99,8 @@ export const trackViewContent = (product) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '254.254.254.254', // replace with actual IP if available
+      // The real IP will be injected by sendToServerCapi
+      client_ip_address: '', 
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
@@ -115,7 +140,7 @@ export const trackAddToCart = (product) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '254.254.254.254',
+      client_ip_address: '',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
@@ -158,7 +183,7 @@ export const trackPurchase = (order) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '254.254.254.254',
+      client_ip_address: '',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
@@ -199,7 +224,7 @@ export const trackSearch = (query) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '254.254.254.254',
+      client_ip_address: '',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
@@ -242,7 +267,7 @@ export const trackInitiateCheckout = (cart) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '254.254.254.254',
+      client_ip_address: '',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
@@ -278,7 +303,7 @@ export const trackAddPaymentInfo = (order) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '254.254.254.254',
+      client_ip_address: '',
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
