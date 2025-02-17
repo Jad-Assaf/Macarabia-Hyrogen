@@ -339,7 +339,7 @@ export function ProductForm({
     trackAddToCartGA(product);
 
     // Trigger server‑side CAPI event
-    fetch('/lib/track-facebook-event', {
+    fetch('/api/track-facebook-event', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
