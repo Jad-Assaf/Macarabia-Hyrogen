@@ -14,9 +14,27 @@ async function hashData(data) {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Safely extracts the numeric ID from a Shopify global ID (gid).
+ * Example: "gid://shopify/Product/123456789" => "123456789"
+ * @param {string} gid - The global ID.
+ * @returns {string} - The extracted numeric ID or an empty string if not available.
+ */
+export function parseGid(gid) {
+  if (!gid) return '';
+  const parts = gid.split('/');
+  return parts[parts.length - 1] || '';
+}
+
+/**
+ * Sends an event to Facebook's Conversions API.
+ * @param {string} eventName - The name of the event (e.g., "ViewContent", "PageView", etc.)
+ * @param {object} eventData - An object containing event details.
+ * @returns {Promise<object>} - The JSON response from the Facebook API.
+ */
 export async function sendFacebookEvent(eventName, eventData) {
-  const pixelId = process.env.META_PIXEL_ID;
-  const accessToken = process.env.META_ACCESS_TOKEN;
+  const pixelId = "321309553208857";
+  const accessToken = "EAAbtKZAEu758BOZCpvs6XBxvEDH2k6347fSMxt7aYdlBV5zUwZAOXbFTL9WEX2TjZChGAOKaqw08qoihZCdYHCyOftlaieOT4Bgite7zRcCVnwfeojeZAZCCnRUpk0V1QZBwERiM3V5X6ZABWGZBfFqRjeV8WxH5TxMDSayZAgaGZBSNLSrMP1xAmSkaMH7gEZCbaJAt5cgZDZD";
   const testEventCode = process.env.TEST_EVENT_CODE; // optional for testing
 
   if (!pixelId || !accessToken) {
@@ -25,7 +43,7 @@ export async function sendFacebookEvent(eventName, eventData) {
 
   const endpoint = `https://graph.facebook.com/v22.0/${pixelId}/events?access_token=${accessToken}`;
 
-  // Build the user_data object conditionally
+  // Build the user_data object conditionally:
   const userData = {};
 
   if (eventData.client_ip_address) {
@@ -54,10 +72,11 @@ export async function sendFacebookEvent(eventName, eventData) {
     if (hashedExternalId) userData.external_id = hashedExternalId;
   }
 
+  // Build the payload object
   const payload = {
     data: [
       {
-        event_name, // e.g., "PageView", "ViewContent", etc.
+        event_name, // e.g., "ViewContent", "PageView", etc.
         event_time: Math.floor(Date.now() / 1000),
         event_source_url: eventData.event_source_url,
         action_source: "website",
@@ -75,6 +94,7 @@ export async function sendFacebookEvent(eventName, eventData) {
     payload.test_event_code = testEventCode;
   }
 
+  // Send the POST request to Facebook's Conversions API
   const response = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
