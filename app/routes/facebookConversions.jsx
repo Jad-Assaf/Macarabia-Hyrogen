@@ -1,31 +1,63 @@
-import {json} from '@shopify/remix-oxygen'; // or the appropriate import in your setup
+import {json} from '@shopify/remix-oxygen';
+import {createHash} from 'crypto';
+
+function sha256Hash(value) {
+  if (!value) return '';
+  return createHash('sha256')
+    .update(value.trim().toLowerCase())
+    .digest('hex');
+}
 
 export async function action({request}) {
   if (request.method !== 'POST') {
-    // Return a 405 if it's not POST
     return json({error: 'Method Not Allowed'}, {status: 405});
   }
 
   try {
-    // 1. Get the event data from the request
-    const eventData = await request.json(); 
-    console.log('Received eventData from client:', eventData);
+    const eventData = await request.json();
+    console.log('[Server] Received from client:', eventData);
 
-    // 2. Prepare payload for Facebook CAPI
+    // --- Extract real IP & UA from server request headers ---
+    const ipHeader =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('client-ip') ||
+      request.headers.get('cf-connecting-ip') ||
+      '';
+    const userAgentHeader = request.headers.get('user-agent') || '';
+
+    // --- Hash sensitive data (email, phone) ---
+    const userData = eventData.user_data || {};
+
+    // Overwrite with server-captured IP/UA
+    userData.client_ip_address = ipHeader || userData.client_ip_address;
+    userData.client_user_agent = userAgentHeader || userData.client_user_agent;
+
+    // Hash email if provided
+    if (userData.email) {
+      userData.em = sha256Hash(userData.email);
+      delete userData.email; // remove plain text
+    }
+    // Hash phone if provided
+    if (userData.phone) {
+      userData.ph = sha256Hash(userData.phone);
+      delete userData.phone; // remove plain text
+    }
+
+    eventData.user_data = userData;
+
+    // Prepare final payload
     const payload = {
-      data: [eventData], 
-      test_event_code: 'TEST31560', 
+      data: [eventData],
+      test_event_code: 'TEST31560', // For debugging in Meta's Test Events
     };
 
-    console.log('Prepared payload for Meta CAPI:', payload);
+    console.log('[Server] Final CAPI payload:', payload);
 
-    // 3. Define Pixel and Access Token
-    const pixelId = '321309553208857';
-    const accessToken =
-      'EAAbtKZAEu758BOZCpvs6XBxvEDH2k6347fSMxt7aYdlBV5zUwZAOXbFTL9WEX2TjZChGAOKaqw08qoihZCdYHCyOftlaieOT4Bgite7zRcCVnwfeojeZAZCCnRUpk0V1QZBwERiM3V5X6ZABWGZBfFqRjeV8WxH5TxMDSayZAgaGZBSNLSrMP1xAmSkaMH7gEZCbaJAt5cgZDZD';
+    // Send to Meta
+    const pixelId = process.env.META_PIXEL_ID;
+    const accessToken = process.env.META_ACCESS_TOKEN;
 
-    // 4. Send POST request to Meta CAPI
-    const response = await fetch(
+    const metaResponse = await fetch(
       `https://graph.facebook.com/v12.0/${pixelId}/events?access_token=${accessToken}`,
       {
         method: 'POST',
@@ -34,16 +66,13 @@ export async function action({request}) {
       }
     );
 
-    console.log('Meta CAPI status:', response.status);
+    const metaResult = await metaResponse.json();
 
-    // 5. Parse the JSON response from Meta
-    const result = await response.json();
-    console.log('Meta CAPI response:', result);
+    console.log('[Server] Meta response:', metaResult);
 
-    // 6. Return the result to the client
-    return json({success: true, result});
-  } catch (error) {
-    console.error('Error in meta-capi action:', error);
-    return json({success: false, error: error.message}, {status: 500});
+    return json({success: true, result: metaResult});
+  } catch (err) {
+    console.error('[Server] Error:', err);
+    return json({success: false, error: err.message}, {status: 500});
   }
 }

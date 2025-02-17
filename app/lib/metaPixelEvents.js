@@ -1,131 +1,175 @@
 /**
- * Utility function to extract the numeric ID from Shopify's global ID (gid).
- * Example: "gid://shopify/Product/123456789" => "123456789"
- * @param {string} gid - The global ID from Shopify.
- * @returns {string} - The extracted numeric ID.
+ * For example: parse the numeric variant ID from Shopify GID (gid://shopify/Variant/123456789).
  */
-const parseGid = (gid) => {
+function parseGid(gid) {
   if (!gid) return '';
   const parts = gid.split('/');
   return parts[parts.length - 1];
-};
+}
 
 /**
- * Helper function to generate unique event IDs.
- * Uses crypto.randomUUID if available, otherwise falls back to a custom method.
- * @returns {string} - A unique event ID.
+ * Generate an event_id for deduplication.
  */
-const generateEventId = () => {
+function generateEventId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
-  } else {
-    // Fallback to a simple unique ID generator
-    return (
-      Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
-    );
   }
-};
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
 
 /**
- * Tracks a ViewContent event when a product is viewed.
- * @param {Object} product - The product details.
+ * POST to our server endpoint (facebookConversions route).
+ * This sends event data for the Meta Conversions API (server side).
  */
-export const trackViewContent = (product) => {
+async function sendToServerCapi(eventData) {
+  try {
+    const res = await fetch('/facebookConversions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(eventData),
+    });
+    console.log('[Client -> Server] /facebookConversions status:', res.status);
+    const jsonData = await res.json();
+    console.log('[Client -> Server] /facebookConversions result:', jsonData);
+    return jsonData;
+  } catch (error) {
+    console.error('[Client -> Server] /facebookConversions error:', error);
+  }
+}
+
+/**
+ * ViewContent
+ */
+export function trackViewContent({product, userEmail, userPhone}) {
   const variantId = parseGid(product.selectedVariant?.id);
   const price = product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
+  // 1) Client-Side Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'ViewContent', {
       value: parseFloat(price),
-      currency: currency,
+      currency,
       content_ids: [variantId],
       content_type: 'product_variant',
       event_id: eventId,
     });
   }
 
-  // Send server-side event
-  fetch('/facebookConversions', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/json'},
-  body: JSON.stringify({
+  // 2) Server-Side
+  sendToServerCapi({
     action_source: 'website',
     event_name: 'ViewContent',
     event_id: eventId,
-    event_time: Math.floor(Date.now() / 1000), 
+    event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '254.254.254.254',
+      email: userEmail, // real email from user
+      phone: userPhone, // real phone from user
+      // The server will override the IP/UA
+      client_ip_address: '0.0.0.0',
       client_user_agent: navigator.userAgent,
-      // etc.
     },
     custom_data: {
       value: parseFloat(price),
-      currency: currency,
+      currency,
       content_ids: [variantId],
       content_type: 'product_variant',
     },
-  }),
-})
-  .then((res) => {
-    console.log('Response status from /api/meta-capi:', res.status);
-    return res.json();
-  })
-  .then((data) => {
-    console.log('JSON returned from /api/meta-capi:', data);
-  })
-  .catch((error) => {
-    console.error('Error calling /api/meta-capi:', error);
   });
-
-};
+}
 
 /**
- * Tracks an AddToCart event when a product is added to the cart.
- * @param {Object} product - The product details.
+ * AddToCart
  */
-export const trackAddToCart = (product) => {
-  const variantId = parseGid(product.selectedVariant?.id); // Extract Variant ID
+export function trackAddToCart({product, userEmail, userPhone}) {
+  const variantId = parseGid(product.selectedVariant?.id);
   const price = product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
+  const eventId = generateEventId();
 
   if (typeof fbq === 'function') {
     fbq('track', 'AddToCart', {
       value: parseFloat(price),
-      currency: currency,
-      content_ids: [variantId], // Use Variant ID directly
+      currency,
+      content_ids: [variantId],
       content_type: 'product_variant',
+      event_id: eventId,
     });
   }
-};
+
+  sendToServerCapi({
+    action_source: 'website',
+    event_name: 'AddToCart',
+    event_id: eventId,
+    event_time: Math.floor(Date.now() / 1000),
+    user_data: {
+      email: userEmail,
+      phone: userPhone,
+      client_ip_address: '0.0.0.0',
+      client_user_agent: navigator.userAgent,
+    },
+    custom_data: {
+      value: parseFloat(price),
+      currency,
+      content_ids: [variantId],
+      content_type: 'product_variant',
+    },
+  });
+}
 
 /**
- * Tracks a Purchase event after a successful purchase.
- * @param {Object} order - The order details.
+ * Purchase
  */
-export const trackPurchase = (order) => {
+export function trackPurchase({order, userEmail, userPhone}) {
+  const eventId = generateEventId();
+
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
-      content_ids: order.items.map((item) => parseGid(item.variantId)), // Use Variant ID directly
+      content_ids: order.items.map((item) => parseGid(item.variantId)),
       content_type: 'product_variant',
       currency: 'USD',
       value: order.total,
       num_items: order.items.length,
       contents: order.items.map((item) => ({
-        id: parseGid(item.variantId), // Use Variant ID directly
+        id: parseGid(item.variantId),
         quantity: item.quantity,
         item_price: item.price,
       })),
+      event_id: eventId,
     });
   }
-};
+
+  sendToServerCapi({
+    action_source: 'website',
+    event_name: 'Purchase',
+    event_id: eventId,
+    event_time: Math.floor(Date.now() / 1000),
+    user_data: {
+      email: userEmail,
+      phone: userPhone,
+      client_ip_address: '0.0.0.0',
+      client_user_agent: navigator.userAgent,
+    },
+    custom_data: {
+      currency: 'USD',
+      value: order.total,
+      num_items: order.items.length,
+      content_type: 'product_variant',
+      content_ids: order.items.map((item) => parseGid(item.variantId)),
+      contents: order.items.map((item) => ({
+        id: parseGid(item.variantId),
+        quantity: item.quantity,
+        item_price: item.price,
+      })),
+    },
+  });
+}
 
 /**
- * Tracks a Search event when a user performs a search.
- * @param {string} query - The search query.
+ * Search
  */
-export const trackSearch = (query) => {
+export function trackSearch({query, userEmail, userPhone}) {
   const eventId = generateEventId();
 
   if (typeof fbq === 'function') {
@@ -135,42 +179,95 @@ export const trackSearch = (query) => {
       event_id: eventId,
     });
   }
-};
+
+  sendToServerCapi({
+    action_source: 'website',
+    event_name: 'Search',
+    event_id: eventId,
+    event_time: Math.floor(Date.now() / 1000),
+    user_data: {
+      email: userEmail,
+      phone: userPhone,
+      client_ip_address: '0.0.0.0',
+      client_user_agent: navigator.userAgent,
+    },
+    custom_data: {
+      search_string: query,
+    },
+  });
+}
 
 /**
- * Tracks an InitiateCheckout event when a user starts the checkout process.
- * @param {Object} cart - The cart details.
+ * InitiateCheckout
  */
-export const trackInitiateCheckout = (cart) => {
+export function trackInitiateCheckout({cart, userEmail, userPhone}) {
+  const eventId = generateEventId();
+
   if (typeof fbq === 'function') {
-    try {
-      const variantIds = cart.items?.map((item) => parseGid(item.variantId)) || []; // Use Variant IDs directly
-      const value = parseFloat(cart.cost?.totalAmount?.amount) || 0;
-      const currency = cart.cost?.totalAmount?.currencyCode || 'USD';
-      const numItems = cart.items?.length || 0;
+    const variantIds = cart.items?.map((item) => parseGid(item.variantId)) || [];
+    const value = parseFloat(cart.cost?.totalAmount?.amount) || 0;
+    const currency = cart.cost?.totalAmount?.currencyCode || 'USD';
+    const numItems = cart.items?.length || 0;
 
-      fbq('track', 'InitiateCheckout', {
-        content_ids: variantIds, // Use Variant IDs directly
-        content_type: 'product_variant',
-        value: value,
-        currency: currency,
-        num_items: numItems,
-      });
-    } catch (error) {
-      console.error('Error tracking InitiateCheckout:', error);
-    }
+    fbq('track', 'InitiateCheckout', {
+      content_ids: variantIds,
+      content_type: 'product_variant',
+      value,
+      currency,
+      num_items: numItems,
+      event_id: eventId,
+    });
   }
-};
+
+  sendToServerCapi({
+    action_source: 'website',
+    event_name: 'InitiateCheckout',
+    event_id: eventId,
+    event_time: Math.floor(Date.now() / 1000),
+    user_data: {
+      email: userEmail,
+      phone: userPhone,
+      client_ip_address: '0.0.0.0',
+      client_user_agent: navigator.userAgent,
+    },
+    custom_data: {
+      content_ids: cart.items?.map((item) => parseGid(item.variantId)) || [],
+      content_type: 'product_variant',
+      value: parseFloat(cart.cost?.totalAmount?.amount) || 0,
+      currency: cart.cost?.totalAmount?.currencyCode || 'USD',
+      num_items: cart.items?.length || 0,
+    },
+  });
+}
 
 /**
- * Tracks an AddPaymentInfo event when a user adds payment information.
- * @param {Object} order - The order details.
+ * AddPaymentInfo
  */
-export const trackAddPaymentInfo = (order) => {
+export function trackAddPaymentInfo({order, userEmail, userPhone}) {
+  const eventId = generateEventId();
+
   if (typeof fbq === 'function') {
     fbq('track', 'AddPaymentInfo', {
       currency: 'USD',
       value: order.total,
+      event_id: eventId,
     });
   }
-};
+
+  sendToServerCapi({
+    action_source: 'website',
+    event_name: 'AddPaymentInfo',
+    event_id: eventId,
+    event_time: Math.floor(Date.now() / 1000),
+    user_data: {
+      email: userEmail,
+      phone: userPhone,
+      client_ip_address: '0.0.0.0',
+      client_user_agent: navigator.userAgent,
+    },
+    custom_data: {
+      currency: 'USD',
+      value: order.total,
+    },
+  });
+}
