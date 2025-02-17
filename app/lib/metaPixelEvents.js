@@ -51,7 +51,7 @@ export const trackViewContent = (product) => {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
-      action_source: 'website',
+      action_source: 'server',
       event_name: 'ViewContent',
       event_id: eventId,
       event_time: Math.floor(Date.now() / 1000), // or a future time if needed
