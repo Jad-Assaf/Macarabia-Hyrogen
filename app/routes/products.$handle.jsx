@@ -334,40 +334,11 @@ export function ProductForm({
   });
 
   const handleAddToCart = () => {
-    // Client‑side tracking (if any)
+    // Track the AddToCart event
     trackAddToCart(product);
     trackAddToCartGA(product);
-
-    // Trigger server‑side CAPI event
-    fetch('../lib/track-facebook-event', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        eventName: 'AddToCart',
-        event_source_url: window.location.href,
-        client_ip_address: '', // if available
-        client_user_agent: navigator.userAgent,
-        email: 'customer@example.com',
-        value: selectedVariant?.price?.amount,
-        currency: selectedVariant?.price?.currencyCode,
-        product_ids: [selectedVariant?.id],
-        event_id: 'unique-event-id-1234',
-      }),
-    })
-      .then(async (res) => {
-        const text = await res.text();
-        console.log('Raw response:', text);
-        return JSON.parse(text);
-      })
-      .then((data) => {
-        console.log('Facebook event sent:', data);
-      })
-      .catch((err) => console.error('Error sending Facebook event:', err));
-
-    // Add the product to the cart
     onAddToCart(product);
   };
-
 
   // Sync local state when the parent’s selectedVariant changes
   useEffect(() => {
