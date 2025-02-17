@@ -40,12 +40,20 @@ async function sendToServerCapi(eventData) {
  * 1) ViewContent
  */
 export function trackViewContent({ product, userEmail, userPhone }) {
-  const variantId = parseGid(product.selectedVariant?.id);
+  if (!product || !product.selectedVariant) {
+    console.error(
+      "trackViewContent: product or product.selectedVariant is undefined",
+      product
+    );
+    return;
+  }
+  
+  const variantId = parseGid(product.selectedVariant.id);
   const price = parseFloat(product.price?.amount) || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
-  // Client Pixel
+  // Client-Side Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'ViewContent', {
       value: price,
@@ -56,7 +64,7 @@ export function trackViewContent({ product, userEmail, userPhone }) {
     });
   }
 
-  // Server CAPI
+  // Server-Side CAPI
   sendToServerCapi({
     action_source: 'website',
     event_name: 'ViewContent',
@@ -82,7 +90,15 @@ export function trackViewContent({ product, userEmail, userPhone }) {
  * 2) AddToCart
  */
 export function trackAddToCart({ product, userEmail, userPhone }) {
-  const variantId = parseGid(product.selectedVariant?.id);
+  if (!product || !product.selectedVariant) {
+    console.error(
+      "trackAddToCart: product or product.selectedVariant is undefined",
+      product
+    );
+    return;
+  }
+  
+  const variantId = parseGid(product.selectedVariant.id);
   const price = parseFloat(product.price?.amount) || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
@@ -121,8 +137,13 @@ export function trackAddToCart({ product, userEmail, userPhone }) {
  * 3) Purchase
  */
 export function trackPurchase({ order, userEmail, userPhone }) {
+  if (!order || !order.items || !order.items.length) {
+    console.error("trackPurchase: order or order.items is undefined", order);
+    return;
+  }
+
   const eventId = generateEventId();
-  
+
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
       content_ids: order.items.map((item) => parseGid(item.variantId)),
@@ -169,6 +190,11 @@ export function trackPurchase({ order, userEmail, userPhone }) {
  * 4) Search
  */
 export function trackSearch({ query, userEmail, userPhone }) {
+  if (!query) {
+    console.error("trackSearch: query is undefined");
+    return;
+  }
+  
   const eventId = generateEventId();
 
   if (typeof fbq === 'function') {
@@ -200,14 +226,18 @@ export function trackSearch({ query, userEmail, userPhone }) {
  * 5) InitiateCheckout
  */
 export function trackInitiateCheckout({ cart, userEmail, userPhone }) {
+  if (!cart || !cart.items || !cart.items.length) {
+    console.error("trackInitiateCheckout: cart or cart.items is undefined", cart);
+    return;
+  }
+  
   const eventId = generateEventId();
+  const variantIds = cart.items.map((item) => parseGid(item.variantId)) || [];
+  const value = parseFloat(cart.cost?.totalAmount?.amount) || 0;
+  const currency = cart.cost?.totalAmount?.currencyCode || 'USD';
+  const numItems = cart.items.length;
 
   if (typeof fbq === 'function') {
-    const variantIds = cart.items?.map((item) => parseGid(item.variantId)) || [];
-    const value = parseFloat(cart.cost?.totalAmount?.amount) || 0;
-    const currency = cart.cost?.totalAmount?.currencyCode || 'USD';
-    const numItems = cart.items?.length || 0;
-
     fbq('track', 'InitiateCheckout', {
       content_ids: variantIds,
       content_type: 'product_variant',
@@ -230,7 +260,7 @@ export function trackInitiateCheckout({ cart, userEmail, userPhone }) {
       client_user_agent: navigator.userAgent,
     },
     custom_data: {
-      content_ids: cart.items?.map((item) => parseGid(item.variantId)) || [],
+      content_ids: variantIds,
       content_type: 'product_variant',
       value,
       currency,
@@ -243,6 +273,11 @@ export function trackInitiateCheckout({ cart, userEmail, userPhone }) {
  * 6) AddPaymentInfo
  */
 export function trackAddPaymentInfo({ order, userEmail, userPhone }) {
+  if (!order) {
+    console.error("trackAddPaymentInfo: order is undefined", order);
+    return;
+  }
+  
   const eventId = generateEventId();
 
   if (typeof fbq === 'function') {
