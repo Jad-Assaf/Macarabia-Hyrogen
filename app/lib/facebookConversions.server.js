@@ -3,10 +3,10 @@
 /**
  * Helper to hash sensitive data with SHA-256 using the Web Crypto API.
  * @param {string} data - The data to hash.
- * @returns {Promise<string|null>} - A promise that resolves to the hashed string in hex, or null if no data.
+ * @returns {Promise<string|undefined>} - A promise that resolves to the hashed string in hex, or undefined if no data.
  */
 async function hashData(data) {
-  if (!data) return null;
+  if (!data) return undefined;
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data.trim().toLowerCase());
   const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
@@ -25,10 +25,34 @@ export async function sendFacebookEvent(eventName, eventData) {
 
   const endpoint = `https://graph.facebook.com/v22.0/${pixelId}/events?access_token=${accessToken}`;
 
-  // Await hashing for sensitive fields
-  const hashedEmail = await hashData(eventData.email);
-  const hashedFbLoginId = await hashData(eventData.facebookLoginId);
-  const hashedExternalId = await hashData(eventData.externalId);
+  // Build the user_data object conditionally
+  const userData = {};
+
+  if (eventData.client_ip_address) {
+    userData.client_ip_address = eventData.client_ip_address;
+  }
+  if (eventData.client_user_agent) {
+    userData.client_user_agent = eventData.client_user_agent;
+  }
+  if (eventData.fbp) {
+    userData.fbp = eventData.fbp;
+  }
+  if (eventData.fbc) {
+    userData.fbc = eventData.fbc;
+  }
+  // Only hash and include sensitive data if provided
+  if (eventData.email) {
+    const hashedEmail = await hashData(eventData.email);
+    if (hashedEmail) userData.em = hashedEmail;
+  }
+  if (eventData.facebookLoginId) {
+    const hashedFbLoginId = await hashData(eventData.facebookLoginId);
+    if (hashedFbLoginId) userData.fb_login_id = hashedFbLoginId;
+  }
+  if (eventData.externalId) {
+    const hashedExternalId = await hashData(eventData.externalId);
+    if (hashedExternalId) userData.external_id = hashedExternalId;
+  }
 
   const payload = {
     data: [
@@ -37,16 +61,7 @@ export async function sendFacebookEvent(eventName, eventData) {
         event_time: Math.floor(Date.now() / 1000),
         event_source_url: eventData.event_source_url,
         action_source: "website",
-        user_data: {
-          // Send sensitive data hashed using Web Crypto.
-          em: hashedEmail,
-          client_ip_address: eventData.client_ip_address || '',
-          client_user_agent: eventData.client_user_agent || '',
-          fbp: eventData.fbp || '',
-          fbc: eventData.fbc || '',
-          fb_login_id: hashedFbLoginId,
-          external_id: hashedExternalId,
-        },
+        user_data,
         custom_data: {
           value: eventData.value,
           currency: eventData.currency,
