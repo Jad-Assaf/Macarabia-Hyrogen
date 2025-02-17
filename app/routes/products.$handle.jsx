@@ -345,19 +345,20 @@ export function ProductForm({
       body: JSON.stringify({
         eventName: 'AddToCart',
         event_source_url: window.location.href,
-        client_ip_address: '', // Optionally fill if you can get this info
+        client_ip_address: '', // if available
         client_user_agent: navigator.userAgent,
-        // Include any sensitive data; it will be hashed on the server:
-        email: 'customer@example.com', // for example
-        // You can include additional custom data:
+        email: 'customer@example.com',
         value: selectedVariant?.price?.amount,
         currency: selectedVariant?.price?.currencyCode,
         product_ids: [selectedVariant?.id],
-        // Optionally, include a deduplication event_id:
         event_id: 'unique-event-id-1234',
       }),
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        const text = await res.text();
+        console.log('Raw response:', text);
+        return JSON.parse(text);
+      })
       .then((data) => {
         console.log('Facebook event sent:', data);
       })

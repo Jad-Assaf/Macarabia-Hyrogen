@@ -72,13 +72,13 @@ export default function RecentlyViewedProducts({currentProductId}) {
     `;
 
     const response = await fetch(
-      `https://macarabia.myshopify.com/api/2023-07/graphql.json`,
+      `https://macarabia.myshopify.com/api/2024-10/graphql.json`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Shopify-Storefront-Access-Token':
-            '4a6888a1225616e0ed01bf21e3c10d0a',
+            'c34c6525896450dac5813b07d50e97f1',
         },
         body: JSON.stringify({
           query,
