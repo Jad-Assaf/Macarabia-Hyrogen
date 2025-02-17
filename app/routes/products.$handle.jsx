@@ -9,7 +9,6 @@ import {
   getSeoMeta,
   CartForm,
   VariantSelector,
-  parseGid,
 } from '@shopify/hydrogen';
 import {getVariantUrl} from '~/lib/variants';
 import {ProductPrice} from '~/components/ProductPrice';
@@ -24,7 +23,6 @@ import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
 import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
-import { sendFacebookEvent } from '~/lib/facebookConversions.server';
 
 // ---------------- SEO & Meta
 export const meta = ({data}) => {
@@ -225,24 +223,6 @@ async function loadCriticalData({context, params, request}) {
   });
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
-
-  const eventData = {
-    event_source_url: new URL(request.url).toString(),
-    client_ip_address: request.headers.get('x-forwarded-for') || '',
-    client_user_agent: request.headers.get('user-agent') || '',
-    fbp: '', // Retrieve from cookie if available
-    fbc: '', // Retrieve from cookie if available
-    email: '', // Typically not available on a product; use customer data if available
-    phone: '', // Same as above
-    facebookLoginId: '', // Same
-    externalId: '', // Same
-    value: product.price.amount,
-    currency: product.price.currencyCode,
-    product_ids: [parseGid(product.selectedVariant?.id)],
-  };
-
-  // Send the ViewContent event to Meta
-  sendFacebookEvent('ViewContent', eventData).catch(console.error);
 
   // Return necessary product data including SEO, first image, and variant price
   return {
