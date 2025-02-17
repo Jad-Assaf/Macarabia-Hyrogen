@@ -589,7 +589,7 @@ export default function Product() {
     selectedVariant?.price?.amount !== selectedVariant?.compareAtPrice?.amount;
 
   const onAddToCart = (prod) => {
-    trackAddToCart(prod);
+    // trackAddToCart(prod);
   };
 
   return (
