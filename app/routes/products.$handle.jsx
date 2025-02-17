@@ -223,25 +223,7 @@ async function loadCriticalData({context, params, request}) {
   });
 
   const relatedProducts = products?.edges.map((edge) => edge.node) || [];
-
-  const eventData = {
-    event_source_url: new URL(request.url).toString(),
-    client_ip_address: request.headers.get('x-forwarded-for') || '',
-    client_user_agent: request.headers.get('user-agent') || '',
-    fbp: '', // Retrieve from cookie if available
-    fbc: '', // Retrieve from cookie if available
-    email: product.email || '', // If available
-    phone: product.phone || '', // If available
-    facebookLoginId: product.facebookLoginId || '', // If available
-    externalId: product.externalId || '', // If available
-    value: product.price.amount,
-    currency: product.price.currencyCode,
-    product_ids: [parseGid(product.selectedVariant?.id)],
-  };
-
-  // Send the ViewContent event
-  sendFacebookEvent('ViewContent', eventData).catch(console.error);
-
+  
 
   // Return necessary product data including SEO, first image, and variant price
   return {
