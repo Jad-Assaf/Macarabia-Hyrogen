@@ -22,7 +22,8 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
-import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
+import {trackAddToCartGA} from '~/lib/googleAnalyticsEvents';
+import { useCustomerTrackingData } from '~/lib/useCustomerTrackingData';
 
 // ---------------- SEO & Meta
 export const meta = ({data}) => {
@@ -547,7 +548,7 @@ export function ProductForm({
 //                   Main Product
 // -----------------------------------------------------
 export default function Product() {
-  const {product, variants, relatedProducts} = useLoaderData();
+  const {product, variants, relatedProducts, trackingData} = useLoaderData();
 
   // Safeguard: If `product` is unexpectedly undefined for any reason, bail out early.
   if (!product) {
@@ -567,9 +568,11 @@ export default function Product() {
     setQuantity(1);
   }, [product]);
 
+  const trackingData = useCustomerTrackingData();
+
   useEffect(() => {
-    trackViewContent(product);
-  }, [product]);
+    trackViewContent(product, trackingData);
+  }, [product, trackingData]);
 
   useEffect(() => {
     if (selectedVariant?.price) {

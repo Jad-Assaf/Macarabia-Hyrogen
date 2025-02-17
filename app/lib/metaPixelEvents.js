@@ -71,7 +71,7 @@ const sendToServerCapi = async (eventData) => {
  * A guard prevents firing the same event multiple times on the same page load.
  * @param {Object} product - The product details.
  */
-export const trackViewContent = (product) => {
+export const trackViewContent = (product, customerData = {}) => {
   // Guard: Prevent multiple ViewContent events per page load.
   if (window.__viewContentTracked) return;
   window.__viewContentTracked = true;
@@ -81,16 +81,48 @@ export const trackViewContent = (product) => {
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
+  // Retrieve fbp and fbc from cookies
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    return parts.length === 2 ? parts.pop().split(';').shift() : '';
+  };
+  const fbp = getCookie('_fbp');
+  const fbc = getCookie('_fbc');
+
+  // Destructure customerData passed in (from your loader or context)
+  const {
+    email = '', 
+    phone = '',
+    external_id = customerData.id || '', // Use customer.id as external_id if available
+    fb_login_id = '', // Only available if using Facebook Login
+  } = customerData;
+
+  // Optionally, you can also extract fbclid from URL:
+  const urlParams = new URLSearchParams(window.location.search);
+  const fbclid = urlParams.get('fbclid') || '';
+
   // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
-    fbq('track', 'ViewContent', {
-      value: parseFloat(price),
-      currency: currency,
-      content_ids: [variantId],
-      content_type: 'product_variant'
-    }, {
-      eventID: eventId
-    });
+    fbq(
+      'track',
+      'ViewContent',
+      {
+        value: parseFloat(price),
+        currency: currency,
+        content_ids: [variantId],
+        content_type: 'product_variant',
+        // Additional customer info
+        fbc,
+        fbp,
+        email,
+        phone,
+        external_id,
+        fb_login_id,
+        fbclid,
+      },
+      { eventID: eventId }
+    );
   }
 
   // Server-side Conversions API
@@ -100,9 +132,15 @@ export const trackViewContent = (product) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      // The real IP will be injected by sendToServerCapi
-      client_ip_address: '',
+      client_ip_address: '', // Will be replaced with the real IP by sendToServerCapi
       client_user_agent: navigator.userAgent,
+      fbc,
+      fbp,
+      email,       // Consider hashing these on the server per Meta's requirements
+      phone,
+      external_id,
+      fb_login_id,
+      fbclid,
     },
     custom_data: {
       value: parseFloat(price),
