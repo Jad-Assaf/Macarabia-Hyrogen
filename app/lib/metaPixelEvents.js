@@ -88,7 +88,7 @@ export const trackViewContent = (product) => {
       currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
-      event_id: eventId,
+      eventID: eventId, // Changed parameter name to eventID (camelCase)
     });
   }
 
@@ -96,7 +96,7 @@ export const trackViewContent = (product) => {
   sendToServerCapi({
     action_source: 'website',
     event_name: 'ViewContent',
-    event_id: eventId,
+    event_id: eventId, // CAPI uses event_id (snake_case)
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
       // The real IP will be injected by sendToServerCapi
@@ -129,7 +129,7 @@ export const trackAddToCart = (product) => {
       currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
-      event_id: eventId,
+      eventID: eventId, // Use eventID for Pixel
     });
   }
 
@@ -172,7 +172,7 @@ export const trackPurchase = (order) => {
         quantity: item.quantity,
         item_price: item.price,
       })),
-      event_id: eventId,
+      eventID: eventId, // Use eventID for Pixel
     });
   }
 
@@ -213,7 +213,7 @@ export const trackSearch = (query) => {
     fbq('track', 'Search', {
       search_string: query,
       content_category: 'Search',
-      event_id: eventId,
+      eventID: eventId, // Use eventID for Pixel
     });
   }
 
@@ -253,7 +253,7 @@ export const trackInitiateCheckout = (cart) => {
         value: value,
         currency: currency,
         num_items: numItems,
-        event_id: eventId,
+        eventID: eventId, // Use eventID for Pixel
       });
     } catch (error) {
       console.error('Error tracking InitiateCheckout:', error);
@@ -292,7 +292,7 @@ export const trackAddPaymentInfo = (order) => {
     fbq('track', 'AddPaymentInfo', {
       currency: 'USD',
       value: order.total,
-      event_id: eventId,
+      eventID: eventId, // Use eventID for Pixel
     });
   }
 
