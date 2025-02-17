@@ -22,7 +22,7 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
-import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
+import { parseGid, trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
 import { sendFacebookEvent } from '~/lib/facebookConversions.server';
 
 // ---------------- SEO & Meta
