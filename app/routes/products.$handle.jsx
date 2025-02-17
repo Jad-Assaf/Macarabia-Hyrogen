@@ -9,6 +9,7 @@ import {
   getSeoMeta,
   CartForm,
   VariantSelector,
+  parseGid,
 } from '@shopify/hydrogen';
 import {getVariantUrl} from '~/lib/variants';
 import {ProductPrice} from '~/components/ProductPrice';
@@ -22,7 +23,7 @@ import RelatedProductsRow from '~/components/RelatedProducts';
 import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
-import { parseGid, trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
+import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
 import { sendFacebookEvent } from '~/lib/facebookConversions.server';
 
 // ---------------- SEO & Meta
