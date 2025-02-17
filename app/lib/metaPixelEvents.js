@@ -47,29 +47,38 @@ export const trackViewContent = (product) => {
   }
 
   // Send server-side event
-  fetch('/facebookConversions', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      action_source: 'website',
-      event_name: 'ViewContent',
-      event_id: eventId,
-      event_time: Math.floor(Date.now() / 1000), // or a future time if needed
-      user_data: {
-        // IP and User Agent can be picked up from the server route if needed
-        // If you're sending from client directly, you might pass them here:
-        client_ip_address: '254.254.254.254',
-        client_user_agent: navigator.userAgent,
-        // Or hashed email, phone, etc.
-      },
-      custom_data: {
-        value: parseFloat(price),
-        currency: currency,
-        content_ids: [variantId],
-        content_type: 'product_variant',
-      },
-    }),
+  fetch('/api/meta-capi', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    action_source: 'website',
+    event_name: 'ViewContent',
+    event_id: eventId,
+    event_time: Math.floor(Date.now() / 1000), 
+    user_data: {
+      client_ip_address: '254.254.254.254',
+      client_user_agent: navigator.userAgent,
+      // etc.
+    },
+    custom_data: {
+      value: parseFloat(price),
+      currency: currency,
+      content_ids: [variantId],
+      content_type: 'product_variant',
+    },
+  }),
+})
+  .then((res) => {
+    console.log('Response status from /api/meta-capi:', res.status);
+    return res.json();
+  })
+  .then((data) => {
+    console.log('JSON returned from /api/meta-capi:', data);
+  })
+  .catch((error) => {
+    console.error('Error calling /api/meta-capi:', error);
   });
+
 };
 
 /**
