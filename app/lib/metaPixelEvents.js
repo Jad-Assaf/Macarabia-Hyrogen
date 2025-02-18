@@ -107,7 +107,7 @@ export const trackViewContent = (product, customerData = {}) => {
   const content_name = product.title || '';
   const content_category = product.productType || '';
 
-  // Client-side Facebook Pixel with updated field names
+  // Client-side Facebook Pixel with updated field names and extra identifiers
   if (typeof fbq === 'function') {
     fbq(
       'track',
@@ -121,12 +121,11 @@ export const trackViewContent = (product, customerData = {}) => {
         content_type: 'product_variant',
         content_name,
         content_category,
-        // Additional customer info (unchanged)
-        fbc,
         fbp,
+        fbc,
+        external_id,
         email,
         phone,
-        external_id,
         fb_login_id,
         fbclid,
       },
@@ -134,7 +133,7 @@ export const trackViewContent = (product, customerData = {}) => {
     );
   }
 
-  // Server-side Conversions API with updated field names
+  // Server-side Conversions API with updated field names and extra identifiers
   sendToServerCapi({
     action_source: 'website',
     event_name: 'ViewContent',
@@ -143,6 +142,9 @@ export const trackViewContent = (product, customerData = {}) => {
     user_data: {
       client_ip_address: '', // Will be replaced with the real IP by sendToServerCapi
       client_user_agent: navigator.userAgent,
+      fbp,
+      fbc,
+      external_id,
     },
     custom_data: {
       URL,
@@ -167,13 +169,23 @@ export const trackAddToCart = (product) => {
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
+  // Retrieve fbp and fbc from cookies for extra identifiers
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    return parts.length === 2 ? parts.pop().split(';').shift() : '';
+  };
+  const fbp = getCookie('_fbp');
+  const fbc = getCookie('_fbc');
+  const external_id = ''; // No customerData provided in this function
+
   // New fields as per required naming
   const URL = window.location.href;
   const content_name = product.title || '';
   const content_category = product.productType || '';
   const num_items = product.quantity || 1; // default to 1 if quantity is not provided
 
-  // Client-side Facebook Pixel with updated field names
+  // Client-side Facebook Pixel with updated field names and extra identifiers
   if (typeof fbq === 'function') {
     fbq(
       'track',
@@ -188,12 +200,15 @@ export const trackAddToCart = (product) => {
         content_name,
         content_category,
         num_items,
+        fbp,
+        fbc,
+        external_id,
       },
       { eventID: eventId }
     );
   }
 
-  // Server-side Conversions API with updated field names
+  // Server-side Conversions API with updated field names and extra identifiers
   sendToServerCapi({
     action_source: 'website',
     event_name: 'AddToCart',
@@ -202,6 +217,9 @@ export const trackAddToCart = (product) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
+      fbp,
+      fbc,
+      external_id,
     },
     custom_data: {
       URL,
@@ -224,7 +242,17 @@ export const trackAddToCart = (product) => {
 export const trackPurchase = (order) => {
   const eventId = generateEventId();
 
-  // Client-side Facebook Pixel
+  // Retrieve fbp and fbc from cookies for extra identifiers
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    return parts.length === 2 ? parts.pop().split(';').shift() : '';
+  };
+  const fbp = getCookie('_fbp');
+  const fbc = getCookie('_fbc');
+  const external_id = ''; // No customerData provided in this function
+
+  // Client-side Facebook Pixel with updated extra identifiers
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
       content_ids: order.items.map((item) => parseGid(item.variantId)),
@@ -236,13 +264,16 @@ export const trackPurchase = (order) => {
         id: parseGid(item.variantId),
         quantity: item.quantity,
         item_price: item.price,
-      }))
+      })),
+      fbp,
+      fbc,
+      external_id,
     }, {
       eventID: eventId
     });
   }
 
-  // Server-side Conversions API
+  // Server-side Conversions API with updated extra identifiers
   sendToServerCapi({
     action_source: 'website',
     event_name: 'Purchase',
@@ -251,6 +282,9 @@ export const trackPurchase = (order) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
+      fbp,
+      fbc,
+      external_id,
     },
     custom_data: {
       currency: 'USD',
@@ -274,17 +308,30 @@ export const trackPurchase = (order) => {
 export const trackSearch = (query) => {
   const eventId = generateEventId();
 
-  // Client-side Facebook Pixel
+  // Retrieve fbp and fbc from cookies for extra identifiers
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    return parts.length === 2 ? parts.pop().split(';').shift() : '';
+  };
+  const fbp = getCookie('_fbp');
+  const fbc = getCookie('_fbc');
+  const external_id = ''; // No customerData provided in this function
+
+  // Client-side Facebook Pixel with updated extra identifiers
   if (typeof fbq === 'function') {
     fbq('track', 'Search', {
       search_string: query,
-      content_category: 'Search'
+      content_category: 'Search',
+      fbp,
+      fbc,
+      external_id,
     }, {
       eventID: eventId
     });
   }
 
-  // Server-side Conversions API
+  // Server-side Conversions API with updated extra identifiers
   sendToServerCapi({
     action_source: 'website',
     event_name: 'Search',
@@ -293,6 +340,9 @@ export const trackSearch = (query) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
+      fbp,
+      fbc,
+      external_id,
     },
     custom_data: {
       search_string: query,
@@ -312,7 +362,17 @@ export const trackInitiateCheckout = (cart) => {
   const num_items = cart.items?.length || 0;
   const URL = window.location.href;
 
-  // Client-side Facebook Pixel with updated field names
+  // Retrieve fbp and fbc from cookies for extra identifiers
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    return parts.length === 2 ? parts.pop().split(';').shift() : '';
+  };
+  const fbp = getCookie('_fbp');
+  const fbc = getCookie('_fbc');
+  const external_id = ''; // No customerData provided in this function
+
+  // Client-side Facebook Pixel with updated field names and extra identifiers
   if (typeof fbq === 'function') {
     try {
       fbq(
@@ -326,6 +386,9 @@ export const trackInitiateCheckout = (cart) => {
           content_ids: variantIds,
           content_type: 'product_variant',
           num_items,
+          fbp,
+          fbc,
+          external_id,
         },
         { eventID: eventId }
       );
@@ -334,7 +397,7 @@ export const trackInitiateCheckout = (cart) => {
     }
   }
 
-  // Server-side Conversions API with updated field names
+  // Server-side Conversions API with updated field names and extra identifiers
   sendToServerCapi({
     action_source: 'website',
     event_name: 'InitiateCheckout',
@@ -343,6 +406,9 @@ export const trackInitiateCheckout = (cart) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
+      fbp,
+      fbc,
+      external_id,
     },
     custom_data: {
       URL,
@@ -363,17 +429,30 @@ export const trackInitiateCheckout = (cart) => {
 export const trackAddPaymentInfo = (order) => {
   const eventId = generateEventId();
 
-  // Client-side Facebook Pixel
+  // Retrieve fbp and fbc from cookies for extra identifiers
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    return parts.length === 2 ? parts.pop().split(';').shift() : '';
+  };
+  const fbp = getCookie('_fbp');
+  const fbc = getCookie('_fbc');
+  const external_id = ''; // No customerData provided in this function
+
+  // Client-side Facebook Pixel with updated extra identifiers
   if (typeof fbq === 'function') {
     fbq('track', 'AddPaymentInfo', {
       currency: 'USD',
-      value: order.total
+      value: order.total,
+      fbp,
+      fbc,
+      external_id,
     }, {
       eventID: eventId
     });
   }
 
-  // Server-side Conversions API
+  // Server-side Conversions API with updated extra identifiers
   sendToServerCapi({
     action_source: 'website',
     event_name: 'AddPaymentInfo',
@@ -382,6 +461,9 @@ export const trackAddPaymentInfo = (order) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
+      fbp,
+      fbc,
+      external_id,
     },
     custom_data: {
       currency: 'USD',
