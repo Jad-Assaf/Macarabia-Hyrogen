@@ -155,7 +155,6 @@ export const trackViewContent = (product, customerData = {}) => {
 
   // Extract fbclid from URL
   const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
 
   // Destructure additional customer info
   const { email = '', phone = '', fb_login_id = '' } = customerData;
@@ -235,7 +234,6 @@ export const trackAddToCart = (product, customerData = {}) => {
   const { email = '', phone = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
   const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
 
   const URL = window.location.href;
   const content_name = product.title || '';
@@ -310,7 +308,6 @@ export const trackPurchase = (order, customerData = {}) => {
   const { email = '', phone = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
   const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
 
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
@@ -377,7 +374,6 @@ export const trackSearch = (query, customerData = {}) => {
   const { email = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
   const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
 
   if (typeof fbq === 'function') {
     fbq('track', 'Search', {
@@ -432,7 +428,6 @@ export const trackInitiateCheckout = (cart, customerData = {}) => {
   const { email = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
   const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
 
   if (typeof fbq === 'function') {
     try {
@@ -502,7 +497,6 @@ export const trackAddPaymentInfo = (order, customerData = {}) => {
   const { email = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
   const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
 
   if (typeof fbq === 'function') {
     fbq('track', 'AddPaymentInfo', {
