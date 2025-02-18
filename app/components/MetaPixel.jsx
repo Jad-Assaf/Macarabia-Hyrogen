@@ -11,18 +11,6 @@ const generateEventId = () => {
   }
 };
 
-// --- Helper: Fetch the real IP using ipify API
-const getRealIp = async () => {
-  try {
-    const res = await fetch('https://api.ipify.org?format=json');
-    const data = await res.json();
-    return data.ip;
-  } catch (error) {
-    console.error('Error fetching real IP:', error);
-    return '0.0.0.0';
-  }
-};
-
 // --- Helper: Get cookie value
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -43,16 +31,14 @@ const getExternalId = () => {
   return anonId;
 };
 
-// --- Function to send PageView event via Conversions API
+// --- Function to send PageView event via Conversions API (without real IP and fbclid)
 const trackPageViewCAPI = async (eventId, extraData) => {
-  const ip = await getRealIp();
   const payload = {
     action_source: 'website',
     event_name: 'PageView',
     event_id: eventId, // This should match the Pixel eventID
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: ip,
       client_user_agent: navigator.userAgent,
       fbp: extraData.fbp,
       fbc: extraData.fbc,
@@ -118,7 +104,6 @@ const MetaPixel = ({pixelId}) => {
     // Get extra fields
     const fbp = getCookie('_fbp');
     const fbc = getCookie('_fbc');
-    const urlParams = new URLSearchParams(window.location.search);
     const external_id = getExternalId();
     const URL = window.location.href;
 
@@ -148,7 +133,6 @@ const MetaPixel = ({pixelId}) => {
     if (typeof fbq === 'function') {
       const fbp = getCookie('_fbp');
       const fbc = getCookie('_fbc');
-      const urlParams = new URLSearchParams(window.location.search);
       const external_id = getExternalId();
       const URL = window.location.href;
       const eventId = generateEventId();

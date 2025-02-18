@@ -88,30 +88,12 @@ const generateEventId = () => {
 };
 
 /**
- * Fetches the real IP address using the ipify API.
- * @returns {Promise<string>} The real IP address.
- */
-const getRealIp = async () => {
-  try {
-    const res = await fetch('https://api.ipify.org?format=json');
-    const data = await res.json();
-    return data.ip;
-  } catch (error) {
-    console.error('Error fetching real IP:', error);
-    return '0.0.0.0';
-  }
-};
-
-/**
  * Sends event data to our /facebookConversions endpoint (server-side).
- * It fetches the real IP and injects it into the payload before sending.
+ * It injects the client IP (removed) and no longer includes fbclid.
  * @param {Object} eventData - The event data payload.
  */
 const sendToServerCapi = async (eventData) => {
-  const ip = await getRealIp();
-  eventData.user_data = eventData.user_data || {};
-  eventData.user_data.client_ip_address = ip;
-
+  // Removed getRealIp() injection
   fetch('/facebookConversions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -131,7 +113,6 @@ const sendToServerCapi = async (eventData) => {
 
 /**
  * Tracks a ViewContent event when a product is viewed.
- * A guard prevents firing the same event multiple times on the same page load.
  * @param {Object} product - The product details.
  * @param {Object} customerData - (Optional) Customer data with fields such as id, email, fb_login_id, etc.
  */
@@ -153,9 +134,7 @@ export const trackViewContent = (product, customerData = {}) => {
   const fbp = getCookie('_fbp');
   const fbc = getCookie('_fbc');
 
-  // Extract fbclid from URL
-  const urlParams = new URLSearchParams(window.location.search);
-
+  // Remove fbclid extraction entirely
   // Destructure additional customer info
   const { email = '', phone = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
@@ -172,7 +151,7 @@ export const trackViewContent = (product, customerData = {}) => {
         URL,
         "Event id": eventId,
         value: parseFloat(price),
-        currency: currency,
+        currency,
         content_ids: [variantId],
         content_type: 'product_variant',
         content_name,
@@ -194,7 +173,6 @@ export const trackViewContent = (product, customerData = {}) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '',
       client_user_agent: navigator.userAgent,
       fbp,
       fbc,
@@ -204,7 +182,7 @@ export const trackViewContent = (product, customerData = {}) => {
       URL,
       "Event id": eventId,
       value: parseFloat(price),
-      currency: currency,
+      currency,
       content_ids: [variantId],
       content_type: 'product_variant',
       content_name,
@@ -233,7 +211,7 @@ export const trackAddToCart = (product, customerData = {}) => {
   const fbc = getCookie('_fbc');
   const { email = '', phone = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
-  const urlParams = new URLSearchParams(window.location.search);
+  // Remove fbclid extraction
 
   const URL = window.location.href;
   const content_name = product.title || '';
@@ -248,7 +226,7 @@ export const trackAddToCart = (product, customerData = {}) => {
         URL,
         "Event id": eventId,
         value: parseFloat(price),
-        currency: currency,
+        currency,
         content_ids: [variantId],
         content_type: 'product_variant',
         content_name,
@@ -271,7 +249,6 @@ export const trackAddToCart = (product, customerData = {}) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '',
       client_user_agent: navigator.userAgent,
       fbp,
       fbc,
@@ -281,7 +258,7 @@ export const trackAddToCart = (product, customerData = {}) => {
       URL,
       "Event id": eventId,
       value: parseFloat(price),
-      currency: currency,
+      currency,
       content_ids: [variantId],
       content_type: 'product_variant',
       content_name,
@@ -294,6 +271,7 @@ export const trackAddToCart = (product, customerData = {}) => {
 /**
  * Tracks a Purchase event after a successful purchase.
  * @param {Object} order - The order details.
+ * @param {Object} customerData - (Optional) Customer data.
  */
 export const trackPurchase = (order, customerData = {}) => {
   const eventId = generateEventId();
@@ -307,7 +285,6 @@ export const trackPurchase = (order, customerData = {}) => {
   const fbc = getCookie('_fbc');
   const { email = '', phone = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
-  const urlParams = new URLSearchParams(window.location.search);
 
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
@@ -336,7 +313,6 @@ export const trackPurchase = (order, customerData = {}) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '',
       client_user_agent: navigator.userAgent,
       fbp,
       fbc,
@@ -360,6 +336,7 @@ export const trackPurchase = (order, customerData = {}) => {
 /**
  * Tracks a Search event when a user performs a search.
  * @param {string} query - The search query.
+ * @param {Object} customerData - (Optional) Customer data.
  */
 export const trackSearch = (query, customerData = {}) => {
   const eventId = generateEventId();
@@ -373,7 +350,6 @@ export const trackSearch = (query, customerData = {}) => {
   const fbc = getCookie('_fbc');
   const { email = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
-  const urlParams = new URLSearchParams(window.location.search);
 
   if (typeof fbq === 'function') {
     fbq('track', 'Search', {
@@ -393,7 +369,6 @@ export const trackSearch = (query, customerData = {}) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '',
       client_user_agent: navigator.userAgent,
       fbp,
       fbc,
@@ -427,7 +402,6 @@ export const trackInitiateCheckout = (cart, customerData = {}) => {
   const fbc = getCookie('_fbc');
   const { email = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
-  const urlParams = new URLSearchParams(window.location.search);
 
   if (typeof fbq === 'function') {
     try {
@@ -461,7 +435,6 @@ export const trackInitiateCheckout = (cart, customerData = {}) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '',
       client_user_agent: navigator.userAgent,
       fbp,
       fbc,
@@ -496,7 +469,6 @@ export const trackAddPaymentInfo = (order, customerData = {}) => {
   const fbc = getCookie('_fbc');
   const { email = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
-  const urlParams = new URLSearchParams(window.location.search);
 
   if (typeof fbq === 'function') {
     fbq('track', 'AddPaymentInfo', {
@@ -516,7 +488,6 @@ export const trackAddPaymentInfo = (order, customerData = {}) => {
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
     user_data: {
-      client_ip_address: '',
       client_user_agent: navigator.userAgent,
       fbp,
       fbc,
