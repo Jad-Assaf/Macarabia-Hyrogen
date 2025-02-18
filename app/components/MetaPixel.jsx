@@ -30,12 +30,17 @@ const getCookie = (name) => {
   return parts.length === 2 ? parts.pop().split(';').shift() : '';
 };
 
-// --- Helper: Get external id from global customer data
+// --- Helper: Get external id from global customer data or generate an anonymous one
 const getExternalId = () => {
   if (window.__customerData && window.__customerData.id) {
     return window.__customerData.id;
   }
-  return '';
+  let anonId = localStorage.getItem('anonExternalId');
+  if (!anonId) {
+    anonId = generateEventId();
+    localStorage.setItem('anonExternalId', anonId);
+  }
+  return anonId;
 };
 
 // --- Function to send PageView event via Conversions API
