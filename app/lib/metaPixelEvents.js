@@ -1,3 +1,61 @@
+// --- Added Helpers for Customer Data ---
+
+const CUSTOMER_QUERY = `
+  query getCustomer($customerAccessToken: String!) {
+    customer(customerAccessToken: $customerAccessToken) {
+      id
+      email
+      firstName
+      lastName
+      phone
+    }
+  }
+`;
+
+/**
+ * Fetch customer data from Shopify using the Storefront API.
+ * @param {string} customerAccessToken - The access token for the logged-in customer.
+ * @returns {Promise<Object|null>} - The customer data or null if not found.
+ */
+export const fetchCustomerData = async (customerAccessToken) => {
+  try {
+    const response = await fetch(`https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2023-04/graphql.json`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Storefront-Access-Token': process.env.PUBLIC_STOREFRONT_API_TOKEN,
+      },
+      body: JSON.stringify({
+        query: CUSTOMER_QUERY,
+        variables: { customerAccessToken },
+      }),
+    });
+    const result = await response.json();
+    if (result.errors) {
+      console.error("Error fetching customer data:", result.errors);
+      return null;
+    }
+    return result.data.customer;
+  } catch (error) {
+    console.error("Error fetching customer data:", error);
+    return null;
+  }
+};
+
+/**
+ * Helper function to get the external_id.
+ * It checks the provided customerData first, then a global variable.
+ * @param {Object} customerData
+ * @returns {string} The external id.
+ */
+const getExternalId = (customerData = {}) => {
+  if (customerData && customerData.id) return customerData.id;
+  if (window.__customerData && window.__customerData.id) return window.__customerData.id;
+  return '';
+};
+
+// --- Existing Tracking Code ---
+
 /**
  * Utility function to extract the numeric ID from Shopify's global ID (gid).
  * Example: "gid://shopify/Product/123456789" => "123456789"
@@ -70,6 +128,7 @@ const sendToServerCapi = async (eventData) => {
  * Tracks a ViewContent event when a product is viewed.
  * A guard prevents firing the same event multiple times on the same page load.
  * @param {Object} product - The product details.
+ * @param {Object} customerData - (Optional) Customer data with fields such as id, email, etc.
  */
 export const trackViewContent = (product, customerData = {}) => {
   // Guard: Prevent multiple ViewContent events per page load.
@@ -95,13 +154,9 @@ export const trackViewContent = (product, customerData = {}) => {
   const urlParams = new URLSearchParams(window.location.search);
   const fbclid = urlParams.get('fbclid') || '';
 
-  // Destructure customerData passed in (from your loader or context)
-  const {
-    email = '',
-    phone = '',
-    external_id = customerData.id || '', // Use customer.id as external_id if available
-    fb_login_id = '', // Only available if using Facebook Login
-  } = customerData;
+  // Destructure additional customer info from customerData
+  const { email = '', phone = '', fb_login_id = '' } = customerData;
+  const external_id = getExternalId(customerData);
 
   // New fields as per required naming
   const URL = window.location.href;
@@ -180,7 +235,7 @@ export const trackAddToCart = (product) => {
   };
   const fbp = getCookie('_fbp');
   const fbc = getCookie('_fbc');
-  const external_id = ''; // No customerData provided in this function
+  const external_id = getExternalId(); // Use global customer data if available
 
   // Extract fbclid from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -259,7 +314,7 @@ export const trackPurchase = (order) => {
   };
   const fbp = getCookie('_fbp');
   const fbc = getCookie('_fbc');
-  const external_id = ''; // No customerData provided in this function
+  const external_id = getExternalId(); // Use global customer data if available
 
   // Extract fbclid from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -331,7 +386,7 @@ export const trackSearch = (query) => {
   };
   const fbp = getCookie('_fbp');
   const fbc = getCookie('_fbc');
-  const external_id = ''; // No customerData provided in this function
+  const external_id = getExternalId(); // Use global customer data if available
 
   // Extract fbclid from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -391,7 +446,7 @@ export const trackInitiateCheckout = (cart) => {
   };
   const fbp = getCookie('_fbp');
   const fbc = getCookie('_fbc');
-  const external_id = ''; // No customerData provided in this function
+  const external_id = getExternalId(); // Use global customer data if available
 
   // Extract fbclid from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -464,7 +519,7 @@ export const trackAddPaymentInfo = (order) => {
   };
   const fbp = getCookie('_fbp');
   const fbc = getCookie('_fbc');
-  const external_id = ''; // No customerData provided in this function
+  const external_id = getExternalId(); // Use global customer data if available
 
   // Extract fbclid from URL
   const urlParams = new URLSearchParams(window.location.search);
