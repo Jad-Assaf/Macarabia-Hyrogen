@@ -57,7 +57,6 @@ const trackPageViewCAPI = async (eventId, extraData) => {
       fbp: extraData.fbp,
       fbc: extraData.fbc,
       external_id: extraData.external_id,
-      fbclid: extraData.fbclid,
     },
     custom_data: {
       URL: extraData.URL,
@@ -120,7 +119,6 @@ const MetaPixel = ({pixelId}) => {
     const fbp = getCookie('_fbp');
     const fbc = getCookie('_fbc');
     const urlParams = new URLSearchParams(window.location.search);
-    const fbclid = urlParams.get('fbclid') || '';
     const external_id = getExternalId();
     const URL = window.location.href;
 
@@ -137,13 +135,12 @@ const MetaPixel = ({pixelId}) => {
         fbp,
         fbc,
         external_id,
-        fbclid,
       },
       {eventID: eventId},
     );
 
     // Also track PageView via Conversions API using the same event_id and extra fields
-    trackPageViewCAPI(eventId, {fbp, fbc, external_id, fbclid, URL});
+    trackPageViewCAPI(eventId, {fbp, fbc, external_id, URL});
   }, [pixelId]);
 
   // On route changes, track PageView events again (both Pixel & CAPI)
@@ -152,7 +149,6 @@ const MetaPixel = ({pixelId}) => {
       const fbp = getCookie('_fbp');
       const fbc = getCookie('_fbc');
       const urlParams = new URLSearchParams(window.location.search);
-      const fbclid = urlParams.get('fbclid') || '';
       const external_id = getExternalId();
       const URL = window.location.href;
       const eventId = generateEventId();
@@ -165,11 +161,10 @@ const MetaPixel = ({pixelId}) => {
           fbp,
           fbc,
           external_id,
-          fbclid,
         },
         {eventID: eventId},
       );
-      trackPageViewCAPI(eventId, {fbp, fbc, external_id, fbclid, URL});
+      trackPageViewCAPI(eventId, {fbp, fbc, external_id, URL});
     }
   }, [location]);
 
