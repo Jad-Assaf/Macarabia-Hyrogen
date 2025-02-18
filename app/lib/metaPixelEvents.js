@@ -184,7 +184,6 @@ export const trackViewContent = (product, customerData = {}) => {
         email,
         phone,
         fb_login_id,
-        fbclid,
       },
       { eventID: eventId }
     );
@@ -201,7 +200,6 @@ export const trackViewContent = (product, customerData = {}) => {
       fbp,
       fbc,
       external_id,
-      fbclid,
     },
     custom_data: {
       URL,
@@ -264,7 +262,6 @@ export const trackAddToCart = (product, customerData = {}) => {
         email,
         phone,
         fb_login_id,
-        fbclid,
       },
       { eventID: eventId }
     );
@@ -281,7 +278,6 @@ export const trackAddToCart = (product, customerData = {}) => {
       fbp,
       fbc,
       external_id,
-      fbclid,
     },
     custom_data: {
       URL,
@@ -334,7 +330,6 @@ export const trackPurchase = (order, customerData = {}) => {
       email,
       phone,
       fb_login_id,
-      fbclid,
     }, { eventID: eventId });
   }
 
@@ -349,7 +344,6 @@ export const trackPurchase = (order, customerData = {}) => {
       fbp,
       fbc,
       external_id,
-      fbclid,
     },
     custom_data: {
       currency: 'USD',
@@ -394,7 +388,6 @@ export const trackSearch = (query, customerData = {}) => {
       external_id,
       email,
       fb_login_id,
-      fbclid,
     }, { eventID: eventId });
   }
 
@@ -409,7 +402,6 @@ export const trackSearch = (query, customerData = {}) => {
       fbp,
       fbc,
       external_id,
-      fbclid,
     },
     custom_data: {
       search_string: query,
@@ -460,7 +452,6 @@ export const trackInitiateCheckout = (cart, customerData = {}) => {
           external_id,
           email,
           fb_login_id,
-          fbclid,
         },
         { eventID: eventId }
       );
@@ -480,7 +471,6 @@ export const trackInitiateCheckout = (cart, customerData = {}) => {
       fbp,
       fbc,
       external_id,
-      fbclid,
     },
     custom_data: {
       URL,
@@ -523,7 +513,6 @@ export const trackAddPaymentInfo = (order, customerData = {}) => {
       external_id,
       email,
       fb_login_id,
-      fbclid,
     }, { eventID: eventId });
   }
 
@@ -538,7 +527,6 @@ export const trackAddPaymentInfo = (order, customerData = {}) => {
       fbp,
       fbc,
       external_id,
-      fbclid,
     },
     custom_data: {
       currency: 'USD',
