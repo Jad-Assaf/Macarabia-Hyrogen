@@ -91,17 +91,17 @@ export const trackViewContent = (product, customerData = {}) => {
   const fbp = getCookie('_fbp');
   const fbc = getCookie('_fbc');
 
+  // Extract fbclid from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const fbclid = urlParams.get('fbclid') || '';
+
   // Destructure customerData passed in (from your loader or context)
   const {
-    email = '', 
+    email = '',
     phone = '',
     external_id = customerData.id || '', // Use customer.id as external_id if available
     fb_login_id = '', // Only available if using Facebook Login
   } = customerData;
-
-  // Optionally, you can also extract fbclid from URL:
-  const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
 
   // New fields as per required naming
   const URL = window.location.href;
@@ -146,6 +146,7 @@ export const trackViewContent = (product, customerData = {}) => {
       fbp,
       fbc,
       external_id,
+      fbclid,
     },
     custom_data: {
       URL,
@@ -181,6 +182,10 @@ export const trackAddToCart = (product) => {
   const fbc = getCookie('_fbc');
   const external_id = ''; // No customerData provided in this function
 
+  // Extract fbclid from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const fbclid = urlParams.get('fbclid') || '';
+
   // New fields as per required naming
   const URL = window.location.href;
   const content_name = product.title || '';
@@ -205,6 +210,7 @@ export const trackAddToCart = (product) => {
         fbp,
         fbc,
         external_id,
+        fbclid,
       },
       { eventID: eventId }
     );
@@ -222,6 +228,7 @@ export const trackAddToCart = (product) => {
       fbp,
       fbc,
       external_id,
+      fbclid,
     },
     custom_data: {
       URL,
@@ -254,6 +261,10 @@ export const trackPurchase = (order) => {
   const fbc = getCookie('_fbc');
   const external_id = ''; // No customerData provided in this function
 
+  // Extract fbclid from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const fbclid = urlParams.get('fbclid') || '';
+
   // Client-side Facebook Pixel with updated extra identifiers
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
@@ -270,6 +281,7 @@ export const trackPurchase = (order) => {
       fbp,
       fbc,
       external_id,
+      fbclid,
     }, {
       eventID: eventId
     });
@@ -287,6 +299,7 @@ export const trackPurchase = (order) => {
       fbp,
       fbc,
       external_id,
+      fbclid,
     },
     custom_data: {
       currency: 'USD',
@@ -320,6 +333,10 @@ export const trackSearch = (query) => {
   const fbc = getCookie('_fbc');
   const external_id = ''; // No customerData provided in this function
 
+  // Extract fbclid from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const fbclid = urlParams.get('fbclid') || '';
+
   // Client-side Facebook Pixel with updated extra identifiers
   if (typeof fbq === 'function') {
     fbq('track', 'Search', {
@@ -328,6 +345,7 @@ export const trackSearch = (query) => {
       fbp,
       fbc,
       external_id,
+      fbclid,
     }, {
       eventID: eventId
     });
@@ -345,6 +363,7 @@ export const trackSearch = (query) => {
       fbp,
       fbc,
       external_id,
+      fbclid,
     },
     custom_data: {
       search_string: query,
@@ -374,6 +393,10 @@ export const trackInitiateCheckout = (cart) => {
   const fbc = getCookie('_fbc');
   const external_id = ''; // No customerData provided in this function
 
+  // Extract fbclid from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const fbclid = urlParams.get('fbclid') || '';
+
   // Client-side Facebook Pixel with updated field names and extra identifiers
   if (typeof fbq === 'function') {
     try {
@@ -391,6 +414,7 @@ export const trackInitiateCheckout = (cart) => {
           fbp,
           fbc,
           external_id,
+          fbclid,
         },
         { eventID: eventId }
       );
@@ -411,6 +435,7 @@ export const trackInitiateCheckout = (cart) => {
       fbp,
       fbc,
       external_id,
+      fbclid,
     },
     custom_data: {
       URL,
@@ -441,6 +466,10 @@ export const trackAddPaymentInfo = (order) => {
   const fbc = getCookie('_fbc');
   const external_id = ''; // No customerData provided in this function
 
+  // Extract fbclid from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const fbclid = urlParams.get('fbclid') || '';
+
   // Client-side Facebook Pixel with updated extra identifiers
   if (typeof fbq === 'function') {
     fbq('track', 'AddPaymentInfo', {
@@ -449,6 +478,7 @@ export const trackAddPaymentInfo = (order) => {
       fbp,
       fbc,
       external_id,
+      fbclid,
     }, {
       eventID: eventId
     });
@@ -466,6 +496,7 @@ export const trackAddPaymentInfo = (order) => {
       fbp,
       fbc,
       external_id,
+      fbclid,
     },
     custom_data: {
       currency: 'USD',
