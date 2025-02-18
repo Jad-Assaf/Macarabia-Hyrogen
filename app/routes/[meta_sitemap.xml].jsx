@@ -1,8 +1,5 @@
 import {flattenConnection} from '@shopify/hydrogen';
 
-// Define your Shopify admin URL (adjust as necessary)
-const adminStoreUrl = 'https://admin.shopify.com/store/d40293-4';
-
 /**
  * A loader to create an RSS XML feed with each product variant as a separate <item>.
  * Adapt the fields inside `renderProductVariantItem` to fit your needs.
@@ -10,17 +7,14 @@ const adminStoreUrl = 'https://admin.shopify.com/store/d40293-4';
 export async function loader({request, context: {storefront}}) {
   const baseUrl = new URL(request.url).origin;
 
-  // 1. Fetch all products/variants via the Storefront API
-  let products = await fetchAllResources({
+  // 1. Fetch all products/variants (with compare_at_price and google_product_category metafield)
+  const products = await fetchAllResources({
     storefront,
     query: PRODUCTS_QUERY,
     field: 'products',
   });
 
-  // 2. For each product, fetch its google_product_category metafield using the admin endpoint
-  products = await attachGoogleProductCategory(products);
-
-  // 3. Generate the feed (similar structure to your Merchant Center feed)
+  // 2. Generate the feed (similar structure to your Merchant Center feed)
   const feedXml = generateMetaXmlFeed({products, baseUrl});
 
   return new Response(feedXml, {
@@ -64,35 +58,6 @@ async function fetchAllResources({storefront, query, field}) {
 }
 
 /**
- * For each product, fetch its google_product_category metafield from the admin endpoint.
- */
-async function attachGoogleProductCategory(products) {
-  return Promise.all(
-    products.map(async (product) => {
-      const productId = parseGid(product.id);
-      try {
-        // Call the admin endpoint using the product ID
-        const res = await fetch(
-          `${adminStoreUrl}/products/${productId}/metafields.json`,
-        );
-        const data = await res.json();
-        // Find the metafield with the key "google_product_category"
-        const googleMetafield = data?.metafields?.find(
-          (m) => m.key === 'google_product_category',
-        );
-        return {
-          ...product,
-          google_product_category: googleMetafield ? googleMetafield.value : '',
-        };
-      } catch (e) {
-        // On error, attach an empty string
-        return {...product, google_product_category: ''};
-      }
-    }),
-  );
-}
-
-/**
  * Generates an RSS 2.0 XML feed using <g:> tags (common for Google/Meta).
  * Creates one <item> for each variant.
  */
@@ -125,22 +90,24 @@ function renderProductVariantItem(product, variant, baseUrl) {
   const productId = parseGid(product.id); // Product ID for grouping
   const variantId = parseGid(variant.id); // Variant ID for unique identification
 
-  // Price information
+  // Price from variant
   const price = variant?.priceV2?.amount || '0.00';
   const currencyCode = variant?.priceV2?.currencyCode || 'USD';
+
+  // Compare-at price, if available
   const compareAtPrice = variant?.compareAtPriceV2?.amount;
   const compareAtCurrency =
     variant?.compareAtPriceV2?.currencyCode || currencyCode;
 
-  // Brand fallback
+  // Basic brand fallback
   const brand = product.vendor || 'MyBrand';
 
-  // Image selection: variant image or fallback to first product image
+  // Use the variant image if available; otherwise, fallback to the first product image
   const variantImage = variant?.image?.url || null;
   const fallbackImage = product?.images?.nodes?.[0]?.url || '';
   const imageUrl = xmlEncode(variantImage || fallbackImage);
 
-  // Additional images
+  // Additional images: exclude the main image (variant or fallback)
   const additionalImageTags =
     product?.images?.nodes
       ?.filter((img) => img.url !== imageUrl)
@@ -152,13 +119,15 @@ function renderProductVariantItem(product, variant, baseUrl) {
       )
       .join('') || '';
 
-  // Clean up description
+  // Clean up description: remove images and convert tables to text
   const cleanDescription = xmlEncode(
     stripTableTags(stripImgTags(product.description || '')),
   );
 
-  // Handle selected options
+  // Expected option names to output as-is
   const expectedAttributes = ['color', 'size', 'material', 'pattern'];
+
+  // Output tags for expected attributes (case-insensitive match)
   let expectedOptionsXml = '';
   expectedAttributes.forEach((attr) => {
     const option = variant.selectedOptions?.find(
@@ -169,6 +138,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
     }
   });
 
+  // Additional selected options
   const additionalOptions = variant.selectedOptions?.filter(
     (o) => !expectedAttributes.includes(o.name.toLowerCase()),
   );
@@ -183,6 +153,8 @@ function renderProductVariantItem(product, variant, baseUrl) {
   }
   const optionsXml = expectedOptionsXml + additionalOptionsXml;
 
+  // Render the XML item. Note the new <g:compare_at_price> tag and
+  // the google_product_category taken from the product metafield.
   return `
     <item>
       <g:id>${xmlEncode(variantId)}</g:id>
@@ -209,7 +181,7 @@ function renderProductVariantItem(product, variant, baseUrl) {
       }
       ${optionsXml}
       <g:google_product_category>${xmlEncode(
-        product.google_product_category || '',
+        product.metafield?.value || '',
       )}</g:google_product_category>
       <g:shipping>
         <g:country>LB</g:country>
@@ -256,7 +228,7 @@ function stripTableTags(html) {
 }
 
 /**
- * Updated GraphQL query to include compareAtPriceV2 for each variant.
+ * Updated GraphQL query to include compareAtPriceV2 and the product metafield for google_product_category.
  */
 const PRODUCTS_QUERY = `#graphql
   query Products($first: Int!, $after: String) {
@@ -277,6 +249,9 @@ const PRODUCTS_QUERY = `#graphql
             url
             altText
           }
+        }
+        metafield(namespace: "global", key: "google_product_category") {
+          value
         }
         variants(first: 30) {
           nodes {
