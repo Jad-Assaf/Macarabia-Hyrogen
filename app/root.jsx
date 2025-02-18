@@ -21,7 +21,7 @@ import {PageLayout} from '~/components/PageLayout';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import React, {Suspense, useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
-import MetaPixel from './components/MetaPixel';
+const MetaPixel = React.lazy(() => import('./components/MetaPixel'));
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -207,7 +207,9 @@ export function Layout({children}) {
             `,
           }}
         ></script>
-        <MetaPixel pixelId={PIXEL_ID} />
+        <Suspense fallback={null}>
+          <MetaPixel pixelId={PIXEL_ID} />
+        </Suspense>
       </head>
       <body>
         <ClarityTracker clarityId={clarityId} />
