@@ -55,16 +55,8 @@ const trackPageViewCAPI = async (eventId, extraData) => {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(payload),
   })
-    .then((res) => {
-      console.log('Response status from /facebookConversions:', res.status);
-      return res.json();
-    })
-    .then((data) => {
-      console.log('JSON returned from /facebookConversions:', data);
-    })
-    .catch((error) => {
-      console.error('Error calling /facebookConversions:', error);
-    });
+    .then((res) => res.json())
+    .catch((error) => {});
 };
 
 const MetaPixel = ({pixelId}) => {

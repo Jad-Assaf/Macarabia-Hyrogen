@@ -32,12 +32,10 @@ export const fetchCustomerData = async (customerAccessToken) => {
     });
     const result = await response.json();
     if (result.errors) {
-      console.error("Error fetching customer data:", result.errors);
       return null;
     }
     return result.data.customer;
   } catch (error) {
-    console.error("Error fetching customer data:", error);
     return null;
   }
 };
@@ -89,26 +87,16 @@ const generateEventId = () => {
 
 /**
  * Sends event data to our /facebookConversions endpoint (server-side).
- * It injects the client IP (removed) and no longer includes fbclid.
  * @param {Object} eventData - The event data payload.
  */
 const sendToServerCapi = async (eventData) => {
-  // Removed getRealIp() injection
   fetch('/facebookConversions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(eventData),
   })
-    .then((res) => {
-      console.log('Response status from /facebookConversions:', res.status);
-      return res.json();
-    })
-    .then((data) => {
-      console.log('JSON returned from /facebookConversions:', data);
-    })
-    .catch((error) => {
-      console.error('Error calling /facebookConversions:', error);
-    });
+    .then((res) => res.json())
+    .catch((error) => {});
 };
 
 /**
@@ -125,7 +113,6 @@ export const trackViewContent = (product, customerData = {}) => {
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
-  // Retrieve fbp and fbc from cookies
   const getCookie = (name) => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -134,8 +121,6 @@ export const trackViewContent = (product, customerData = {}) => {
   const fbp = getCookie('_fbp');
   const fbc = getCookie('_fbc');
 
-  // Remove fbclid extraction entirely
-  // Destructure additional customer info
   const { email = '', phone = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
 
@@ -151,7 +136,7 @@ export const trackViewContent = (product, customerData = {}) => {
         URL,
         "Event id": eventId,
         value: parseFloat(price),
-        currency,
+        currency: currency,
         content_ids: [variantId],
         content_type: 'product_variant',
         content_name,
@@ -182,7 +167,7 @@ export const trackViewContent = (product, customerData = {}) => {
       URL,
       "Event id": eventId,
       value: parseFloat(price),
-      currency,
+      currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
       content_name,
@@ -211,7 +196,6 @@ export const trackAddToCart = (product, customerData = {}) => {
   const fbc = getCookie('_fbc');
   const { email = '', phone = '', fb_login_id = '' } = customerData;
   const external_id = getExternalId(customerData);
-  // Remove fbclid extraction
 
   const URL = window.location.href;
   const content_name = product.title || '';
@@ -226,7 +210,7 @@ export const trackAddToCart = (product, customerData = {}) => {
         URL,
         "Event id": eventId,
         value: parseFloat(price),
-        currency,
+        currency: currency,
         content_ids: [variantId],
         content_type: 'product_variant',
         content_name,
@@ -258,7 +242,7 @@ export const trackAddToCart = (product, customerData = {}) => {
       URL,
       "Event id": eventId,
       value: parseFloat(price),
-      currency,
+      currency: currency,
       content_ids: [variantId],
       content_type: 'product_variant',
       content_name,
@@ -424,9 +408,7 @@ export const trackInitiateCheckout = (cart, customerData = {}) => {
         },
         { eventID: eventId }
       );
-    } catch (error) {
-      console.error('Error tracking InitiateCheckout:', error);
-    }
+    } catch (error) {}
   }
 
   sendToServerCapi({
