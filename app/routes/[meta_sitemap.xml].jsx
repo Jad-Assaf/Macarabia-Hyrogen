@@ -8,13 +8,16 @@ export async function loader({request, context: {storefront}}) {
   const baseUrl = new URL(request.url).origin;
 
   // 1. Fetch all products/variants
-  const products = await fetchAllResources({
+  let products = await fetchAllResources({
     storefront,
     query: PRODUCTS_QUERY,
     field: 'products',
   });
 
-  // 2. Generate the feed (similar structure to your Merchant Center feed)
+  // 2. For each product, fetch its google_product_category from /metafields.json
+  products = await attachGoogleProductCategory(products, baseUrl);
+
+  // 3. Generate the feed (similar structure to your Merchant Center feed)
   const feedXml = generateMetaXmlFeed({products, baseUrl});
 
   return new Response(feedXml, {
@@ -58,6 +61,33 @@ async function fetchAllResources({storefront, query, field}) {
 }
 
 /**
+ * Fetches the google_product_category metafield for each product via /metafields.json
+ * and attaches it to the product object.
+ */
+async function attachGoogleProductCategory(products, baseUrl) {
+  return Promise.all(
+    products.map(async (product) => {
+      const productId = parseGid(product.id);
+      try {
+        const res = await fetch(
+          `${baseUrl}/metafields.json?product_id=${productId}`,
+        );
+        const data = await res.json();
+        const googleMetafield = data?.metafields?.find(
+          (m) => m.key === 'google_product_category',
+        );
+        return {
+          ...product,
+          google_product_category: googleMetafield ? googleMetafield.value : '',
+        };
+      } catch (e) {
+        return {...product, google_product_category: ''};
+      }
+    }),
+  );
+}
+
+/**
  * Generates an RSS 2.0 XML feed using <g:> tags (common for Google/Meta).
  * Creates one <item> for each variant.
  */
@@ -93,6 +123,11 @@ function renderProductVariantItem(product, variant, baseUrl) {
   // Example: price from variant
   const price = variant?.priceV2?.amount || '0.00';
   const currencyCode = variant?.priceV2?.currencyCode || 'USD';
+
+  // New: compare_at_price from variant, if available
+  const compareAtPrice = variant?.compareAtPriceV2?.amount;
+  const compareAtCurrency =
+    variant?.compareAtPriceV2?.currencyCode || currencyCode;
 
   // Basic brand fallback
   const brand = product.vendor || 'MyBrand';
@@ -170,7 +205,17 @@ function renderProductVariantItem(product, variant, baseUrl) {
         variant?.availableForSale ? 'in stock' : 'out of stock'
       }</g:availability>
       <g:price>${price} ${currencyCode}</g:price>
+      ${
+        compareAtPrice
+          ? `<g:compare_at_price>${xmlEncode(compareAtPrice)} ${xmlEncode(
+              compareAtCurrency,
+            )}</g:compare_at_price>`
+          : ''
+      }
       ${optionsXml}
+      <g:google_product_category>${xmlEncode(
+        product.google_product_category || '',
+      )}</g:google_product_category>
       <g:shipping>
         <g:country>LB</g:country>
         <g:service>Standard</g:service>
@@ -216,7 +261,7 @@ function stripTableTags(html) {
 }
 
 /**
- * Updated GraphQL query to include image and selectedOptions for each variant.
+ * Updated GraphQL query to include image, selectedOptions, and compareAtPriceV2 for each variant.
  */
 const PRODUCTS_QUERY = `#graphql
   query Products($first: Int!, $after: String) {
@@ -244,6 +289,10 @@ const PRODUCTS_QUERY = `#graphql
             title
             availableForSale
             priceV2 {
+              amount
+              currencyCode
+            }
+            compareAtPriceV2 {
               amount
               currencyCode
             }
