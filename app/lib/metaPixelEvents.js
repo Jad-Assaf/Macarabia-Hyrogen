@@ -19,7 +19,7 @@ const CUSTOMER_QUERY = `
  */
 export const fetchCustomerData = async (customerAccessToken) => {
   try {
-    const response = await fetch(`https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2023-04/graphql.json`, {
+    const response = await fetch(`https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2024-10/graphql.json`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

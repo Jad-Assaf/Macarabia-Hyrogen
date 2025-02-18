@@ -1,5 +1,6 @@
 // src/root.jsx
 import {useNonce, getShopAnalytics, Analytics} from '@shopify/hydrogen';
+import {json} from '@remix-run/node';
 import {defer} from '@shopify/remix-oxygen';
 import {
   Links,
@@ -12,6 +13,7 @@ import {
   isRouteErrorResponse,
   useNavigation,
   LiveReload,
+  useLoaderData,
 } from '@remix-run/react';
 import favicon from '~/assets/macarabia-favicon-black_32x32.jpg';
 import resetStyles from '~/styles/reset.css?url';
@@ -22,6 +24,10 @@ import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import React, {Suspense, useEffect, useState} from 'react';
 import ClarityTracker from './components/ClarityTracker';
 import MetaPixel from './components/MetaPixel';
+import {fetchCustomerData} from './lib/metaPixelEvents';
+
+// Replace with your actual Pixel ID
+const PIXEL_ID = '321309553208857';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -38,8 +44,6 @@ export const shouldRevalidate = ({
   return defaultShouldRevalidate;
 };
 
-const PIXEL_ID = '321309553208857'; // Replace with your actual Pixel ID
-
 export function links() {
   return [
     {rel: 'stylesheet', href: appStyles},
@@ -52,13 +56,22 @@ export function links() {
 }
 
 /**
- * @param {LoaderFunctionArgs} args
+ * Loader function: retrieves deferred and critical data,
+ * fetches customer data if a valid customerAccessToken is found,
+ * and returns the customer data along with other payload.
  */
-export async function loader(args) {
+export async function loader({request, context}) {
   try {
-    const deferredData = await loadDeferredData(args);
-    const criticalData = await loadCriticalData(args);
-    const {storefront, env} = args.context;
+    // Pass {request, context} to your data loaders if needed
+    const deferredData = await loadDeferredData({request, context});
+    const criticalData = await loadCriticalData({request, context});
+    const {storefront, env} = context;
+    const customerAccessToken = await getCustomerAccessToken(request);
+
+    let customer = null;
+    if (customerAccessToken) {
+      customer = await fetchCustomerData(customerAccessToken);
+    }
 
     return defer({
       ...deferredData,
@@ -72,9 +85,10 @@ export async function loader(args) {
         checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
         storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
         withPrivacyBanner: true,
-        country: args.context.storefront.i18n.country,
-        language: args.context.storefront.i18n.language,
+        country: storefront.i18n.country,
+        language: storefront.i18n.language,
       },
+      customer,
     });
   } catch (error) {
     console.error('Loader error:', error);
@@ -146,6 +160,15 @@ export function Layout({children}) {
   const navigation = useNavigation();
   const [nprogress, setNProgress] = useState(null); // Store NProgress instance
   const clarityId = 'pfyepst8v5'; // Replace with your Clarity project ID
+  const {customer} = useLoaderData();
+
+  useEffect(() => {
+    if (customer) {
+      window.__customerData = customer;
+    } else {
+      window.__customerData = null;
+    }
+  }, [customer]);
 
   useEffect(() => {
     // Load NProgress once and set it in the state
@@ -194,7 +217,6 @@ export function Layout({children}) {
           nonce={nonce}
           src="https://www.googletagmanager.com/gtag/js?id=G-3PZN80E9FJ"
         ></script>
-
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
@@ -202,7 +224,6 @@ export function Layout({children}) {
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-
               gtag('config', 'G-3PZN80E9FJ');
             `,
           }}
@@ -324,7 +345,6 @@ export function ErrorBoundary() {
 }
 
 /** @typedef {LoaderReturnData} RootLoader */
-
 /** @typedef {import('@shopify/remix-oxygen').LoaderFunctionArgs} LoaderFunctionArgs */
 /** @typedef {import('@remix-run/react').ShouldRevalidateFunction} ShouldRevalidateFunction */
 /** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */
