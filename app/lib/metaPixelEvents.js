@@ -77,7 +77,8 @@ export const trackViewContent = (product, customerData = {}) => {
   window.__viewContentTracked = true;
 
   const variantId = parseGid(product.selectedVariant?.id);
-  const price = product.price?.amount || 0;
+  // Update price extraction: prefer selectedVariant.price, fallback to product.price
+  const price = product.selectedVariant?.price?.amount || product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
@@ -165,7 +166,8 @@ export const trackViewContent = (product, customerData = {}) => {
  */
 export const trackAddToCart = (product) => {
   const variantId = parseGid(product.selectedVariant?.id);
-  const price = product.price?.amount || 0;
+  // Update price extraction: prefer selectedVariant.price, fallback to product.price
+  const price = product.selectedVariant?.price?.amount || product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
