@@ -219,6 +219,8 @@ export async function loader(args) {
     topProductsByHandle[handle] = fetchedTopProducts[index];
   });
 
+  delete topProductsByHandle['new-arrivals'];
+
   const newData = {
     banners,
     title: criticalData.title,
@@ -231,11 +233,19 @@ export async function loader(args) {
   // Cache the new data
   cache.set(cacheKey, {value: newData, expiry: now + cacheTTL});
 
-  return defer(newData, {
-    headers: {
-      'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
+  const newArrivals = await fetchCollectionByHandle(
+    args.context,
+    'new-arrivals',
+  );
+
+  return defer(
+    {...newData, newArrivals},
+    {
+      headers: {
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
+      },
     },
-  });
+  );
 }
 
 async function loadCriticalData({context}) {
@@ -424,7 +434,7 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, topProducts} =
+  const {banners, sliderCollections, topProducts, newArrivals} =
     useLoaderData();
 
 
@@ -432,9 +442,7 @@ export default function Homepage() {
     <div className="home">
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
-      {topProducts['new-arrivals'] && (
-        <TopProductSections collection={topProducts['new-arrivals']} />
-      )}
+      {newArrivals && <TopProductSections collection={newArrivals} />}
 
       <CollectionCircles collections={appleMenu} />
       {topProducts['apple-accessories'] && (
