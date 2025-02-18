@@ -1,61 +1,3 @@
-// --- Added Helpers for Customer Data ---
-
-const CUSTOMER_QUERY = `
-  query getCustomer($customerAccessToken: String!) {
-    customer(customerAccessToken: $customerAccessToken) {
-      id
-      email
-      firstName
-      lastName
-      phone
-    }
-  }
-`;
-
-/**
- * Fetch customer data from Shopify using the Storefront API.
- * @param {string} customerAccessToken - The access token for the logged-in customer.
- * @returns {Promise<Object|null>} - The customer data or null if not found.
- */
-export const fetchCustomerData = async (customerAccessToken) => {
-  try {
-    const response = await fetch(`https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2024-10/graphql.json`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Storefront-Access-Token': process.env.PUBLIC_STOREFRONT_API_TOKEN,
-      },
-      body: JSON.stringify({
-        query: CUSTOMER_QUERY,
-        variables: { customerAccessToken },
-      }),
-    });
-    const result = await response.json();
-    if (result.errors) {
-      console.error("Error fetching customer data:", result.errors);
-      return null;
-    }
-    return result.data.customer;
-  } catch (error) {
-    console.error("Error fetching customer data:", error);
-    return null;
-  }
-};
-
-/**
- * Helper function to get the external_id.
- * It checks the provided customerData first, then a global variable.
- * @param {Object} customerData
- * @returns {string} The external id.
- */
-const getExternalId = (customerData = {}) => {
-  if (customerData && customerData.id) return customerData.id;
-  if (window.__customerData && window.__customerData.id) return window.__customerData.id;
-  return '';
-};
-
-// --- Existing Tracking Code ---
-
 /**
  * Utility function to extract the numeric ID from Shopify's global ID (gid).
  * Example: "gid://shopify/Product/123456789" => "123456789"
@@ -128,7 +70,6 @@ const sendToServerCapi = async (eventData) => {
  * Tracks a ViewContent event when a product is viewed.
  * A guard prevents firing the same event multiple times on the same page load.
  * @param {Object} product - The product details.
- * @param {Object} customerData - (Optional) Customer data with fields such as id, email, etc.
  */
 export const trackViewContent = (product, customerData = {}) => {
   // Guard: Prevent multiple ViewContent events per page load.
@@ -136,8 +77,7 @@ export const trackViewContent = (product, customerData = {}) => {
   window.__viewContentTracked = true;
 
   const variantId = parseGid(product.selectedVariant?.id);
-  // Update price extraction: prefer selectedVariant.price, fallback to product.price
-  const price = product.selectedVariant?.price?.amount || product.price?.amount || 0;
+  const price = product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
 
@@ -150,20 +90,24 @@ export const trackViewContent = (product, customerData = {}) => {
   const fbp = getCookie('_fbp');
   const fbc = getCookie('_fbc');
 
-  // Extract fbclid from URL
+  // Destructure customerData passed in (from your loader or context)
+  const {
+    email = '', 
+    phone = '',
+    external_id = customerData.id || '', // Use customer.id as external_id if available
+    fb_login_id = '', // Only available if using Facebook Login
+  } = customerData;
+
+  // Optionally, you can also extract fbclid from URL:
   const urlParams = new URLSearchParams(window.location.search);
   const fbclid = urlParams.get('fbclid') || '';
-
-  // Destructure additional customer info from customerData
-  const { email = '', phone = '', fb_login_id = '' } = customerData;
-  const external_id = getExternalId(customerData);
 
   // New fields as per required naming
   const URL = window.location.href;
   const content_name = product.title || '';
   const content_category = product.productType || '';
 
-  // Client-side Facebook Pixel with updated field names and extra identifiers
+  // Client-side Facebook Pixel with updated field names
   if (typeof fbq === 'function') {
     fbq(
       'track',
@@ -177,11 +121,12 @@ export const trackViewContent = (product, customerData = {}) => {
         content_type: 'product_variant',
         content_name,
         content_category,
-        fbp,
+        // Additional customer info (unchanged)
         fbc,
-        external_id,
+        fbp,
         email,
         phone,
+        external_id,
         fb_login_id,
         fbclid,
       },
@@ -189,7 +134,7 @@ export const trackViewContent = (product, customerData = {}) => {
     );
   }
 
-  // Server-side Conversions API with updated field names and extra identifiers
+  // Server-side Conversions API with updated field names
   sendToServerCapi({
     action_source: 'website',
     event_name: 'ViewContent',
@@ -198,10 +143,6 @@ export const trackViewContent = (product, customerData = {}) => {
     user_data: {
       client_ip_address: '', // Will be replaced with the real IP by sendToServerCapi
       client_user_agent: navigator.userAgent,
-      fbp,
-      fbc,
-      external_id,
-      fbclid,
     },
     custom_data: {
       URL,
@@ -222,24 +163,9 @@ export const trackViewContent = (product, customerData = {}) => {
  */
 export const trackAddToCart = (product) => {
   const variantId = parseGid(product.selectedVariant?.id);
-  // Update price extraction: prefer selectedVariant.price, fallback to product.price
-  const price = product.selectedVariant?.price?.amount || product.price?.amount || 0;
+  const price = product.price?.amount || 0;
   const currency = product.price?.currencyCode || 'USD';
   const eventId = generateEventId();
-
-  // Retrieve fbp and fbc from cookies for extra identifiers
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    return parts.length === 2 ? parts.pop().split(';').shift() : '';
-  };
-  const fbp = getCookie('_fbp');
-  const fbc = getCookie('_fbc');
-  const external_id = getExternalId(); // Use global customer data if available
-
-  // Extract fbclid from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
 
   // New fields as per required naming
   const URL = window.location.href;
@@ -247,7 +173,7 @@ export const trackAddToCart = (product) => {
   const content_category = product.productType || '';
   const num_items = product.quantity || 1; // default to 1 if quantity is not provided
 
-  // Client-side Facebook Pixel with updated field names and extra identifiers
+  // Client-side Facebook Pixel with updated field names
   if (typeof fbq === 'function') {
     fbq(
       'track',
@@ -262,16 +188,12 @@ export const trackAddToCart = (product) => {
         content_name,
         content_category,
         num_items,
-        fbp,
-        fbc,
-        external_id,
-        fbclid,
       },
       { eventID: eventId }
     );
   }
 
-  // Server-side Conversions API with updated field names and extra identifiers
+  // Server-side Conversions API with updated field names
   sendToServerCapi({
     action_source: 'website',
     event_name: 'AddToCart',
@@ -280,10 +202,6 @@ export const trackAddToCart = (product) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
-      fbp,
-      fbc,
-      external_id,
-      fbclid,
     },
     custom_data: {
       URL,
@@ -306,21 +224,7 @@ export const trackAddToCart = (product) => {
 export const trackPurchase = (order) => {
   const eventId = generateEventId();
 
-  // Retrieve fbp and fbc from cookies for extra identifiers
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    return parts.length === 2 ? parts.pop().split(';').shift() : '';
-  };
-  const fbp = getCookie('_fbp');
-  const fbc = getCookie('_fbc');
-  const external_id = getExternalId(); // Use global customer data if available
-
-  // Extract fbclid from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
-
-  // Client-side Facebook Pixel with updated extra identifiers
+  // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'Purchase', {
       content_ids: order.items.map((item) => parseGid(item.variantId)),
@@ -332,17 +236,13 @@ export const trackPurchase = (order) => {
         id: parseGid(item.variantId),
         quantity: item.quantity,
         item_price: item.price,
-      })),
-      fbp,
-      fbc,
-      external_id,
-      fbclid,
+      }))
     }, {
       eventID: eventId
     });
   }
 
-  // Server-side Conversions API with updated extra identifiers
+  // Server-side Conversions API
   sendToServerCapi({
     action_source: 'website',
     event_name: 'Purchase',
@@ -351,10 +251,6 @@ export const trackPurchase = (order) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
-      fbp,
-      fbc,
-      external_id,
-      fbclid,
     },
     custom_data: {
       currency: 'USD',
@@ -378,35 +274,17 @@ export const trackPurchase = (order) => {
 export const trackSearch = (query) => {
   const eventId = generateEventId();
 
-  // Retrieve fbp and fbc from cookies for extra identifiers
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    return parts.length === 2 ? parts.pop().split(';').shift() : '';
-  };
-  const fbp = getCookie('_fbp');
-  const fbc = getCookie('_fbc');
-  const external_id = getExternalId(); // Use global customer data if available
-
-  // Extract fbclid from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
-
-  // Client-side Facebook Pixel with updated extra identifiers
+  // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'Search', {
       search_string: query,
-      content_category: 'Search',
-      fbp,
-      fbc,
-      external_id,
-      fbclid,
+      content_category: 'Search'
     }, {
       eventID: eventId
     });
   }
 
-  // Server-side Conversions API with updated extra identifiers
+  // Server-side Conversions API
   sendToServerCapi({
     action_source: 'website',
     event_name: 'Search',
@@ -415,10 +293,6 @@ export const trackSearch = (query) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
-      fbp,
-      fbc,
-      external_id,
-      fbclid,
     },
     custom_data: {
       search_string: query,
@@ -438,21 +312,7 @@ export const trackInitiateCheckout = (cart) => {
   const num_items = cart.items?.length || 0;
   const URL = window.location.href;
 
-  // Retrieve fbp and fbc from cookies for extra identifiers
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    return parts.length === 2 ? parts.pop().split(';').shift() : '';
-  };
-  const fbp = getCookie('_fbp');
-  const fbc = getCookie('_fbc');
-  const external_id = getExternalId(); // Use global customer data if available
-
-  // Extract fbclid from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
-
-  // Client-side Facebook Pixel with updated field names and extra identifiers
+  // Client-side Facebook Pixel with updated field names
   if (typeof fbq === 'function') {
     try {
       fbq(
@@ -466,10 +326,6 @@ export const trackInitiateCheckout = (cart) => {
           content_ids: variantIds,
           content_type: 'product_variant',
           num_items,
-          fbp,
-          fbc,
-          external_id,
-          fbclid,
         },
         { eventID: eventId }
       );
@@ -478,7 +334,7 @@ export const trackInitiateCheckout = (cart) => {
     }
   }
 
-  // Server-side Conversions API with updated field names and extra identifiers
+  // Server-side Conversions API with updated field names
   sendToServerCapi({
     action_source: 'website',
     event_name: 'InitiateCheckout',
@@ -487,10 +343,6 @@ export const trackInitiateCheckout = (cart) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
-      fbp,
-      fbc,
-      external_id,
-      fbclid,
     },
     custom_data: {
       URL,
@@ -511,35 +363,17 @@ export const trackInitiateCheckout = (cart) => {
 export const trackAddPaymentInfo = (order) => {
   const eventId = generateEventId();
 
-  // Retrieve fbp and fbc from cookies for extra identifiers
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    return parts.length === 2 ? parts.pop().split(';').shift() : '';
-  };
-  const fbp = getCookie('_fbp');
-  const fbc = getCookie('_fbc');
-  const external_id = getExternalId(); // Use global customer data if available
-
-  // Extract fbclid from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const fbclid = urlParams.get('fbclid') || '';
-
-  // Client-side Facebook Pixel with updated extra identifiers
+  // Client-side Facebook Pixel
   if (typeof fbq === 'function') {
     fbq('track', 'AddPaymentInfo', {
       currency: 'USD',
-      value: order.total,
-      fbp,
-      fbc,
-      external_id,
-      fbclid,
+      value: order.total
     }, {
       eventID: eventId
     });
   }
 
-  // Server-side Conversions API with updated extra identifiers
+  // Server-side Conversions API
   sendToServerCapi({
     action_source: 'website',
     event_name: 'AddPaymentInfo',
@@ -548,10 +382,6 @@ export const trackAddPaymentInfo = (order) => {
     user_data: {
       client_ip_address: '',
       client_user_agent: navigator.userAgent,
-      fbp,
-      fbc,
-      external_id,
-      fbclid,
     },
     custom_data: {
       currency: 'USD',

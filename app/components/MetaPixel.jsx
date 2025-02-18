@@ -23,28 +23,8 @@ const getRealIp = async () => {
   }
 };
 
-// --- Helper: Get cookie value
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  return parts.length === 2 ? parts.pop().split(';').shift() : '';
-};
-
-// --- Helper: Get external id from global customer data or generate an anonymous one
-const getExternalId = () => {
-  if (window.__customerData && window.__customerData.id) {
-    return window.__customerData.id;
-  }
-  let anonId = localStorage.getItem('anonExternalId');
-  if (!anonId) {
-    anonId = generateEventId();
-    localStorage.setItem('anonExternalId', anonId);
-  }
-  return anonId;
-};
-
 // --- Function to send PageView event via Conversions API
-const trackPageViewCAPI = async (eventId, extraData) => {
+const trackPageViewCAPI = async (eventId) => {
   const ip = await getRealIp();
   const payload = {
     action_source: 'website',
@@ -54,15 +34,8 @@ const trackPageViewCAPI = async (eventId, extraData) => {
     user_data: {
       client_ip_address: ip,
       client_user_agent: navigator.userAgent,
-      fbp: extraData.fbp,
-      fbc: extraData.fbc,
-      external_id: extraData.external_id,
-      fbclid: extraData.fbclid,
     },
-    custom_data: {
-      URL: extraData.URL,
-      'Event id': eventId,
-    },
+    custom_data: {}, // No additional data needed for PageView
   };
 
   fetch('/facebookConversions', {
@@ -116,60 +89,22 @@ const MetaPixel = ({pixelId}) => {
     // Initialize the Pixel
     fbq('init', pixelId);
 
-    // Get extra fields
-    const fbp = getCookie('_fbp');
-    const fbc = getCookie('_fbc');
-    const urlParams = new URLSearchParams(window.location.search);
-    const fbclid = urlParams.get('fbclid') || '';
-    const external_id = getExternalId();
-    const URL = window.location.href;
-
     // Generate one event ID for the initial PageView
     const eventId = generateEventId();
 
-    // Track PageView via Pixel with additional fields
-    fbq(
-      'track',
-      'PageView',
-      {
-        URL,
-        'Event id': eventId,
-        fbp,
-        fbc,
-        external_id,
-        fbclid,
-      },
-      {eventID: eventId},
-    );
+    // Track PageView via Pixel (passing eventID as the 4th parameter)
+    fbq('track', 'PageView', {}, {eventID: eventId});
 
-    // Also track PageView via Conversions API using the same event_id and extra fields
-    trackPageViewCAPI(eventId, {fbp, fbc, external_id, fbclid, URL});
+    // Also track PageView via Conversions API using the same event_id
+    trackPageViewCAPI(eventId);
   }, [pixelId]);
 
   // On route changes, track PageView events again (both Pixel & CAPI)
   useEffect(() => {
     if (typeof fbq === 'function') {
-      const fbp = getCookie('_fbp');
-      const fbc = getCookie('_fbc');
-      const urlParams = new URLSearchParams(window.location.search);
-      const fbclid = urlParams.get('fbclid') || '';
-      const external_id = getExternalId();
-      const URL = window.location.href;
       const eventId = generateEventId();
-      fbq(
-        'track',
-        'PageView',
-        {
-          URL,
-          'Event id': eventId,
-          fbp,
-          fbc,
-          external_id,
-          fbclid,
-        },
-        {eventID: eventId},
-      );
-      trackPageViewCAPI(eventId, {fbp, fbc, external_id, fbclid, URL});
+      fbq('track', 'PageView', {}, {eventID: eventId});
+      trackPageViewCAPI(eventId);
     }
   }, [location]);
 
