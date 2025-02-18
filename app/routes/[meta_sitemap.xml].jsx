@@ -1,5 +1,8 @@
 import {flattenConnection} from '@shopify/hydrogen';
 
+// Define your Shopify admin URL (adjust as necessary)
+const adminStoreUrl = 'https://admin.shopify.com/store/d40293-4';
+
 /**
  * A loader to create an RSS XML feed with each product variant as a separate <item>.
  * Adapt the fields inside `renderProductVariantItem` to fit your needs.
@@ -7,15 +10,15 @@ import {flattenConnection} from '@shopify/hydrogen';
 export async function loader({request, context: {storefront}}) {
   const baseUrl = new URL(request.url).origin;
 
-  // 1. Fetch all products/variants
+  // 1. Fetch all products/variants via the Storefront API
   let products = await fetchAllResources({
     storefront,
     query: PRODUCTS_QUERY,
     field: 'products',
   });
 
-  // 2. For each product, fetch its google_product_category from /metafields.json
-  products = await attachGoogleProductCategory(products, baseUrl);
+  // 2. For each product, fetch its google_product_category metafield using the admin endpoint
+  products = await attachGoogleProductCategory(products);
 
   // 3. Generate the feed (similar structure to your Merchant Center feed)
   const feedXml = generateMetaXmlFeed({products, baseUrl});
@@ -61,18 +64,19 @@ async function fetchAllResources({storefront, query, field}) {
 }
 
 /**
- * Fetches the google_product_category metafield for each product via /metafields.json
- * and attaches it to the product object.
+ * For each product, fetch its google_product_category metafield from the admin endpoint.
  */
-async function attachGoogleProductCategory(products, baseUrl) {
+async function attachGoogleProductCategory(products) {
   return Promise.all(
     products.map(async (product) => {
       const productId = parseGid(product.id);
       try {
+        // Call the admin endpoint using the product ID
         const res = await fetch(
-          `${baseUrl}/metafields.json?product_id=${productId}`,
+          `${adminStoreUrl}/products/${productId}/metafields.json`,
         );
         const data = await res.json();
+        // Find the metafield with the key "google_product_category"
         const googleMetafield = data?.metafields?.find(
           (m) => m.key === 'google_product_category',
         );
@@ -81,6 +85,7 @@ async function attachGoogleProductCategory(products, baseUrl) {
           google_product_category: googleMetafield ? googleMetafield.value : '',
         };
       } catch (e) {
+        // On error, attach an empty string
         return {...product, google_product_category: ''};
       }
     }),
@@ -120,24 +125,22 @@ function renderProductVariantItem(product, variant, baseUrl) {
   const productId = parseGid(product.id); // Product ID for grouping
   const variantId = parseGid(variant.id); // Variant ID for unique identification
 
-  // Example: price from variant
+  // Price information
   const price = variant?.priceV2?.amount || '0.00';
   const currencyCode = variant?.priceV2?.currencyCode || 'USD';
-
-  // New: compare_at_price from variant, if available
   const compareAtPrice = variant?.compareAtPriceV2?.amount;
   const compareAtCurrency =
     variant?.compareAtPriceV2?.currencyCode || currencyCode;
 
-  // Basic brand fallback
+  // Brand fallback
   const brand = product.vendor || 'MyBrand';
 
-  // Use the variant image if available; otherwise, fallback to the first product image
+  // Image selection: variant image or fallback to first product image
   const variantImage = variant?.image?.url || null;
   const fallbackImage = product?.images?.nodes?.[0]?.url || '';
   const imageUrl = xmlEncode(variantImage || fallbackImage);
 
-  // Additional images: exclude the main image (variant or fallback)
+  // Additional images
   const additionalImageTags =
     product?.images?.nodes
       ?.filter((img) => img.url !== imageUrl)
@@ -149,34 +152,28 @@ function renderProductVariantItem(product, variant, baseUrl) {
       )
       .join('') || '';
 
-  // Clean up description: remove images and convert tables to text
+  // Clean up description
   const cleanDescription = xmlEncode(
     stripTableTags(stripImgTags(product.description || '')),
   );
 
-  // Define the option names that should be output as-is
+  // Handle selected options
   const expectedAttributes = ['color', 'size', 'material', 'pattern'];
-
-  // Output tags for expected attributes if they exist on the variant.
-  // We do a case-insensitive comparison.
   let expectedOptionsXml = '';
   expectedAttributes.forEach((attr) => {
     const option = variant.selectedOptions?.find(
       (o) => o.name.toLowerCase() === attr,
     );
     if (option) {
-      // Output using the lower-case tag as defined in expectedAttributes
       expectedOptionsXml += `<g:${attr}>${xmlEncode(option.value)}</g:${attr}>`;
     }
   });
 
-  // For any other selected options, combine them into a single additional attribute.
   const additionalOptions = variant.selectedOptions?.filter(
     (o) => !expectedAttributes.includes(o.name.toLowerCase()),
   );
   let additionalOptionsXml = '';
   if (additionalOptions && additionalOptions.length) {
-    // Format each additional attribute as "Name: Value"
     const additionalString = additionalOptions
       .map((opt) => `${opt.name}: ${opt.value}`)
       .join('; ');
@@ -184,8 +181,6 @@ function renderProductVariantItem(product, variant, baseUrl) {
       additionalString,
     )}</g:additional_variant_attribute>`;
   }
-
-  // Combine all option tags.
   const optionsXml = expectedOptionsXml + additionalOptionsXml;
 
   return `
@@ -254,14 +249,14 @@ function stripImgTags(html) {
  */
 function stripTableTags(html) {
   return html
-    .replace(/<tr>/gi, '\n') // New line for each row
-    .replace(/<\/td><td>/gi, ': ') // Convert table cells into readable text
-    .replace(/<\/?(table|tr|td)>/gi, '') // Remove all table tags
+    .replace(/<tr>/gi, '\n')
+    .replace(/<\/td><td>/gi, ': ')
+    .replace(/<\/?(table|tr|td)>/gi, '')
     .trim();
 }
 
 /**
- * Updated GraphQL query to include image, selectedOptions, and compareAtPriceV2 for each variant.
+ * Updated GraphQL query to include compareAtPriceV2 for each variant.
  */
 const PRODUCTS_QUERY = `#graphql
   query Products($first: Int!, $after: String) {
