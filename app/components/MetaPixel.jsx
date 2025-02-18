@@ -1,6 +1,6 @@
 // src/components/MetaPixelManual.jsx
-import {useEffect} from 'react';
-import {useLocation} from 'react-router-dom';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 // --- Helper: Generate a unique event ID
 const generateEventId = () => {
@@ -35,12 +35,12 @@ const trackPageViewCAPI = async (eventId) => {
       client_ip_address: ip,
       client_user_agent: navigator.userAgent,
     },
-    custom_data: {}, // No additional data needed for PageView
+    custom_data: {} // No additional data needed for PageView
   };
 
   fetch('/facebookConversions', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
     .then((res) => {
@@ -55,7 +55,7 @@ const trackPageViewCAPI = async (eventId) => {
     });
 };
 
-const MetaPixel = ({pixelId}) => {
+const MetaPixel = ({ pixelId }) => {
   const location = useLocation();
 
   useEffect(() => {
@@ -83,7 +83,7 @@ const MetaPixel = ({pixelId}) => {
       window,
       document,
       'script',
-      'https://connect.facebook.net/en_US/fbevents.js',
+      'https://connect.facebook.net/en_US/fbevents.js'
     );
 
     // Initialize the Pixel
@@ -93,7 +93,7 @@ const MetaPixel = ({pixelId}) => {
     const eventId = generateEventId();
 
     // Track PageView via Pixel (passing eventID as the 4th parameter)
-    fbq('track', 'PageView', {}, {eventID: eventId});
+    fbq('track', 'PageView', {}, { eventID: eventId });
 
     // Also track PageView via Conversions API using the same event_id
     trackPageViewCAPI(eventId);
@@ -103,7 +103,7 @@ const MetaPixel = ({pixelId}) => {
   useEffect(() => {
     if (typeof fbq === 'function') {
       const eventId = generateEventId();
-      fbq('track', 'PageView', {}, {eventID: eventId});
+      fbq('track', 'PageView', {}, { eventID: eventId });
       trackPageViewCAPI(eventId);
     }
   }, [location]);
@@ -115,7 +115,7 @@ const MetaPixel = ({pixelId}) => {
         <img
           height="1"
           width="1"
-          style={{display: 'none'}}
+          style={{ display: 'none' }}
           src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
           alt="Meta Pixel"
         />
