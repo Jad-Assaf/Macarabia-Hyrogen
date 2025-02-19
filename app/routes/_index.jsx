@@ -260,6 +260,10 @@ export async function loader(args) {
   );
 }
 
+export function shouldRevalidate() {
+  return true;
+}
+
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
