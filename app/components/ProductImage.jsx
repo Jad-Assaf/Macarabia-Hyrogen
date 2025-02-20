@@ -42,6 +42,7 @@ export function ProductImages({media, selectedVariantImage}) {
   const [showKeyIndicator, setShowKeyIndicator] = useState(false);
   const thumbnailRefs = useRef([]);
   thumbnailRefs.current = [];
+  const imageRef = useRef(null);
 
   // Preload an image given its URL
   const preloadImage = (url) => {
@@ -99,6 +100,13 @@ export function ProductImages({media, selectedVariantImage}) {
   // Mark image as not loaded whenever selected index changes
   useEffect(() => {
     setIsImageLoaded(false);
+  }, [selectedIndex]);
+
+  // Check if image is already loaded (from cache) on mount/update
+  useEffect(() => {
+    if (imageRef.current && imageRef.current.complete) {
+      setIsImageLoaded(true);
+    }
   }, [selectedIndex]);
 
   // Scroll the active thumbnail into view
@@ -246,6 +254,7 @@ export function ProductImages({media, selectedVariantImage}) {
           >
             {selectedMedia.__typename === 'MediaImage' && (
               <Image
+                ref={imageRef}
                 data={selectedMedia.image}
                 alt={selectedMedia.image.altText || 'Product Image'}
                 sizes="(min-width: 45em) 50vw, 100vw"
