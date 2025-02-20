@@ -50,11 +50,19 @@ export function ProductImages({media, selectedVariantImage}) {
     img.src = url;
   };
 
-  // Preload adjacent images (next & previous)
+  // Preload ALL images on mount (if they are MediaImage type)
+  useEffect(() => {
+    media.forEach(({node}) => {
+      if (node.__typename === 'MediaImage' && node.image?.url) {
+        preloadImage(node.image.url);
+      }
+    });
+  }, [media]);
+
+  // (Optional) Preload adjacent images as well
   useEffect(() => {
     const total = media.length;
     if (total === 0) return;
-    // Calculate next and previous indices with wrap-around:
     const nextIndex = (selectedIndex + 1) % total;
     const prevIndex = (selectedIndex - 1 + total) % total;
     const preloadURLs = [];
@@ -67,7 +75,7 @@ export function ProductImages({media, selectedVariantImage}) {
     preloadURLs.forEach((url) => preloadImage(url));
   }, [selectedIndex, media]);
 
-  // If a variant is selected, update selectedIndex accordingly
+  // Update selected index if variant image is selected
   useEffect(() => {
     if (selectedVariantImage) {
       const variantImageIndex = media.findIndex(({node}) => {
@@ -83,17 +91,17 @@ export function ProductImages({media, selectedVariantImage}) {
     }
   }, [selectedVariantImage, media, isVariantSelected]);
 
-  // Reset the “variant selected” flag if selectedVariantImage changes
+  // Reset the “variant selected” flag when variant changes
   useEffect(() => {
     setIsVariantSelected(false);
   }, [selectedVariantImage]);
 
-  // Whenever selectedIndex changes, mark the image as not loaded
+  // Mark image as not loaded whenever selected index changes
   useEffect(() => {
     setIsImageLoaded(false);
   }, [selectedIndex]);
 
-  // Scroll the thumbnails so the new item is visible
+  // Scroll the active thumbnail into view
   useEffect(() => {
     if (thumbnailRefs.current[selectedIndex]) {
       thumbnailRefs.current[selectedIndex].scrollIntoView({
