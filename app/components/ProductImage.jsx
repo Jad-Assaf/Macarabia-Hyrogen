@@ -215,7 +215,7 @@ export function ProductImages({media, selectedVariantImage}) {
               >
                 {thumbSrc ? (
                   <img
-                    src={thumbSrc}
+                    src={`${thumbSrc}?width=300&quality=10`}
                     alt={altText}
                     width={80}
                     height={80}
