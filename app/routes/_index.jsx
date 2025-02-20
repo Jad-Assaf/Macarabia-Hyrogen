@@ -92,6 +92,7 @@ export async function loader(args) {
   // Check if data is in cache
   const cachedData = cache.get(cacheKey);
   if (cachedData && cachedData.expiry > now) {
+    // Fetch new arrivals separately
     const newArrivals = await fetchCollectionByHandle(
       args.context,
       'new-arrivals',
@@ -100,7 +101,7 @@ export async function loader(args) {
     return defer(
       {
         ...cachedData.value,
-        newArrivals, // Attach the fresh new-arrivals
+        newArrivals,
       },
       {
         headers: {
@@ -109,7 +110,6 @@ export async function loader(args) {
       },
     );
   }
-
   const banners = [
     {
       desktopImageUrl:
@@ -267,8 +267,8 @@ export async function loader(args) {
   );
 }
 
-export function shouldRevalidate() {
-  return true;
+export function shouldRevalidate({currentUrl, nextUrl}) {
+  return currentUrl.pathname !== nextUrl.pathname;
 }
 
 async function loadCriticalData({context}) {
