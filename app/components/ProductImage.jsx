@@ -252,38 +252,16 @@ export function ProductImages({media, selectedVariantImage}) {
             }}
           >
             {selectedMedia.__typename === 'MediaImage' && (
-              <>
-                <img
-                  ref={imageRef}
-                  src={selectedMedia.image.url}
-                  alt={selectedMedia.image.altText || 'Product Image'}
-                  loading="eager"
-                  decoding="async"
-                  onLoad={() => setIsImageLoaded(true)}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    visibility: isImageLoaded ? 'visible' : 'hidden',
-                  }}
-                />
-                {!isImageLoaded && (
-                  <div
-                    className="placeholder"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      backgroundColor: '#f0f0f0',
-                    }}
-                  />
-                )}
-              </>
+              <img
+                ref={imageRef}
+                src={selectedMedia.image.url}
+                alt={selectedMedia.image.altText || 'Product Image'}
+                loading="eager"
+                decoding="async"
+                onLoad={() => setIsImageLoaded(true)}
+                width="562.5px"
+                height="562.5px"
+              />
             )}
 
             {selectedMedia.__typename === 'ExternalVideo' && (
