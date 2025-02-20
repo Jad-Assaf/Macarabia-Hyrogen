@@ -247,21 +247,43 @@ export function ProductImages({media, selectedVariantImage}) {
         {selectedMedia && (
           <div
             style={{
-              filter: isImageLoaded ? 'blur(0px)' : 'blur(5px)',
-              transition: 'filter 0.1s ease',
+              filter: isImageLoaded ? 'blur(0px)' : 'blur(10px)',
+              transition: 'filter 0.3s ease',
             }}
           >
             {selectedMedia.__typename === 'MediaImage' && (
-              <img
-                ref={imageRef}
-                src={selectedMedia.image.url}
-                alt={selectedMedia.image.altText || 'Product Image'}
-                loading="eager"
-                decoding="async"
-                onLoad={() => setIsImageLoaded(true)}
-                width="564"
-                height="564"
-              />
+              <>
+                <img
+                  ref={imageRef}
+                  src={selectedMedia.image.url}
+                  alt={selectedMedia.image.altText || 'Product Image'}
+                  loading="eager"
+                  decoding="async"
+                  onLoad={() => setIsImageLoaded(true)}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    visibility: isImageLoaded ? 'visible' : 'hidden',
+                  }}
+                />
+                {!isImageLoaded && (
+                  <div
+                    className="placeholder"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      backgroundColor: '#f0f0f0',
+                    }}
+                  />
+                )}
+              </>
             )}
 
             {selectedMedia.__typename === 'ExternalVideo' && (
