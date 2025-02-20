@@ -247,8 +247,8 @@ export function ProductImages({media, selectedVariantImage}) {
         {selectedMedia && (
           <div
             style={{
-              filter: isImageLoaded ? 'blur(0px)' : 'blur(10px)',
-              transition: 'filter 0.3s ease',
+              filter: isImageLoaded ? 'blur(0px)' : 'blur(5px)',
+              transition: 'filter 0.1s ease',
             }}
           >
             {selectedMedia.__typename === 'MediaImage' && (
@@ -259,8 +259,8 @@ export function ProductImages({media, selectedVariantImage}) {
                 loading="eager"
                 decoding="async"
                 onLoad={() => setIsImageLoaded(true)}
-                width="100%"
-                height="auto"
+                width="564"
+                height="564"
               />
             )}
 
