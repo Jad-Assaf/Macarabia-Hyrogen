@@ -47,8 +47,10 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-evenly;
     align-items: center;
+    width: 100%;
+    height: 300px;
 }
 
 /* Popup Image */
@@ -154,4 +156,13 @@
 
 #app-popup.hide {
     animation-name: fade_out, scale_down;
+}
+
+#download-button {
+    padding: 12px 25px;
+    background-color: #2172af;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    box-shadow: -2px 3px 3px 0px #dadada;
 }
