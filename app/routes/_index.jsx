@@ -22,6 +22,7 @@ import {
   partsMenu,
   tabletsMenu,
 } from '~/components/CollectionCircles';
+import MobileAppPopup from '~/components/MobileAppPopup';
 
 const cache = new Map();
 
@@ -462,6 +463,7 @@ export default function Homepage() {
 
   return (
     <div className="home">
+      <MobileAppPopup />
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
       {newArrivals && <TopProductSections collection={newArrivals} />}
