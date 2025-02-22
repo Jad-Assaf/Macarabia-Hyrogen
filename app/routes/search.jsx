@@ -101,35 +101,31 @@ export async function loader({request, context}) {
   // Price range & text search
   // -----------------------------------------
   const rawTerm = searchParams.get('q') || '';
-  // For title matching, replace hyphens with spaces
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
-  // For SKU matching, remove hyphens entirely
-  const termWithoutHyphen = rawTerm.replace(/-/g, '');
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // Process the search term for title by splitting the normalized term and adding wildcards
-  const titleTerms = normalizedTerm
+  // Process the search term to include wildcards and specify fields
+  const terms = normalizedTerm
     .split(/\s+/)
     .map((word) => word.trim())
     .filter(Boolean)
     .map((word) => (usePrefix ? `${word}*` : `*${word}*`));
 
-  // Process the search term for SKU by splitting the term with hyphens removed
-  const skuTerms = termWithoutHyphen
-    .split(/\s+/)
-    .map((word) => word.trim())
-    .filter(Boolean)
-    .map((word) => (usePrefix ? `${word}*` : `*${word}*`));
+  const fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
 
-  // Build query conditions
-  const titleQuery = titleTerms.map((word) => `title:${word}`).join(' AND ');
-  const skuQuery = skuTerms.map((word) => `variants.sku:${word}`).join(' AND ');
+  // **Step 2 (Optional):** Include description and variants.sku if needed
+  // Uncomment the following lines to include additional fields after verifying titles work
+  /*
+  const fieldSpecificTerms = terms
+    .map(
+      (word) =>
+        `(title:${word} OR description:${word} OR variants.sku:${word})`,
+    )
+    .join(' AND '); // Combine with AND for multiple terms
+  */
 
-  // Combine with OR so that a match in either field qualifies
-  const fieldSpecificTerms = `(${titleQuery}) OR (${skuQuery})`;
-
-  // Now, use 'fieldSpecificTerms' in the filterQuery and merge with any additional filters
+  // Now, use 'fieldSpecificTerms' instead of 'termWithWildcards' in the filterQuery
   let filterQuery = fieldSpecificTerms;
 
   if (filterQueryParts.length > 0) {
@@ -691,6 +687,10 @@ export default function SearchPage() {
 /* ------------------------------------------------------------------
    GRAPHQL + REGULAR SEARCH
 ------------------------------------------------------------------- */
+
+/**
+ * Query for the subset with cursors
+ */
 const FILTERED_PRODUCTS_QUERY = `#graphql
   query FilteredProducts(
     $filterQuery: String,
@@ -765,6 +765,12 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
   }
 `;
 
+/**
+ * Regular search fetcher using cursors
+ * If `after` is present, we use `first=50`.
+ * If `before` is present, we use `last=50`.
+ * If neither is present, we do first=50 from the start.
+ */
 async function regularSearch({
   request,
   context,
@@ -775,20 +781,33 @@ async function regularSearch({
   before = null,
 }) {
   const {storefront} = context;
+
   let first = null;
   let last = null;
   if (after) {
-    first = 50;
+    first = 50; // going forward
   } else if (before) {
-    last = 50;
+    last = 50; // going backward
   } else {
+    // default: first page
     first = 50;
   }
-  const variables = {filterQuery, sortKey, reverse, after, before, first, last};
+
+  const variables = {
+    filterQuery,
+    sortKey,
+    reverse,
+    after,
+    before,
+    first,
+    last,
+  };
+
   try {
     const {products} = await storefront.query(FILTERED_PRODUCTS_QUERY, {
       variables,
     });
+
     if (!products?.edges) {
       return {
         type: 'regular',
@@ -796,6 +815,7 @@ async function regularSearch({
         result: {products: {edges: []}},
       };
     }
+
     return {
       type: 'regular',
       term: filterQuery,
@@ -812,6 +832,9 @@ async function regularSearch({
   }
 }
 
+/* ------------------------------------------------------------------
+   PREDICTIVE SEARCH (unchanged)
+------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
     __typename
@@ -929,38 +952,34 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
-
-async function predictiveSearch({request, context, usePrefix}) {
-  const {storefront} = context;
+async function predictiveSearch({ request, context, usePrefix }) {
+  const { storefront } = context;
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
-  // Normalize by replacing hyphens with spaces for title matching
+  // Normalize by replacing hyphens with spaces
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
 
   if (!normalizedTerm) {
-    return {type, term: '', result: getEmptyPredictiveSearchResult()};
+    return { type, term: '', result: getEmptyPredictiveSearchResult() };
   }
 
-  // For predictive search, use normalized term for title and remove hyphens for SKU matching
-  const titleTerms = normalizedTerm
+  const terms = normalizedTerm
     .split(/\s+/)
     .map((w) => w.trim())
-    .filter(Boolean)
-    .map((word) => (usePrefix ? `${word}*` : `*${word}*`));
-  const skuTerms = rawTerm
-    .replace(/-/g, '')
-    .split(/\s+/)
-    .map((w) => w.trim())
-    .filter(Boolean)
-    .map((word) => (usePrefix ? `${word}*` : `*${word}*`));
+    .filter(Boolean);
 
-  const titleQuery = titleTerms.map((word) => `title:${word}`).join(' AND ');
-  const skuQuery = skuTerms.map((word) => `variants.sku:${word}`).join(' AND ');
-  const queryTerm = `(${titleQuery}) OR (${skuQuery})`;
+  const queryTerm = terms
+    .map(
+      (word) =>
+        `(variants.sku:${usePrefix ? word : `*${word}*`} OR title:${
+          usePrefix ? word : `*${word}*`
+        } OR description:${usePrefix ? word : `*${word}*`})`
+    )
+    .join(' AND ');
 
-  const {predictiveSearch: items, errors} = await storefront.query(
+  const { predictiveSearch: items, errors } = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
       variables: {
@@ -973,7 +992,7 @@ async function predictiveSearch({request, context, usePrefix}) {
 
   if (errors) {
     throw new Error(
-      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`
+      `Shopify API errors: ${errors.map(({ message }) => message).join(', ')}`
     );
   }
   if (!items) {
@@ -981,7 +1000,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   }
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
-  return {type, term: normalizedTerm, result: {items, total}};
+  return { type, term: normalizedTerm, result: { items, total } };
 }
 
 /**
