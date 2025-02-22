@@ -10,30 +10,11 @@ import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents'; // Import the trackSearch function
 import '../styles/SearchPage.css';
-// Import the ML-refined custom dictionary from your lib folder
-import customDict from '~/lib/custom_dictionary_autocorrect_ml.json';
 
 /**
- * Helper: Expand a search term using the custom dictionary.
- * If the term exists (in lowercase) in the dictionary,
- * returns a grouped string like "(term OR synonym1 OR correction1 ...)".
- * Otherwise, returns the term unchanged.
- *
- * @param {string} term
- * @returns {string}
+ * IMPORTANT: Import your synonyms JSON file
  */
-function expandTerm(term) {
-  const lowerTerm = term.toLowerCase();
-  if (customDict[lowerTerm]) {
-    const synonyms = customDict[lowerTerm].synonyms || [];
-    const corrections = customDict[lowerTerm].corrections || [];
-    const allCandidates = [term, ...synonyms, ...corrections];
-    // Remove duplicates
-    const unique = Array.from(new Set(allCandidates));
-    return `(${unique.join(' OR ')})`;
-  }
-  return term;
-}
+import synonymsData from '~/lib/custom_dictionary_autocorrect_ml.json';
 
 /**
  * @type {import('@remix-run/react').MetaFunction}
@@ -109,10 +90,13 @@ export async function loader({request, context}) {
   // Build the OR groups for each filter key
   const filterQueryParts = [];
   for (const [rawKey, values] of filterMap.entries()) {
+    // e.g. shopifyKey = product_type or vendor
     const shopifyKey = shopifyKeyMap[rawKey] || rawKey;
     if (values.length === 1) {
+      // single value => vendor:"Nike"
       filterQueryParts.push(`${shopifyKey}:"${values[0]}"`);
     } else {
+      // multiple => (vendor:"Nike" OR vendor:"Adidas")
       const orGroup = values.map((v) => `${shopifyKey}:"${v}"`).join(' OR ');
       filterQueryParts.push(`(${orGroup})`);
     }
@@ -126,26 +110,55 @@ export async function loader({request, context}) {
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // Process the search term:
-  // Split into words, trim them, then expand each word using our custom dictionary.
-  const rawWords = normalizedTerm
+  /**
+   * PART: Expand the user's search terms with synonyms and corrections.
+   * (Minimal changes introduced below)
+   */
+  const baseTerms = normalizedTerm
     .split(/\s+/)
     .map((word) => word.trim())
     .filter(Boolean);
-  const expandedWords = rawWords.map((word) => {
-    const expanded = expandTerm(word);
-    // Apply wildcards based on usePrefix flag.
-    return usePrefix ? expanded + '*' : '*' + expanded + '*';
-  });
-  // Build field-specific query; here, we're searching in the title field.
-  const fieldSpecificTerms = expandedWords
-    .map((word) => `title:${word}`)
-    .join(' AND ');
 
-  // Now, use fieldSpecificTerms in the filterQuery.
+  // Expand each base term:
+  const expandedTerms = baseTerms.flatMap((word) => {
+    const lower = word.toLowerCase();
+    const synonymsObj = synonymsData[lower];
+    if (synonymsObj) {
+      // Include original + synonyms + corrections (if desired)
+      return [word, ...synonymsObj.synonyms, ...synonymsObj.corrections];
+    }
+    return [word];
+  });
+
+  // Optionally remove duplicates
+  const uniqueExpanded = [...new Set(expandedTerms)];
+
+  // Apply prefix or wildcard to each final term
+  const terms = uniqueExpanded.map((w) => (usePrefix ? `${w}*` : `*${w}*`));
+
+  // Now build the query for specific fields
+  // Default: title
+  let fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
+
+  // **If you also want to match description and variants.sku**,
+  // you could adapt the lines below as needed (kept commented as in original):
+  /*
+  let fieldSpecificTerms = terms
+    .map(
+      (word) => `(title:${word} OR description:${word} OR variants.sku:${word})`
+    )
+    .join(' AND '); // For multiple words, you might prefer AND
+  */
+
   let filterQuery = fieldSpecificTerms;
+
   if (filterQueryParts.length > 0) {
-    filterQuery += ' AND ' + filterQueryParts.join(' AND ');
+    if (filterQuery) {
+      // e.g. "title:*XM5* AND (vendor:"Sony" OR vendor:"Adidas")"
+      filterQuery += ' AND ' + filterQueryParts.join(' AND ');
+    } else {
+      filterQuery = filterQueryParts.join(' AND ');
+    }
   }
 
   // **Debugging Step:** Log the constructed filterQuery
@@ -183,6 +196,9 @@ export async function loader({request, context}) {
     return {term: '', result: null, error: error.message};
   });
 
+  // -----------------------------------------
+  // Extract vendor / productType from *these* results
+  // -----------------------------------------
   const filteredVendors = [
     ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
   ].sort();
@@ -215,13 +231,16 @@ export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // Price range local states
   const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
 
+  // Desktop filter toggles
   const [showVendors, setShowVendors] = useState(false);
   const [showProductTypes, setShowProductTypes] = useState(false);
   const [showPriceRange, setShowPriceRange] = useState(false);
 
+  // Mobile filters
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [mobileShowVendors, setMobileShowVendors] = useState(false);
   const [mobileShowProductTypes, setMobileShowProductTypes] = useState(false);
@@ -236,8 +255,10 @@ export default function SearchPage() {
     }, 300);
   };
 
+  // Filter changes (already supports multiple filters)
   const handleFilterChange = (filterKey, value, checked) => {
     const params = new URLSearchParams(searchParams);
+
     if (checked) {
       params.append(`filter_${filterKey}`, value);
     } else {
@@ -248,19 +269,24 @@ export default function SearchPage() {
         params.append(`filter_${filterKey}`, item),
       );
     }
+
+    // Reset cursors
     params.delete('after');
     params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
+  // Sorting
   const handleSortChange = (e) => {
     const params = new URLSearchParams(searchParams);
     params.set('sort', e.target.value);
+    // Reset cursors
     params.delete('after');
     params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
+  // Price filter
   const applyPriceFilter = () => {
     const params = new URLSearchParams(searchParams);
     if (minPrice) {
@@ -273,17 +299,20 @@ export default function SearchPage() {
     } else {
       params.delete('maxPrice');
     }
+    // Reset cursors
     params.delete('after');
     params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
+  // Track Search event
   useEffect(() => {
     if (term) {
       trackSearch(term);
     }
   }, [term]);
 
+  // If we have no products, show "no results"
   const edges = result?.products?.edges || [];
   if (!edges.length) {
     return (
@@ -294,10 +323,12 @@ export default function SearchPage() {
     );
   }
 
+  // Grab pageInfo so we know if there's a next / prev page
   const pageInfo = result?.products?.pageInfo || {};
   const hasNextPage = pageInfo.hasNextPage;
   const hasPreviousPage = pageInfo.hasPreviousPage;
 
+  // Handler: next => set after = pageInfo.endCursor
   const goNext = () => {
     if (!hasNextPage) return;
     const params = new URLSearchParams(searchParams);
@@ -306,6 +337,7 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
+  // Handler: prev => set before = pageInfo.startCursor
   const goPrev = () => {
     if (!hasPreviousPage) return;
     const params = new URLSearchParams(searchParams);
@@ -317,6 +349,7 @@ export default function SearchPage() {
   return (
     <div className="search">
       <h1>Search Results</h1>
+
       <div className="search-filters-container" style={{display: 'flex'}}>
         {/* Sidebar (Desktop) */}
         <div className="filters">
@@ -358,6 +391,7 @@ export default function SearchPage() {
               </div>
             )}
           </fieldset>
+
           <fieldset>
             <button
               type="button"
@@ -400,6 +434,7 @@ export default function SearchPage() {
               </div>
             )}
           </fieldset>
+
           <fieldset>
             <button
               type="button"
@@ -448,6 +483,7 @@ export default function SearchPage() {
 
         {/* Main Search Results */}
         <div className="search-results">
+          {/* Sorting */}
           <div>
             <label htmlFor="sort-select">Sort by:</label>
             <select
@@ -462,11 +498,15 @@ export default function SearchPage() {
               <option value="newest">Newest</option>
             </select>
           </div>
+
+          {/* Product Grid */}
           <div className="search-results-grid">
             {edges.map(({node: product}, idx) => (
               <ProductItem product={product} index={idx} key={product.id} />
             ))}
           </div>
+
+          {/* Prev / Next Buttons */}
           <div
             style={{
               marginTop: '1rem',
@@ -507,6 +547,7 @@ export default function SearchPage() {
         </div>
       </div>
 
+      {/* Mobile Filters */}
       <button
         className="mobile-filters-toggle"
         onClick={() => setIsMobileFiltersOpen(true)}
@@ -668,8 +709,12 @@ export default function SearchPage() {
 }
 
 /* ------------------------------------------------------------------
-   GRAPHQL + REGULAR SEARCH (Not used in file-based approach)
+   GRAPHQL + REGULAR SEARCH
 ------------------------------------------------------------------- */
+
+/**
+ * Query for the subset with cursors
+ */
 const FILTERED_PRODUCTS_QUERY = `#graphql
   query FilteredProducts(
     $filterQuery: String,
@@ -745,8 +790,10 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
 `;
 
 /**
- * Regular search fetcher using cursors.
- * (Not used in the file-based approach.)
+ * Regular search fetcher using cursors
+ * If `after` is present, we use `first=50`.
+ * If `before` is present, we use `last=50`.
+ * If neither is present, we do first=50 from the start.
  */
 async function regularSearch({
   request,
@@ -757,11 +804,60 @@ async function regularSearch({
   after = null,
   before = null,
 }) {
-  return {term: filterQuery, result: null};
+  const {storefront} = context;
+
+  let first = null;
+  let last = null;
+  if (after) {
+    first = 50; // going forward
+  } else if (before) {
+    last = 50; // going backward
+  } else {
+    // default: first page
+    first = 50;
+  }
+
+  const variables = {
+    filterQuery,
+    sortKey,
+    reverse,
+    after,
+    before,
+    first,
+    last,
+  };
+
+  try {
+    const {products} = await storefront.query(FILTERED_PRODUCTS_QUERY, {
+      variables,
+    });
+
+    if (!products?.edges) {
+      return {
+        type: 'regular',
+        term: filterQuery,
+        result: {products: {edges: []}},
+      };
+    }
+
+    return {
+      type: 'regular',
+      term: filterQuery,
+      result: {products},
+    };
+  } catch (error) {
+    console.error('Regular search error:', error);
+    return {
+      type: 'regular',
+      term: filterQuery,
+      result: null,
+      error: error.message,
+    };
+  }
 }
 
 /* ------------------------------------------------------------------
-   PREDICTIVE SEARCH (Not used in the file-based approach)
+   PREDICTIVE SEARCH (unchanged)
 ------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
@@ -848,11 +944,13 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   query PredictiveSearch(
     $country: CountryCode
     $language: LanguageCode
+    $limit: Int = 10000
     $limitScope: PredictiveSearchLimitScope!
     $term: String!
     $types: [PredictiveSearchType!]
   ) @inContext(country: $country, language: $language) {
     predictiveSearch(
+      limit: $limit,
       limitScope: $limitScope,
       query: $term,
       types: $types
@@ -880,8 +978,8 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
-async function predictiveSearch({request, context, usePrefix}) {
-  const {storefront} = context;
+async function predictiveSearch({ request, context, usePrefix }) {
+  const { storefront } = context;
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
   // Normalize by replacing hyphens with spaces
@@ -890,7 +988,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   const type = 'predictive';
 
   if (!normalizedTerm) {
-    return {type, term: '', result: getEmptyPredictiveSearchResult()};
+    return { type, term: '', result: getEmptyPredictiveSearchResult() };
   }
 
   const terms = normalizedTerm
@@ -903,11 +1001,11 @@ async function predictiveSearch({request, context, usePrefix}) {
       (word) =>
         `(variants.sku:${usePrefix ? word : `*${word}*`} OR title:${
           usePrefix ? word : `*${word}*`
-        } OR description:${usePrefix ? word : `*${word}*`})`,
+        } OR description:${usePrefix ? word : `*${word}*`})`
     )
     .join(' AND ');
 
-  const {predictiveSearch: items, errors} = await storefront.query(
+  const { predictiveSearch: items, errors } = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
       variables: {
@@ -915,12 +1013,12 @@ async function predictiveSearch({request, context, usePrefix}) {
         limitScope: 'EACH',
         term: queryTerm,
       },
-    },
+    }
   );
 
   if (errors) {
     throw new Error(
-      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
+      `Shopify API errors: ${errors.map(({ message }) => message).join(', ')}`
     );
   }
   if (!items) {
@@ -928,7 +1026,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   }
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
-  return {type, term: normalizedTerm, result: {items, total}};
+  return { type, term: normalizedTerm, result: { items, total } };
 }
 
 /**
