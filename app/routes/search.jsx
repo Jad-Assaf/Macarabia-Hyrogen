@@ -19,6 +19,55 @@ export const meta = () => {
 };
 
 /**
+ * TWO-WAY DICTIONARY - Build a map of synonyms so that
+ * "hp", "HP", "horsepower", "H.P." all map to the same set.
+ */
+const originalDictionary = {
+  hp: ['HP', 'horsepower', 'H.P.'],
+  tv: ['Television', 'smart-tv'],
+  bag: ['bags', 'handbag', 'handbags'],
+};
+
+function buildSynonymMap(originalDict) {
+  const map = {};
+
+  for (const [key, synonyms] of Object.entries(originalDict)) {
+    // Combine the main key + synonyms => one set
+    const allForms = new Set([
+      key.toLowerCase(),
+      ...synonyms.map((s) => s.toLowerCase()),
+    ]);
+
+    // For each form, map it to all original forms (in their original case),
+    // so searching *any* form yields the entire set.
+    const uniqueGroup = Array.from(new Set([key, ...synonyms]));
+    for (const form of allForms) {
+      map[form] = uniqueGroup;
+    }
+  }
+
+  return map;
+}
+
+const dictionaryMap = buildSynonymMap(originalDictionary);
+
+function expandSearchTerms(terms) {
+  const expanded = [];
+  for (const t of terms) {
+    const lower = t.toLowerCase();
+    if (dictionaryMap[lower]) {
+      // Add all synonyms from the dictionary
+      expanded.push(...dictionaryMap[lower]);
+    } else {
+      // Or just keep the original
+      expanded.push(t);
+    }
+  }
+  // Deduplicate
+  return [...new Set(expanded)];
+}
+
+/**
  * @param {import('@shopify/remix-oxygen').LoaderFunctionArgs} args
  */
 export async function loader({request, context}) {
@@ -26,33 +75,6 @@ export async function loader({request, context}) {
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const usePrefix = searchParams.get('prefix') === 'true';
-
-  // -----------------------------------------
-  // CUSTOM DICTIONARY - START
-  // Example synonyms or expansions. You can structure it however you like.
-  // Key = lowercased word, Value = array of expansions.
-  const dictionary = {
-    hp: ['HP', 'horsepower', 'H.P.'],
-    tv: ['television', 'smart-tv'],
-    bag: ['bags', 'handbag', 'handbags'],
-  };
-
-  function expandSearchTerms(baseTerms) {
-    const expanded = [];
-    for (const t of baseTerms) {
-      const lower = t.toLowerCase();
-      // Always include the original
-      expanded.push(t);
-      // If we have expansions, include them as well
-      if (dictionary[lower]) {
-        expanded.push(...dictionary[lower]);
-      }
-    }
-    // Remove duplicates
-    return [...new Set(expanded)];
-  }
-  // CUSTOM DICTIONARY - END
-  // -----------------------------------------
 
   // -----------------------------------------
   // Check if predictive search
@@ -92,12 +114,9 @@ export async function loader({request, context}) {
   // -----------------------------------------
   const shopifyKeyMap = {
     vendor: 'vendor',
-    productType: 'product_type', // important for Shopify's textual query
+    productType: 'product_type',
   };
 
-  // Collect all filter values in a map:
-  //   filter_vendor=Nike, filter_vendor=Adidas => [Nike, Adidas]
-  //   filter_productType=Shirt => [Shirt]
   const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
@@ -109,7 +128,6 @@ export async function loader({request, context}) {
     }
   }
 
-  // Build the OR groups for each filter key
   const filterQueryParts = [];
   for (const [rawKey, values] of filterMap.entries()) {
     const shopifyKey = shopifyKeyMap[rawKey] || rawKey;
@@ -129,32 +147,26 @@ export async function loader({request, context}) {
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // -----------------------------------------
-  // CUSTOM DICTIONARY USAGE
-  // -----------------------------------------
-  // Instead of directly mapping to wildcards, let's first expand them.
+  // 1) Split user input
   const baseTerms = normalizedTerm
     .split(/\s+/)
     .map((w) => w.trim())
     .filter(Boolean);
 
-  // Expand using our custom dictionary
-  const expandedTerms = expandSearchTerms(baseTerms);
+  // 2) Expand to synonyms (two-way mapping)
+  const synonymsExpanded = expandSearchTerms(baseTerms);
 
-  // Then apply prefix/wildcard
-  const terms = expandedTerms.map((word) =>
+  // 3) Add wildcard if prefix or otherwise
+  const terms = synonymsExpanded.map((word) =>
     usePrefix ? `${word}*` : `*${word}*`,
   );
 
-  // Now build the field-specific search
+  // 4) Build your field-specific search
   let fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
-
   /*
-  // If also searching descriptions/variants.sku, do:
+  // If searching multiple fields:
   // let fieldSpecificTerms = terms
-  //   .map(
-  //     (word) => `(title:${word} OR description:${word} OR variants.sku:${word})`
-  //   )
+  //   .map(word => `(title:${word} OR description:${word} OR variants.sku:${word})`)
   //   .join(' AND ');
   */
 
@@ -202,7 +214,7 @@ export async function loader({request, context}) {
   });
 
   // -----------------------------------------
-  // Extract vendor / productType from these results
+  // Extract vendor / productType from *these* results
   // -----------------------------------------
   const filteredVendors = [
     ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
@@ -221,7 +233,7 @@ export async function loader({request, context}) {
 }
 
 /* ------------------------------------------------------------------
-   REACT COMPONENT
+   REACT COMPONENT (unchanged)
 ------------------------------------------------------------------- */
 export default function SearchPage() {
   const {
@@ -260,7 +272,6 @@ export default function SearchPage() {
     }, 300);
   };
 
-  // Filter changes
   const handleFilterChange = (filterKey, value, checked) => {
     const params = new URLSearchParams(searchParams);
 
@@ -280,7 +291,6 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
-  // Sorting
   const handleSortChange = (e) => {
     const params = new URLSearchParams(searchParams);
     params.set('sort', e.target.value);
@@ -289,7 +299,6 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
-  // Price filter
   const applyPriceFilter = () => {
     const params = new URLSearchParams(searchParams);
     if (minPrice) {
@@ -307,14 +316,12 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
-  // Track Search event
   useEffect(() => {
     if (term) {
       trackSearch(term);
     }
   }, [term]);
 
-  // If we have no products, show "no results"
   const edges = result?.products?.edges || [];
   if (!edges.length) {
     return (
@@ -325,7 +332,6 @@ export default function SearchPage() {
     );
   }
 
-  // Grab pageInfo so we know if there's a next / prev page
   const pageInfo = result?.products?.pageInfo || {};
   const hasNextPage = pageInfo.hasNextPage;
   const hasPreviousPage = pageInfo.hasPreviousPage;
@@ -582,7 +588,8 @@ export default function SearchPage() {
                     c-6.074,6.077-6.074,15.911,0,21.986
                     l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55
                     c4.127,0,8.08-1.639,10.994-4.55
-                    l171.117-171.12l171.118,171.12
+                    l171.117-171.12
+                    l171.118,171.12
                     c2.913,2.911,6.866,4.55,10.993,4.55
                     c4.128,0,8.081-1.639,10.992-4.55
                     l32.709-32.719
@@ -614,7 +621,11 @@ export default function SearchPage() {
                           value={vendor}
                           checked={isChecked}
                           onChange={(e) =>
-                            handleFilterChange('vendor', vendor, e.target.checked)
+                            handleFilterChange(
+                              'vendor',
+                              vendor,
+                              e.target.checked,
+                            )
                           }
                         />
                         <label htmlFor={`mobile-vendor-${vendor}`}>
@@ -712,10 +723,6 @@ export default function SearchPage() {
 /* ------------------------------------------------------------------
    GRAPHQL + REGULAR SEARCH
 ------------------------------------------------------------------- */
-
-/**
- * Query for the subset with cursors
- */
 const FILTERED_PRODUCTS_QUERY = `#graphql
   query FilteredProducts(
     $filterQuery: String,
@@ -971,8 +978,8 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 
-async function predictiveSearch({ request, context, usePrefix }) {
-  const { storefront } = context;
+async function predictiveSearch({request, context, usePrefix}) {
+  const {storefront} = context;
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
@@ -980,7 +987,7 @@ async function predictiveSearch({ request, context, usePrefix }) {
   const type = 'predictive';
 
   if (!normalizedTerm) {
-    return { type, term: '', result: getEmptyPredictiveSearchResult() };
+    return {type, term: '', result: getEmptyPredictiveSearchResult()};
   }
 
   const terms = normalizedTerm
@@ -993,11 +1000,11 @@ async function predictiveSearch({ request, context, usePrefix }) {
       (word) =>
         `(variants.sku:${usePrefix ? word : `*${word}*`} OR title:${
           usePrefix ? word : `*${word}*`
-        } OR description:${usePrefix ? word : `*${word}*`})`
+        } OR description:${usePrefix ? word : `*${word}*`})`,
     )
     .join(' AND ');
 
-  const { predictiveSearch: items, errors } = await storefront.query(
+  const {predictiveSearch: items, errors} = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
       variables: {
@@ -1005,12 +1012,12 @@ async function predictiveSearch({ request, context, usePrefix }) {
         limitScope: 'EACH',
         term: queryTerm,
       },
-    }
+    },
   );
 
   if (errors) {
     throw new Error(
-      `Shopify API errors: ${errors.map(({ message }) => message).join(', ')}`
+      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
     );
   }
   if (!items) {
@@ -1018,7 +1025,7 @@ async function predictiveSearch({ request, context, usePrefix }) {
   }
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
-  return { type, term: normalizedTerm, result: { items, total } };
+  return {type, term: normalizedTerm, result: {items, total}};
 }
 
 /**
@@ -1028,4 +1035,4 @@ async function predictiveSearch({ request, context, usePrefix }) {
  * @typedef {import('~/lib/search').RegularSearchReturn} RegularSearchReturn
  * @typedef {import('~/lib/search').PredictiveSearchReturn} PredictiveSearchReturn
  * @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData
-*/
+ */
