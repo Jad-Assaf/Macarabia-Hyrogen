@@ -1,31 +1,31 @@
-import { json } from '@shopify/remix-oxygen';
+import {json} from '@shopify/remix-oxygen';
 import {
   useLoaderData,
   useSearchParams,
   useNavigate,
   Link,
 } from '@remix-run/react';
-import { useState, useEffect } from 'react';
-import { ProductItem } from '~/components/CollectionDisplay';
-import { getEmptyPredictiveSearchResult } from '~/lib/search';
-import { trackSearch } from '~/lib/metaPixelEvents'; // Import the trackSearch function
+import {useState, useEffect} from 'react';
+import {ProductItem} from '~/components/CollectionDisplay';
+import {getEmptyPredictiveSearchResult} from '~/lib/search';
+import {trackSearch} from '~/lib/metaPixelEvents'; // Import the trackSearch function
 import '../styles/SearchPage.css';
 
 /**
  * @type {import('@remix-run/react').MetaFunction}
  */
 export const meta = () => {
-  return [{ title: `Macarabia | Search` }];
+  return [{title: `Macarabia | Search`}];
 };
 
 /**
  * @param {import('@shopify/remix-oxygen').LoaderFunctionArgs} args
  */
-export async function loader({ request, context }) {
-  const { storefront } = context;
+export async function loader({request, context}) {
+  const {storefront} = context;
   const url = new URL(request.url);
-  const usePrefix = searchParams.get('prefix') === 'true';
   const searchParams = url.searchParams;
+  const usePrefix = searchParams.get('prefix') === 'true';
 
   // -----------------------------------------
   // Check if predictive search
@@ -33,10 +33,17 @@ export async function loader({ request, context }) {
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
     // Immediately do predictive
-    const result = await predictiveSearch({ request, context }).catch((error) => {
-      console.error('Predictive Search Error:', error);
-      return { type: 'predictive', term: '', result: null, error: error.message };
-    });
+    const result = await predictiveSearch({request, context, usePrefix}).catch(
+      (error) => {
+        console.error('Predictive Search Error:', error);
+        return {
+          type: 'predictive',
+          term: '',
+          result: null,
+          error: error.message,
+        };
+      },
+    );
     return json({
       ...result,
       vendors: [],
@@ -162,18 +169,18 @@ export async function loader({ request, context }) {
     before,
   }).catch((error) => {
     console.error('Search Error:', error);
-    return { term: '', result: null, error: error.message };
+    return {term: '', result: null, error: error.message};
   });
 
   // -----------------------------------------
   // Extract vendor / productType from *these* results
   // -----------------------------------------
   const filteredVendors = [
-    ...new Set(result?.result?.products?.edges.map(({ node }) => node.vendor)),
+    ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
   ].sort();
   const filteredProductTypes = [
     ...new Set(
-      result?.result?.products?.edges.map(({ node }) => node.productType),
+      result?.result?.products?.edges.map(({node}) => node.productType),
     ),
   ].sort();
 
@@ -319,7 +326,7 @@ export default function SearchPage() {
     <div className="search">
       <h1>Search Results</h1>
 
-      <div className="search-filters-container" style={{ display: 'flex' }}>
+      <div className="search-filters-container" style={{display: 'flex'}}>
         {/* Sidebar (Desktop) */}
         <div className="filters">
           <fieldset>
@@ -470,7 +477,7 @@ export default function SearchPage() {
 
           {/* Product Grid */}
           <div className="search-results-grid">
-            {edges.map(({ node: product }, idx) => (
+            {edges.map(({node: product}, idx) => (
               <ProductItem product={product} index={idx} key={product.id} />
             ))}
           </div>
@@ -773,7 +780,7 @@ async function regularSearch({
   after = null,
   before = null,
 }) {
-  const { storefront } = context;
+  const {storefront} = context;
 
   let first = null;
   let last = null;
@@ -797,7 +804,7 @@ async function regularSearch({
   };
 
   try {
-    const { products } = await storefront.query(FILTERED_PRODUCTS_QUERY, {
+    const {products} = await storefront.query(FILTERED_PRODUCTS_QUERY, {
       variables,
     });
 
@@ -805,14 +812,14 @@ async function regularSearch({
       return {
         type: 'regular',
         term: filterQuery,
-        result: { products: { edges: [] } },
+        result: {products: {edges: []}},
       };
     }
 
     return {
       type: 'regular',
       term: filterQuery,
-      result: { products },
+      result: {products},
     };
   } catch (error) {
     console.error('Regular search error:', error);
@@ -945,15 +952,15 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
-async function predictiveSearch({ request, context }) {
-  const { storefront } = context;
+async function predictiveSearch({request, context, usePrefix}) {
+  const {storefront} = context;
   const url = new URL(request.url);
   const term = String(url.searchParams.get('q') || '').trim();
   const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
 
   if (!term) {
-    return { type, term, result: getEmptyPredictiveSearchResult() };
+    return {type, term, result: getEmptyPredictiveSearchResult()};
   }
 
   const terms = term
@@ -969,7 +976,7 @@ async function predictiveSearch({ request, context }) {
     )
     .join(' AND ');
 
-  const { predictiveSearch: items, errors } = await storefront.query(
+  const {predictiveSearch: items, errors} = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
       variables: {
@@ -982,7 +989,7 @@ async function predictiveSearch({ request, context }) {
 
   if (errors) {
     throw new Error(
-      `Shopify API errors: ${errors.map(({ message }) => message).join(', ')}`,
+      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
     );
   }
   if (!items) {
@@ -990,7 +997,7 @@ async function predictiveSearch({ request, context }) {
   }
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
-  return { type, term, result: { items, total } };
+  return {type, term, result: {items, total}};
 }
 
 /**
