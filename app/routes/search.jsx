@@ -8,10 +8,8 @@ import {
 import {useState, useEffect} from 'react';
 import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
-import {trackSearch} from '~/lib/metaPixelEvents';
+import {trackSearch} from '~/lib/metaPixelEvents'; // Import the trackSearch function
 import '../styles/SearchPage.css';
-
-import {Client} from 'pg'; // <-- New: we'll use pg for Postgres
 
 /**
  * @type {import('@remix-run/react').MetaFunction}
@@ -24,15 +22,17 @@ export const meta = () => {
  * @param {import('@shopify/remix-oxygen').LoaderFunctionArgs} args
  */
 export async function loader({request, context}) {
+  const {storefront} = context;
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const usePrefix = searchParams.get('prefix') === 'true';
 
   // -----------------------------------------
-  // Predictive Search (still uses Shopify)
+  // Check if predictive search
   // -----------------------------------------
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
+    // Immediately do predictive
     const result = await predictiveSearch({request, context, usePrefix}).catch(
       (error) => {
         console.error('Predictive Search Error:', error);
@@ -48,45 +48,51 @@ export async function loader({request, context}) {
       ...result,
       vendors: [],
       productTypes: [],
+      // No pagination needed for predictive results
       pageInfo: {},
     });
   }
 
   // -----------------------------------------
   // Parse after/before for cursor-based pagination
-  // For demonstration, treat them as numeric offsets.
   // -----------------------------------------
-  const after = Number(searchParams.get('after')) || 0;
-  const before = Number(searchParams.get('before')) || 0;
+  const after = searchParams.get('after') || null;
+  const before = searchParams.get('before') || null;
 
   // -----------------------------------------
-  // Build filters with OR logic for multiple values
-  // (we won't implement them in the SQL example below,
-  // but kept for demonstration)
+  // Build filters with OR for multiple values on the same key,
+  // and map `productType` => `product_type`.
   // -----------------------------------------
   const shopifyKeyMap = {
     vendor: 'vendor',
-    productType: 'product_type',
+    productType: 'product_type', // important for Shopify's textual query
   };
+
+  // Collect all filter values in a map:
+  //   filter_vendor=Nike, filter_vendor=Adidas => [Nike, Adidas]
+  //   filter_productType=Shirt => [Shirt]
   const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
-      const rawKey = key.replace('filter_', '');
+      const rawKey = key.replace('filter_', ''); // e.g. vendor, productType
       if (!filterMap.has(rawKey)) {
         filterMap.set(rawKey, []);
       }
       filterMap.get(rawKey).push(value);
     }
   }
+
+  // Build the OR groups for each filter key
   const filterQueryParts = [];
   for (const [rawKey, values] of filterMap.entries()) {
-    const pgColumn = shopifyKeyMap[rawKey] || rawKey;
+    // e.g. shopifyKey = product_type or vendor
+    const shopifyKey = shopifyKeyMap[rawKey] || rawKey;
     if (values.length === 1) {
-      // e.g. vendor = 'Nike'
-      filterQueryParts.push(`${pgColumn} = '${values[0]}'`);
+      // single value => vendor:"Nike"
+      filterQueryParts.push(`${shopifyKey}:"${values[0]}"`);
     } else {
-      // e.g. (vendor = 'Nike' OR vendor = 'Adidas')
-      const orGroup = values.map((v) => `${pgColumn} = '${v}'`).join(' OR ');
+      // multiple => (vendor:"Nike" OR vendor:"Adidas")
+      const orGroup = values.map((v) => `${shopifyKey}:"${v}"`).join(' OR ');
       filterQueryParts.push(`(${orGroup})`);
     }
   }
@@ -99,50 +105,75 @@ export async function loader({request, context}) {
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // Build your fuzzy target from the user input
-  // (if usePrefix => maybe partial substring, etc.)
-  // For demonstration, we’ll keep it simple:
-  const fuzzyTerm = normalizedTerm.trim();
+  // Process the search term to include wildcards and specify fields
+  const terms = normalizedTerm
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter(Boolean)
+    .map((word) => (usePrefix ? `${word}*` : `*${word}*`));
 
-  // Optionally incorporate filters
-  // e.g. WHERE title % $1 AND vendor = 'Nike' ...
-  // We'll pass them to the function
-  const whereFilters = filterQueryParts;
+  const fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
+
+  // **Step 2 (Optional):** Include description and variants.sku if needed
+  // Uncomment the following lines to include additional fields after verifying titles work
+  /*
+  const fieldSpecificTerms = terms
+    .map(
+      (word) =>
+        `(title:${word} OR description:${word} OR variants.sku:${word})`,
+    )
+    .join(' AND '); // Combine with AND for multiple terms
+  */
+
+  // Now, use 'fieldSpecificTerms' instead of 'termWithWildcards' in the filterQuery
+  let filterQuery = fieldSpecificTerms;
+
+  if (filterQueryParts.length > 0) {
+    if (filterQuery) {
+      // e.g. "title:*XM5* AND (vendor:"Sony" OR vendor:"Adidas")"
+      filterQuery += ' AND ' + filterQueryParts.join(' AND ');
+    } else {
+      filterQuery = filterQueryParts.join(' AND ');
+    }
+  }
+
+  // **Debugging Step:** Log the constructed filterQuery
+  console.log('Filter Query:', filterQuery);
 
   // -----------------------------------------
   // Sort
   // -----------------------------------------
   const sortKeyMapping = {
-    featured: 'similarity', // just an example fallback
-    'price-low-high': 'price',
-    'price-high-low': 'price',
-    'best-selling': 'id', // or some custom field
-    newest: 'created_at', // or your actual date field
+    featured: 'RELEVANCE',
+    'price-low-high': 'PRICE',
+    'price-high-low': 'PRICE',
+    'best-selling': 'BEST_SELLING',
+    newest: 'CREATED_AT',
   };
-  const sortKey = sortKeyMapping[searchParams.get('sort')] || 'similarity';
-  const reverseMap = {
+  const reverseMapping = {
     'price-high-low': true,
   };
-  const reverse = reverseMap[searchParams.get('sort')] || false;
+  const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
+  const reverse = reverseMapping[searchParams.get('sort')] || false;
 
   // -----------------------------------------
-  // Perform fuzzy search in Postgres
+  // Perform the regular search with cursors
   // -----------------------------------------
-  const result = await fuzzySearchInPostgres({
-    fuzzyTerm,
-    whereFilters,
+  const result = await regularSearch({
+    request,
+    context,
+    filterQuery,
     sortKey,
     reverse,
-    offset: after || 0, // using after as offset
-    limit: 50,
+    after,
+    before,
   }).catch((error) => {
-    console.error('Search Error (Postgres):', error);
+    console.error('Search Error:', error);
     return {term: '', result: null, error: error.message};
   });
 
   // -----------------------------------------
-  // Extract unique vendor/productType from results
-  // so we can show filters
+  // Extract vendor / productType from *these* results
   // -----------------------------------------
   const filteredVendors = [
     ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
@@ -161,111 +192,7 @@ export async function loader({request, context}) {
 }
 
 /* ------------------------------------------------------------------
-   Fuzzy Search in Postgres
-------------------------------------------------------------------- */
-async function fuzzySearchInPostgres({
-  fuzzyTerm,
-  whereFilters = [],
-  sortKey = 'similarity',
-  reverse = false,
-  offset = 0,
-  limit = 50,
-}) {
-  // Initialize PG client
-  const client = new Client({
-    connectionString: process.env.PG_CONNECTION_STRING,
-  });
-  await client.connect();
-
-  // Build WHERE clause
-  // Using the Postgres trigram operator (%). Example:
-  //   title % $1 or we can do: (title % $1 OR description % $1)
-  let whereClause = `title % $1`;
-  if (whereFilters.length > 0) {
-    const filtersJoined = whereFilters.join(' AND ');
-    whereClause += ` AND ${filtersJoined}`;
-  }
-
-  // In this example, we’ll compute similarity and then order by it:
-  //   ORDER BY similarity(title, $1)
-  // If your sortKey is something else (price, created_at), handle separately.
-  let orderClause = `ORDER BY similarity(title, $1) DESC`;
-  if (sortKey !== 'similarity') {
-    // We'll just do a basic dynamic sort on a column
-    orderClause = `ORDER BY ${sortKey} ${reverse ? 'DESC' : 'ASC'}`;
-  }
-
-  // Example query using trigram similarity
-  // offset/limit for pagination
-  const queryText = `
-    SELECT
-      id,
-      title,
-      vendor,
-      product_type,
-      description,
-      price,         -- example
-      image_url,     -- example
-      created_at     -- example
-    FROM products
-    WHERE ${whereClause}
-    ${orderClause}
-    LIMIT $2
-    OFFSET $3
-  `;
-
-  const values = [fuzzyTerm, limit, offset];
-  const {rows} = await client.query(queryText, values);
-
-  await client.end();
-
-  // Transform these into the structure your UI code expects:
-  // e.g. {result: {products: {edges: [...], pageInfo: {...}}}}
-  const edges = rows.map((row) => ({
-    node: {
-      id: String(row.id),
-      title: row.title,
-      vendor: row.vendor,
-      productType: row.product_type,
-      description: row.description,
-      // example: transform your DB columns to match needed fields
-      images: {
-        nodes: [{url: row.image_url, altText: row.title}],
-      },
-      priceRange: {
-        minVariantPrice: {
-          amount: String(row.price || 0),
-          currencyCode: 'USD', // or your currency
-        },
-      },
-      variants: {
-        nodes: [],
-      },
-    },
-  }));
-
-  // Fake hasNextPage / hasPreviousPage if needed, or compute from total count
-  const pageInfo = {
-    hasNextPage: rows.length === limit, // naive check
-    hasPreviousPage: offset > 0,
-    startCursor: offset,
-    endCursor: offset + rows.length,
-  };
-
-  return {
-    type: 'regular',
-    term: fuzzyTerm,
-    result: {
-      products: {
-        edges,
-        pageInfo,
-      },
-    },
-  };
-}
-
-/* ------------------------------------------------------------------
-   The React Component (unchanged from your code)
+   REACT COMPONENT
 ------------------------------------------------------------------- */
 export default function SearchPage() {
   const {
@@ -377,20 +304,20 @@ export default function SearchPage() {
   const hasNextPage = pageInfo.hasNextPage;
   const hasPreviousPage = pageInfo.hasPreviousPage;
 
-  // Handler: next => treat endCursor as offset
+  // Handler: next => set after = pageInfo.endCursor
   const goNext = () => {
     if (!hasNextPage) return;
     const params = new URLSearchParams(searchParams);
-    params.set('after', pageInfo.endCursor); // offset = end
+    params.set('after', pageInfo.endCursor);
     params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
-  // Handler: prev => treat startCursor as offset
+  // Handler: prev => set before = pageInfo.startCursor
   const goPrev = () => {
     if (!hasPreviousPage) return;
     const params = new URLSearchParams(searchParams);
-    params.set('before', pageInfo.startCursor); // offset = start
+    params.set('before', pageInfo.startCursor);
     params.delete('after');
     navigate(`/search?${params.toString()}`);
   };
@@ -758,7 +685,155 @@ export default function SearchPage() {
 }
 
 /* ------------------------------------------------------------------
-   PREDICTIVE SEARCH (unchanged from your code)
+   GRAPHQL + REGULAR SEARCH
+------------------------------------------------------------------- */
+
+/**
+ * Query for the subset with cursors
+ */
+const FILTERED_PRODUCTS_QUERY = `#graphql
+  query FilteredProducts(
+    $filterQuery: String,
+    $sortKey: ProductSortKeys,
+    $reverse: Boolean,
+    $after: String,
+    $before: String,
+    $first: Int,
+    $last: Int
+  ) {
+    products(
+      query: $filterQuery,
+      sortKey: $sortKey,
+      reverse: $reverse,
+      after: $after,
+      before: $before,
+      first: $first,
+      last: $last
+    ) {
+      edges {
+        node {
+          vendor
+          id
+          title
+          handle
+          productType
+          description
+          images(first: 3) {
+            nodes {
+              url
+              altText
+            }
+          }
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          variants(first: 1) {
+            nodes {
+              id
+              sku
+              price {
+                amount
+                currencyCode
+              }
+              image {
+                url
+                altText
+              }
+              availableForSale
+              compareAtPrice {
+                amount
+                currencyCode
+              }
+              selectedOptions {
+                name
+                value
+              }
+            }
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+`;
+
+/**
+ * Regular search fetcher using cursors
+ * If `after` is present, we use `first=50`.
+ * If `before` is present, we use `last=50`.
+ * If neither is present, we do first=50 from the start.
+ */
+async function regularSearch({
+  request,
+  context,
+  filterQuery,
+  sortKey,
+  reverse,
+  after = null,
+  before = null,
+}) {
+  const {storefront} = context;
+
+  let first = null;
+  let last = null;
+  if (after) {
+    first = 50; // going forward
+  } else if (before) {
+    last = 50; // going backward
+  } else {
+    // default: first page
+    first = 50;
+  }
+
+  const variables = {
+    filterQuery,
+    sortKey,
+    reverse,
+    after,
+    before,
+    first,
+    last,
+  };
+
+  try {
+    const {products} = await storefront.query(FILTERED_PRODUCTS_QUERY, {
+      variables,
+    });
+
+    if (!products?.edges) {
+      return {
+        type: 'regular',
+        term: filterQuery,
+        result: {products: {edges: []}},
+      };
+    }
+
+    return {
+      type: 'regular',
+      term: filterQuery,
+      result: {products},
+    };
+  } catch (error) {
+    console.error('Regular search error:', error);
+    return {
+      type: 'regular',
+      term: filterQuery,
+      result: null,
+      error: error.message,
+    };
+  }
+}
+
+/* ------------------------------------------------------------------
+   PREDICTIVE SEARCH (unchanged)
 ------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
@@ -877,16 +952,17 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
-async function predictiveSearch({request, context, usePrefix}) {
-  const {storefront} = context;
+async function predictiveSearch({ request, context, usePrefix }) {
+  const { storefront } = context;
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
+  // Normalize by replacing hyphens with spaces
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
 
   if (!normalizedTerm) {
-    return {type, term: '', result: getEmptyPredictiveSearchResult()};
+    return { type, term: '', result: getEmptyPredictiveSearchResult() };
   }
 
   const terms = normalizedTerm
@@ -899,11 +975,11 @@ async function predictiveSearch({request, context, usePrefix}) {
       (word) =>
         `(variants.sku:${usePrefix ? word : `*${word}*`} OR title:${
           usePrefix ? word : `*${word}*`
-        } OR description:${usePrefix ? word : `*${word}*`})`,
+        } OR description:${usePrefix ? word : `*${word}*`})`
     )
     .join(' AND ');
 
-  const {predictiveSearch: items, errors} = await storefront.query(
+  const { predictiveSearch: items, errors } = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
       variables: {
@@ -911,12 +987,12 @@ async function predictiveSearch({request, context, usePrefix}) {
         limitScope: 'EACH',
         term: queryTerm,
       },
-    },
+    }
   );
 
   if (errors) {
     throw new Error(
-      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
+      `Shopify API errors: ${errors.map(({ message }) => message).join(', ')}`
     );
   }
   if (!items) {
@@ -924,7 +1000,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   }
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
-  return {type, term: normalizedTerm, result: {items, total}};
+  return { type, term: normalizedTerm, result: { items, total } };
 }
 
 /**
