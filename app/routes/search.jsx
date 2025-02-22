@@ -24,6 +24,7 @@ export const meta = () => {
 export async function loader({ request, context }) {
   const { storefront } = context;
   const url = new URL(request.url);
+  const usePrefix = searchParams.get('prefix') === 'true';
   const searchParams = url.searchParams;
 
   // -----------------------------------------
@@ -101,10 +102,10 @@ export async function loader({ request, context }) {
     .split(/\s+/)
     .map((word) => word.trim())
     .filter(Boolean)
-    .map((word) => `*${word}*`); // Add wildcards to each term
+    .map((word) => (usePrefix ? `${word}*` : `*${word}*`));
 
   // **Step 1:** Start by searching only within the title
-  const fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR '); // Use OR for field-specific terms
+  const fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
 
   // **Step 2 (Optional):** Include description and variants.sku if needed
   // Uncomment the following lines to include additional fields after verifying titles work
@@ -962,7 +963,9 @@ async function predictiveSearch({ request, context }) {
   const queryTerm = terms
     .map(
       (word) =>
-        `(variants.sku:*${word}* OR title:*${word}* OR description:*${word}*)`,
+        `(variants.sku:${usePrefix ? word : `*${word}*`} OR title:${
+          usePrefix ? word : `*${word}*`
+        } OR description:${usePrefix ? word : `*${word}*`})`,
     )
     .join(' AND ');
 
