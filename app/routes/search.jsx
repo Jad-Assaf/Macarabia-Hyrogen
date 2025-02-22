@@ -23,10 +23,13 @@ export const meta = () => {
 const originalDictionary = {
   apple: ['appel', 'aple', 'apl'],
   iphone: ['iphone 16 pro max', 'iphon', 'iphne'],
-  'airpods pro 2nd': ['airpods pro 2', 'airpods por', 'airpod', 'airpods pro'],
+  airpods: ['earpods', 'airpod'],
+  pro: ['prof', 'pro.'],
+  '2nd': ['2', '2th', '2nd.'],
   hp: ['HP', 'horsepower', 'H.P.'],
   tv: ['Television', 'smart-tv'],
   bag: ['bags', 'handbag', 'handbags'],
+  'WH-1000XM5': ['xm5', '1000xm5'],
 };
 
 function buildSynonymMap(originalDict) {
