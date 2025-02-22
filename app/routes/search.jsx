@@ -3,7 +3,6 @@ import {
   useLoaderData,
   useSearchParams,
   useNavigate,
-  Link,
 } from '@remix-run/react';
 import {useState, useEffect} from 'react';
 import {ProductItem} from '~/components/CollectionDisplay';
@@ -18,10 +17,9 @@ export const meta = () => {
   return [{title: `Macarabia | Search`}];
 };
 
-/**
- * TWO-WAY DICTIONARY - Build a map of synonyms so that
- * "hp", "HP", "horsepower", "H.P." all map to the same set.
- */
+/* ------------------------------------------------------------------
+   TWO-WAY DICTIONARY
+------------------------------------------------------------------- */
 const originalDictionary = {
   hp: ['HP', 'horsepower', 'H.P.'],
   tv: ['Television', 'smart-tv'],
@@ -30,22 +28,13 @@ const originalDictionary = {
 
 function buildSynonymMap(originalDict) {
   const map = {};
-
   for (const [key, synonyms] of Object.entries(originalDict)) {
-    // Combine main key + synonyms => one set
-    const allForms = new Set([
-      key.toLowerCase(),
-      ...synonyms.map((s) => s.toLowerCase()),
-    ]);
-
-    // For each form, map it to all original forms (in their original case),
-    // so searching *any* form yields the entire set.
+    const allForms = new Set([key.toLowerCase(), ...synonyms.map((s) => s.toLowerCase())]);
     const uniqueGroup = Array.from(new Set([key, ...synonyms]));
     for (const form of allForms) {
       map[form] = uniqueGroup;
     }
   }
-
   return map;
 }
 
@@ -65,18 +54,15 @@ function expandSearchTerms(terms) {
   return [...new Set(expanded)];
 }
 
-/**
- * @param {import('@shopify/remix-oxygen').LoaderFunctionArgs} args
- */
+/* ------------------------------------------------------------------
+   LOADER
+------------------------------------------------------------------- */
 export async function loader({request, context}) {
-  const {storefront} = context;
   const url = new URL(request.url);
   const searchParams = url.searchParams;
   const usePrefix = searchParams.get('prefix') === 'true';
 
-  // -----------------------------------------
-  // Check if predictive search
-  // -----------------------------------------
+  // Predictive search check
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
     const result = await predictiveSearch({request, context, usePrefix}).catch(
@@ -98,16 +84,11 @@ export async function loader({request, context}) {
     });
   }
 
-  // -----------------------------------------
-  // Parse after/before for cursor-based pagination
-  // -----------------------------------------
+  // Cursor-based pagination
   const after = searchParams.get('after') || null;
   const before = searchParams.get('before') || null;
 
-  // -----------------------------------------
-  // Build filters with OR for multiple values on the same key,
-  // and map `productType` => `product_type`.
-  // -----------------------------------------
+  // Filter building
   const shopifyKeyMap = {
     vendor: 'vendor',
     productType: 'product_type',
@@ -135,34 +116,31 @@ export async function loader({request, context}) {
     }
   }
 
-  // -----------------------------------------
   // Price range & text search
-  // -----------------------------------------
   const rawTerm = searchParams.get('q') || '';
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // 1) Split user input
+  // Expand synonyms for normal search
   const baseTerms = normalizedTerm
     .split(/\s+/)
     .map((w) => w.trim())
     .filter(Boolean);
 
-  // 2) Expand to synonyms (two-way mapping)
   const synonymsExpanded = expandSearchTerms(baseTerms);
 
-  // 3) Add wildcard if prefix or otherwise
+  // If user chose prefix => "word*" else => "*word*"
   const terms = synonymsExpanded.map((word) =>
     usePrefix ? `${word}*` : `*${word}*`,
   );
 
-  // 4) Build field-specific search
+  // Field-specific (title by default)
   let fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
   /*
-  // If also searching multiple fields:
-  // let fieldSpecificTerms = terms
-  //   .map((word) => `(title:${word} OR description:${word} OR variants.sku:${word})`)
+  // If you want multiple fields:
+  // fieldSpecificTerms = terms
+  //   .map((w) => `(title:${w} OR description:${w} OR variants.sku:${w})`)
   //   .join(' AND ');
   */
 
@@ -177,9 +155,7 @@ export async function loader({request, context}) {
 
   console.log('Filter Query:', filterQuery);
 
-  // -----------------------------------------
-  // Sort
-  // -----------------------------------------
+  // Sorting
   const sortKeyMapping = {
     featured: 'RELEVANCE',
     'price-low-high': 'PRICE',
@@ -193,9 +169,7 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // -----------------------------------------
-  // Perform the regular search with cursors
-  // -----------------------------------------
+  // Perform search
   const result = await regularSearch({
     request,
     context,
@@ -209,9 +183,7 @@ export async function loader({request, context}) {
     return {term: '', result: null, error: error.message};
   });
 
-  // -----------------------------------------
-  // Extract vendor / productType from these results
-  // -----------------------------------------
+  // Vendors & productTypes for filters
   const filteredVendors = [
     ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
   ].sort();
@@ -229,7 +201,7 @@ export async function loader({request, context}) {
 }
 
 /* ------------------------------------------------------------------
-   REACT COMPONENT (unchanged)
+   REACT COMPONENT
 ------------------------------------------------------------------- */
 export default function SearchPage() {
   const {
@@ -244,16 +216,13 @@ export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Price range local states
   const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
 
-  // Desktop filter toggles
   const [showVendors, setShowVendors] = useState(false);
   const [showProductTypes, setShowProductTypes] = useState(false);
   const [showPriceRange, setShowPriceRange] = useState(false);
 
-  // Mobile filters
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [mobileShowVendors, setMobileShowVendors] = useState(false);
   const [mobileShowProductTypes, setMobileShowProductTypes] = useState(false);
@@ -277,9 +246,7 @@ export default function SearchPage() {
       const currentFilters = params.getAll(`filter_${filterKey}`);
       const updatedFilters = currentFilters.filter((item) => item !== value);
       params.delete(`filter_${filterKey}`);
-      updatedFilters.forEach((item) =>
-        params.append(`filter_${filterKey}`, item),
-      );
+      updatedFilters.forEach((item) => params.append(`filter_${filterKey}`, item));
     }
 
     params.delete('after');
@@ -508,7 +475,7 @@ export default function SearchPage() {
             ))}
           </div>
 
-          {/* Prev / Next Buttons */}
+          {/* Pagination */}
           <div
             style={{
               marginTop: '1rem',
@@ -561,10 +528,7 @@ export default function SearchPage() {
         <div className="mobile-filters-overlay">
           <div className={`mobile-filters-panel ${isClosing ? 'closing' : ''}`}>
             <hr className="mobile-filters-hr" />
-            <button
-              className="close-mobile-filters"
-              onClick={closeMobileFilters}
-            >
+            <button className="close-mobile-filters" onClick={closeMobileFilters}>
               <svg
                 fill="#000"
                 height="30px"
@@ -574,23 +538,18 @@ export default function SearchPage() {
                 <g>
                   <path
                     d="M285.08,230.397L456.218,59.27
-                    c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565
-                    c-2.913-2.911-6.866-4.55-10.992-4.55
-                    c-4.127,0-8.08,1.639-10.993,4.55L285.08,171.705
-                    L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55
-                    c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284
-                    c-6.077,6.075-6.077,15.909,0,21.986
-                    l171.138,171.128L4.575,401.505
-                    c-6.074,6.077-6.074,15.911,0,21.986
-                    l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55
-                    c4.127,0,8.08-1.639,10.994-4.55
-                    l171.117-171.12
-                    l171.118,171.12
-                    c2.913,2.911,6.866,4.55,10.993,4.55
-                    c4.128,0,8.081-1.639,10.992-4.55
-                    l32.709-32.719
-                    c6.074-6.075,6.074-15.909,0-21.986
-                    L285.08,230.397z"
+                      c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565
+                      c-2.913-2.911-6.866-4.55-10.992-4.55
+                      c-4.127,0-8.08,1.639-10.993,4.55L285.08,171.705
+                      L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55
+                      c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284
+                      c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128
+                      L4.575,401.505c-6.074,6.077-6.074,15.911,0,21.986
+                      l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55
+                      c4.127,0,8.08-1.639,10.994-4.55l171.117-171.12
+                      l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55
+                      c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719
+                      c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"
                   />
                 </g>
               </svg>
@@ -850,7 +809,7 @@ async function regularSearch({
 }
 
 /* ------------------------------------------------------------------
-   PREDICTIVE SEARCH (now uses expandSearchTerms)
+   PREDICTIVE SEARCH (Important: OR synonyms within each word, AND across words)
 ------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
@@ -970,12 +929,17 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 
+/**
+ * For each typed word:
+ *   1) Expand synonyms => [syn1, syn2, ...]
+ *   2) OR them all together for that single word
+ * Then AND across multiple typed words.
+ */
 async function predictiveSearch({request, context, usePrefix}) {
   const {storefront} = context;
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
 
-  // Normalize by replacing hyphens with spaces
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
@@ -984,31 +948,31 @@ async function predictiveSearch({request, context, usePrefix}) {
     return {type, term: '', result: getEmptyPredictiveSearchResult()};
   }
 
-  // 1) Split user input into words
-  const baseTerms = normalizedTerm
+  // Split the input into separate words
+  const typedWords = normalizedTerm
     .split(/\s+/)
     .map((w) => w.trim())
     .filter(Boolean);
 
-  // 2) Expand synonyms with dictionary
-  const synonymsExpanded = expandSearchTerms(baseTerms);
+  // For each typed word, build an OR group of synonyms
+  const wordGroups = typedWords.map((baseWord) => {
+    // Expand synonyms for THIS typed word
+    const synonyms = expandSearchTerms([baseWord]);
+    // For each synonym, build the triple check (variants.sku / title / description)
+    // then OR them together
+    const orSynonyms = synonyms.map((syn) => {
+      const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
+      return `(variants.sku:${termWithWildcard} OR title:${termWithWildcard} OR description:${termWithWildcard})`;
+    });
+    // Wrap this single word's synonyms in parentheses and join with OR
+    return `(${orSynonyms.join(' OR ')})`;
+  });
 
-  // 3) If usePrefix => apply wildcard, else partial wildcards
-  const finalTerms = synonymsExpanded.map((word) =>
-    usePrefix ? `${word}*` : `*${word}*`,
-  );
+  // Now AND across multiple typed words
+  // e.g. if user typed "horsepower car" => (all synonyms for "horsepower") AND (all synonyms for "car")
+  const queryTerm = wordGroups.join(' AND ');
 
-  // 4) Build the final predictive query
-  //    e.g. (variants.sku:*hp* OR title:*hp* OR description:*hp*)
-  //    Then AND them for multiple words
-  const queryTerm = finalTerms
-    .map(
-      (word) =>
-        `(variants.sku:${word} OR title:${word} OR description:${word})`,
-    )
-    .join(' AND ');
-
-  // Query Shopify's predictiveSearch
+  // Query the Shopify predictiveSearch API
   const {predictiveSearch: items, errors} = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
