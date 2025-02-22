@@ -8,7 +8,7 @@ import {
 import {useState, useEffect} from 'react';
 import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
-import {trackSearch} from '~/lib/metaPixelEvents'; // Import the trackSearch function
+import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
 
 /**
@@ -32,7 +32,7 @@ function buildSynonymMap(originalDict) {
   const map = {};
 
   for (const [key, synonyms] of Object.entries(originalDict)) {
-    // Combine the main key + synonyms => one set
+    // Combine main key + synonyms => one set
     const allForms = new Set([
       key.toLowerCase(),
       ...synonyms.map((s) => s.toLowerCase()),
@@ -56,14 +56,12 @@ function expandSearchTerms(terms) {
   for (const t of terms) {
     const lower = t.toLowerCase();
     if (dictionaryMap[lower]) {
-      // Add all synonyms from the dictionary
       expanded.push(...dictionaryMap[lower]);
     } else {
-      // Or just keep the original
       expanded.push(t);
     }
   }
-  // Deduplicate
+  // Remove duplicates
   return [...new Set(expanded)];
 }
 
@@ -81,7 +79,6 @@ export async function loader({request, context}) {
   // -----------------------------------------
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
-    // Immediately do predictive
     const result = await predictiveSearch({request, context, usePrefix}).catch(
       (error) => {
         console.error('Predictive Search Error:', error);
@@ -97,7 +94,6 @@ export async function loader({request, context}) {
       ...result,
       vendors: [],
       productTypes: [],
-      // No pagination needed for predictive results
       pageInfo: {},
     });
   }
@@ -161,12 +157,12 @@ export async function loader({request, context}) {
     usePrefix ? `${word}*` : `*${word}*`,
   );
 
-  // 4) Build your field-specific search
+  // 4) Build field-specific search
   let fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
   /*
-  // If searching multiple fields:
+  // If also searching multiple fields:
   // let fieldSpecificTerms = terms
-  //   .map(word => `(title:${word} OR description:${word} OR variants.sku:${word})`)
+  //   .map((word) => `(title:${word} OR description:${word} OR variants.sku:${word})`)
   //   .join(' AND ');
   */
 
@@ -214,7 +210,7 @@ export async function loader({request, context}) {
   });
 
   // -----------------------------------------
-  // Extract vendor / productType from *these* results
+  // Extract vendor / productType from these results
   // -----------------------------------------
   const filteredVendors = [
     ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
@@ -621,11 +617,7 @@ export default function SearchPage() {
                           value={vendor}
                           checked={isChecked}
                           onChange={(e) =>
-                            handleFilterChange(
-                              'vendor',
-                              vendor,
-                              e.target.checked,
-                            )
+                            handleFilterChange('vendor', vendor, e.target.checked)
                           }
                         />
                         <label htmlFor={`mobile-vendor-${vendor}`}>
@@ -858,7 +850,7 @@ async function regularSearch({
 }
 
 /* ------------------------------------------------------------------
-   PREDICTIVE SEARCH (unchanged)
+   PREDICTIVE SEARCH (now uses expandSearchTerms)
 ------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
@@ -982,6 +974,8 @@ async function predictiveSearch({request, context, usePrefix}) {
   const {storefront} = context;
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
+
+  // Normalize by replacing hyphens with spaces
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
@@ -990,20 +984,31 @@ async function predictiveSearch({request, context, usePrefix}) {
     return {type, term: '', result: getEmptyPredictiveSearchResult()};
   }
 
-  const terms = normalizedTerm
+  // 1) Split user input into words
+  const baseTerms = normalizedTerm
     .split(/\s+/)
     .map((w) => w.trim())
     .filter(Boolean);
 
-  const queryTerm = terms
+  // 2) Expand synonyms with dictionary
+  const synonymsExpanded = expandSearchTerms(baseTerms);
+
+  // 3) If usePrefix => apply wildcard, else partial wildcards
+  const finalTerms = synonymsExpanded.map((word) =>
+    usePrefix ? `${word}*` : `*${word}*`,
+  );
+
+  // 4) Build the final predictive query
+  //    e.g. (variants.sku:*hp* OR title:*hp* OR description:*hp*)
+  //    Then AND them for multiple words
+  const queryTerm = finalTerms
     .map(
       (word) =>
-        `(variants.sku:${usePrefix ? word : `*${word}*`} OR title:${
-          usePrefix ? word : `*${word}*`
-        } OR description:${usePrefix ? word : `*${word}*`})`,
+        `(variants.sku:${word} OR title:${word} OR description:${word})`,
     )
     .join(' AND ');
 
+  // Query Shopify's predictiveSearch
   const {predictiveSearch: items, errors} = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
@@ -1035,4 +1040,4 @@ async function predictiveSearch({request, context, usePrefix}) {
  * @typedef {import('~/lib/search').RegularSearchReturn} RegularSearchReturn
  * @typedef {import('~/lib/search').PredictiveSearchReturn} PredictiveSearchReturn
  * @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData
- */
+*/
