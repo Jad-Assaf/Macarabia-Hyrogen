@@ -878,7 +878,7 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
     description
     handle
     trackingParameters
-    variants(first: 100) {
+    variants(first: 1) {
       nodes {
         id
         sku
@@ -917,7 +917,7 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
     $types: [PredictiveSearchType!]
   ) @inContext(country: $country, language: $language) {
     predictiveSearch(
-      limitScope: 100,
+      limitScope: $limitScope,
       query: $term,
       types: $types
     ) {
@@ -948,7 +948,7 @@ async function predictiveSearch({ request, context }) {
   const { storefront } = context;
   const url = new URL(request.url);
   const term = String(url.searchParams.get('q') || '').trim();
-  const limit = 10000;
+  const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
 
   if (!term) {
