@@ -8,15 +8,15 @@ import {
 import {useState, useEffect} from 'react';
 import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
-import {trackSearch} from '~/lib/metaPixelEvents';
+import {trackSearch} from '~/lib/metaPixelEvents'; // Import the trackSearch function
 import '../styles/SearchPage.css';
-import customDict from '~/lib/custom_dictionary_autocorrect_ml';
-// Import the custom dictionary (ML refined) from your lib folder
+// Import the ML-refined custom dictionary from your lib folder
+import customDict from '~/lib/custom_dictionary_autocorrect_ml.json';
 
 /**
  * Helper: Expand a search term using the custom dictionary.
- * If the term exists in the dictionary, returns a grouped string
- * like "(word OR synonym1 OR correction1 ...)".
+ * If the term exists (in lowercase) in the dictionary,
+ * returns a grouped string like "(term OR synonym1 OR correction1 ...)".
  * Otherwise, returns the term unchanged.
  *
  * @param {string} term
@@ -27,10 +27,10 @@ function expandTerm(term) {
   if (customDict[lowerTerm]) {
     const synonyms = customDict[lowerTerm].synonyms || [];
     const corrections = customDict[lowerTerm].corrections || [];
-    // Use a Set to deduplicate
-    const expandedSet = new Set([term, ...synonyms, ...corrections]);
-    // Return a group string for use in the query
-    return `(${[...expandedSet].join(' OR ')})`;
+    const allCandidates = [term, ...synonyms, ...corrections];
+    // Remove duplicates
+    const unique = Array.from(new Set(allCandidates));
+    return `(${unique.join(' OR ')})`;
   }
   return term;
 }
@@ -89,13 +89,16 @@ export async function loader({request, context}) {
   // -----------------------------------------
   const shopifyKeyMap = {
     vendor: 'vendor',
-    productType: 'product_type',
+    productType: 'product_type', // important for Shopify's textual query
   };
 
+  // Collect all filter values in a map:
+  //   filter_vendor=Nike, filter_vendor=Adidas => [Nike, Adidas]
+  //   filter_productType=Shirt => [Shirt]
   const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
-      const rawKey = key.replace('filter_', '');
+      const rawKey = key.replace('filter_', ''); // e.g. vendor, productType
       if (!filterMap.has(rawKey)) {
         filterMap.set(rawKey, []);
       }
@@ -103,6 +106,7 @@ export async function loader({request, context}) {
     }
   }
 
+  // Build the OR groups for each filter key
   const filterQueryParts = [];
   for (const [rawKey, values] of filterMap.entries()) {
     const shopifyKey = shopifyKeyMap[rawKey] || rawKey;
@@ -123,23 +127,28 @@ export async function loader({request, context}) {
   const maxPrice = searchParams.get('maxPrice');
 
   // Process the search term:
-  // Split the normalized term into words, expand each word using our custom dictionary,
-  // then add wildcards based on the prefix flag.
-  const words = normalizedTerm
+  // Split into words, trim them, then expand each word using our custom dictionary.
+  const rawWords = normalizedTerm
     .split(/\s+/)
     .map((word) => word.trim())
     .filter(Boolean);
-  const expandedWords = words.map(expandTerm);
+  const expandedWords = rawWords.map((word) => {
+    const expanded = expandTerm(word);
+    // Apply wildcards based on usePrefix flag.
+    return usePrefix ? expanded + '*' : '*' + expanded + '*';
+  });
+  // Build field-specific query; here, we're searching in the title field.
   const fieldSpecificTerms = expandedWords
-    .map((word) => `title:${usePrefix ? word + '*' : '*' + word + '*'}`)
+    .map((word) => `title:${word}`)
     .join(' AND ');
 
-  // Build the final filter query
+  // Now, use fieldSpecificTerms in the filterQuery.
   let filterQuery = fieldSpecificTerms;
   if (filterQueryParts.length > 0) {
     filterQuery += ' AND ' + filterQueryParts.join(' AND ');
   }
 
+  // **Debugging Step:** Log the constructed filterQuery
   console.log('Filter Query:', filterQuery);
 
   // -----------------------------------------
@@ -308,8 +317,8 @@ export default function SearchPage() {
   return (
     <div className="search">
       <h1>Search Results</h1>
-
       <div className="search-filters-container" style={{display: 'flex'}}>
+        {/* Sidebar (Desktop) */}
         <div className="filters">
           <fieldset>
             <button
@@ -349,7 +358,6 @@ export default function SearchPage() {
               </div>
             )}
           </fieldset>
-
           <fieldset>
             <button
               type="button"
@@ -392,7 +400,6 @@ export default function SearchPage() {
               </div>
             )}
           </fieldset>
-
           <fieldset>
             <button
               type="button"
@@ -439,6 +446,7 @@ export default function SearchPage() {
           </fieldset>
         </div>
 
+        {/* Main Search Results */}
         <div className="search-results">
           <div>
             <label htmlFor="sort-select">Sort by:</label>
@@ -454,13 +462,11 @@ export default function SearchPage() {
               <option value="newest">Newest</option>
             </select>
           </div>
-
           <div className="search-results-grid">
             {edges.map(({node: product}, idx) => (
               <ProductItem product={product} index={idx} key={product.id} />
             ))}
           </div>
-
           <div
             style={{
               marginTop: '1rem',
@@ -875,11 +881,54 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 async function predictiveSearch({request, context, usePrefix}) {
-  return {
-    type: 'predictive',
-    term: '',
-    result: getEmptyPredictiveSearchResult(),
-  };
+  const {storefront} = context;
+  const url = new URL(request.url);
+  const rawTerm = String(url.searchParams.get('q') || '').trim();
+  // Normalize by replacing hyphens with spaces
+  const normalizedTerm = rawTerm.replace(/-/g, ' ');
+  const limit = Number(url.searchParams.get('limit') || 10000);
+  const type = 'predictive';
+
+  if (!normalizedTerm) {
+    return {type, term: '', result: getEmptyPredictiveSearchResult()};
+  }
+
+  const terms = normalizedTerm
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter(Boolean);
+
+  const queryTerm = terms
+    .map(
+      (word) =>
+        `(variants.sku:${usePrefix ? word : `*${word}*`} OR title:${
+          usePrefix ? word : `*${word}*`
+        } OR description:${usePrefix ? word : `*${word}*`})`,
+    )
+    .join(' AND ');
+
+  const {predictiveSearch: items, errors} = await storefront.query(
+    PREDICTIVE_SEARCH_QUERY,
+    {
+      variables: {
+        limit,
+        limitScope: 'EACH',
+        term: queryTerm,
+      },
+    },
+  );
+
+  if (errors) {
+    throw new Error(
+      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
+    );
+  }
+  if (!items) {
+    throw new Error('No predictive search data returned from Shopify API');
+  }
+
+  const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
+  return {type, term: normalizedTerm, result: {items, total}};
 }
 
 /**
