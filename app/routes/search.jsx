@@ -101,17 +101,17 @@ export async function loader({request, context}) {
   // Price range & text search
   // -----------------------------------------
   const rawTerm = searchParams.get('q') || '';
+  const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
   // Process the search term to include wildcards and specify fields
-  const terms = rawTerm
+  const terms = normalizedTerm
     .split(/\s+/)
     .map((word) => word.trim())
     .filter(Boolean)
     .map((word) => (usePrefix ? `${word}*` : `*${word}*`));
 
-  // **Step 1:** Start by searching only within the title
   const fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
 
   // **Step 2 (Optional):** Include description and variants.sku if needed
@@ -952,31 +952,34 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
-async function predictiveSearch({request, context, usePrefix}) {
-  const {storefront} = context;
+async function predictiveSearch({ request, context, usePrefix }) {
+  const { storefront } = context;
   const url = new URL(request.url);
-  const term = String(url.searchParams.get('q') || '').trim();
+  const rawTerm = String(url.searchParams.get('q') || '').trim();
+  // Normalize by replacing hyphens with spaces
+  const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
 
-  if (!term) {
-    return {type, term, result: getEmptyPredictiveSearchResult()};
+  if (!normalizedTerm) {
+    return { type, term: '', result: getEmptyPredictiveSearchResult() };
   }
 
-  const terms = term
+  const terms = normalizedTerm
     .split(/\s+/)
     .map((w) => w.trim())
     .filter(Boolean);
+
   const queryTerm = terms
     .map(
       (word) =>
         `(variants.sku:${usePrefix ? word : `*${word}*`} OR title:${
           usePrefix ? word : `*${word}*`
-        } OR description:${usePrefix ? word : `*${word}*`})`,
+        } OR description:${usePrefix ? word : `*${word}*`})`
     )
     .join(' AND ');
 
-  const {predictiveSearch: items, errors} = await storefront.query(
+  const { predictiveSearch: items, errors } = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
       variables: {
@@ -984,12 +987,12 @@ async function predictiveSearch({request, context, usePrefix}) {
         limitScope: 'EACH',
         term: queryTerm,
       },
-    },
+    }
   );
 
   if (errors) {
     throw new Error(
-      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
+      `Shopify API errors: ${errors.map(({ message }) => message).join(', ')}`
     );
   }
   if (!items) {
@@ -997,7 +1000,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   }
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
-  return {type, term, result: {items, total}};
+  return { type, term: normalizedTerm, result: { items, total } };
 }
 
 /**
