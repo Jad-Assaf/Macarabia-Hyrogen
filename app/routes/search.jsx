@@ -878,7 +878,7 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
     description
     handle
     trackingParameters
-    variants(first: 1) {
+    variants(first: 100) {
       nodes {
         id
         sku
@@ -948,7 +948,7 @@ async function predictiveSearch({ request, context }) {
   const { storefront } = context;
   const url = new URL(request.url);
   const term = String(url.searchParams.get('q') || '').trim();
-  const limit = Number(url.searchParams.get('limit') || 10000);
+  const limit = 10000;
   const type = 'predictive';
 
   if (!term) {
