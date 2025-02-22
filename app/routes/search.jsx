@@ -917,7 +917,7 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
     $types: [PredictiveSearchType!]
   ) @inContext(country: $country, language: $language) {
     predictiveSearch(
-      limitScope: $limitScope,
+      limitScope: 100,
       query: $term,
       types: $types
     ) {
