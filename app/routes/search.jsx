@@ -21,6 +21,9 @@ export const meta = () => {
    TWO-WAY DICTIONARY
 ------------------------------------------------------------------- */
 const originalDictionary = {
+  apple: ['appel', 'aple', 'apl'],
+  iphone: ['iphone 16 pro max', 'iphon', 'iphne'],
+  'airpods pro 2nd': ['airpods pro 2', 'airpods por', 'airpod', 'airpods pro'],
   hp: ['HP', 'horsepower', 'H.P.'],
   tv: ['Television', 'smart-tv'],
   bag: ['bags', 'handbag', 'handbags'],
