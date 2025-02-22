@@ -8,8 +8,32 @@ import {
 import {useState, useEffect} from 'react';
 import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
-import {trackSearch} from '~/lib/metaPixelEvents'; // Import the trackSearch function
+import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
+import customDict from '~/lib/custom_dictionary_autocorrect_ml';
+// Import the custom dictionary (ML refined) from your lib folder
+
+/**
+ * Helper: Expand a search term using the custom dictionary.
+ * If the term exists in the dictionary, returns a grouped string
+ * like "(word OR synonym1 OR correction1 ...)".
+ * Otherwise, returns the term unchanged.
+ *
+ * @param {string} term
+ * @returns {string}
+ */
+function expandTerm(term) {
+  const lowerTerm = term.toLowerCase();
+  if (customDict[lowerTerm]) {
+    const synonyms = customDict[lowerTerm].synonyms || [];
+    const corrections = customDict[lowerTerm].corrections || [];
+    // Use a Set to deduplicate
+    const expandedSet = new Set([term, ...synonyms, ...corrections]);
+    // Return a group string for use in the query
+    return `(${[...expandedSet].join(' OR ')})`;
+  }
+  return term;
+}
 
 /**
  * @type {import('@remix-run/react').MetaFunction}
@@ -65,16 +89,13 @@ export async function loader({request, context}) {
   // -----------------------------------------
   const shopifyKeyMap = {
     vendor: 'vendor',
-    productType: 'product_type', // important for Shopify's textual query
+    productType: 'product_type',
   };
 
-  // Collect all filter values in a map:
-  //   filter_vendor=Nike, filter_vendor=Adidas => [Nike, Adidas]
-  //   filter_productType=Shirt => [Shirt]
   const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
-      const rawKey = key.replace('filter_', ''); // e.g. vendor, productType
+      const rawKey = key.replace('filter_', '');
       if (!filterMap.has(rawKey)) {
         filterMap.set(rawKey, []);
       }
@@ -82,16 +103,12 @@ export async function loader({request, context}) {
     }
   }
 
-  // Build the OR groups for each filter key
   const filterQueryParts = [];
   for (const [rawKey, values] of filterMap.entries()) {
-    // e.g. shopifyKey = product_type or vendor
     const shopifyKey = shopifyKeyMap[rawKey] || rawKey;
     if (values.length === 1) {
-      // single value => vendor:"Nike"
       filterQueryParts.push(`${shopifyKey}:"${values[0]}"`);
     } else {
-      // multiple => (vendor:"Nike" OR vendor:"Adidas")
       const orGroup = values.map((v) => `${shopifyKey}:"${v}"`).join(' OR ');
       filterQueryParts.push(`(${orGroup})`);
     }
@@ -105,39 +122,24 @@ export async function loader({request, context}) {
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // Process the search term to include wildcards and specify fields
-  const terms = normalizedTerm
+  // Process the search term:
+  // Split the normalized term into words, expand each word using our custom dictionary,
+  // then add wildcards based on the prefix flag.
+  const words = normalizedTerm
     .split(/\s+/)
     .map((word) => word.trim())
-    .filter(Boolean)
-    .map((word) => (usePrefix ? `${word}*` : `*${word}*`));
+    .filter(Boolean);
+  const expandedWords = words.map(expandTerm);
+  const fieldSpecificTerms = expandedWords
+    .map((word) => `title:${usePrefix ? word + '*' : '*' + word + '*'}`)
+    .join(' AND ');
 
-  const fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
-
-  // **Step 2 (Optional):** Include description and variants.sku if needed
-  // Uncomment the following lines to include additional fields after verifying titles work
-  /*
-  const fieldSpecificTerms = terms
-    .map(
-      (word) =>
-        `(title:${word} OR description:${word} OR variants.sku:${word})`,
-    )
-    .join(' AND '); // Combine with AND for multiple terms
-  */
-
-  // Now, use 'fieldSpecificTerms' instead of 'termWithWildcards' in the filterQuery
+  // Build the final filter query
   let filterQuery = fieldSpecificTerms;
-
   if (filterQueryParts.length > 0) {
-    if (filterQuery) {
-      // e.g. "title:*XM5* AND (vendor:"Sony" OR vendor:"Adidas")"
-      filterQuery += ' AND ' + filterQueryParts.join(' AND ');
-    } else {
-      filterQuery = filterQueryParts.join(' AND ');
-    }
+    filterQuery += ' AND ' + filterQueryParts.join(' AND ');
   }
 
-  // **Debugging Step:** Log the constructed filterQuery
   console.log('Filter Query:', filterQuery);
 
   // -----------------------------------------
@@ -172,9 +174,6 @@ export async function loader({request, context}) {
     return {term: '', result: null, error: error.message};
   });
 
-  // -----------------------------------------
-  // Extract vendor / productType from *these* results
-  // -----------------------------------------
   const filteredVendors = [
     ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
   ].sort();
@@ -207,16 +206,13 @@ export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Price range local states
   const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
 
-  // Desktop filter toggles
   const [showVendors, setShowVendors] = useState(false);
   const [showProductTypes, setShowProductTypes] = useState(false);
   const [showPriceRange, setShowPriceRange] = useState(false);
 
-  // Mobile filters
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [mobileShowVendors, setMobileShowVendors] = useState(false);
   const [mobileShowProductTypes, setMobileShowProductTypes] = useState(false);
@@ -231,10 +227,8 @@ export default function SearchPage() {
     }, 300);
   };
 
-  // Filter changes (already supports multiple filters)
   const handleFilterChange = (filterKey, value, checked) => {
     const params = new URLSearchParams(searchParams);
-
     if (checked) {
       params.append(`filter_${filterKey}`, value);
     } else {
@@ -245,24 +239,19 @@ export default function SearchPage() {
         params.append(`filter_${filterKey}`, item),
       );
     }
-
-    // Reset cursors
     params.delete('after');
     params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
-  // Sorting
   const handleSortChange = (e) => {
     const params = new URLSearchParams(searchParams);
     params.set('sort', e.target.value);
-    // Reset cursors
     params.delete('after');
     params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
-  // Price filter
   const applyPriceFilter = () => {
     const params = new URLSearchParams(searchParams);
     if (minPrice) {
@@ -275,20 +264,17 @@ export default function SearchPage() {
     } else {
       params.delete('maxPrice');
     }
-    // Reset cursors
     params.delete('after');
     params.delete('before');
     navigate(`/search?${params.toString()}`);
   };
 
-  // Track Search event
   useEffect(() => {
     if (term) {
       trackSearch(term);
     }
   }, [term]);
 
-  // If we have no products, show "no results"
   const edges = result?.products?.edges || [];
   if (!edges.length) {
     return (
@@ -299,12 +285,10 @@ export default function SearchPage() {
     );
   }
 
-  // Grab pageInfo so we know if there's a next / prev page
   const pageInfo = result?.products?.pageInfo || {};
   const hasNextPage = pageInfo.hasNextPage;
   const hasPreviousPage = pageInfo.hasPreviousPage;
 
-  // Handler: next => set after = pageInfo.endCursor
   const goNext = () => {
     if (!hasNextPage) return;
     const params = new URLSearchParams(searchParams);
@@ -313,7 +297,6 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
-  // Handler: prev => set before = pageInfo.startCursor
   const goPrev = () => {
     if (!hasPreviousPage) return;
     const params = new URLSearchParams(searchParams);
@@ -327,7 +310,6 @@ export default function SearchPage() {
       <h1>Search Results</h1>
 
       <div className="search-filters-container" style={{display: 'flex'}}>
-        {/* Sidebar (Desktop) */}
         <div className="filters">
           <fieldset>
             <button
@@ -457,9 +439,7 @@ export default function SearchPage() {
           </fieldset>
         </div>
 
-        {/* Main Search Results */}
         <div className="search-results">
-          {/* Sorting */}
           <div>
             <label htmlFor="sort-select">Sort by:</label>
             <select
@@ -475,14 +455,12 @@ export default function SearchPage() {
             </select>
           </div>
 
-          {/* Product Grid */}
           <div className="search-results-grid">
             {edges.map(({node: product}, idx) => (
               <ProductItem product={product} index={idx} key={product.id} />
             ))}
           </div>
 
-          {/* Prev / Next Buttons */}
           <div
             style={{
               marginTop: '1rem',
@@ -523,7 +501,6 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* Mobile Filters */}
       <button
         className="mobile-filters-toggle"
         onClick={() => setIsMobileFiltersOpen(true)}
@@ -685,12 +662,8 @@ export default function SearchPage() {
 }
 
 /* ------------------------------------------------------------------
-   GRAPHQL + REGULAR SEARCH
+   GRAPHQL + REGULAR SEARCH (Not used in file-based approach)
 ------------------------------------------------------------------- */
-
-/**
- * Query for the subset with cursors
- */
 const FILTERED_PRODUCTS_QUERY = `#graphql
   query FilteredProducts(
     $filterQuery: String,
@@ -766,10 +739,8 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
 `;
 
 /**
- * Regular search fetcher using cursors
- * If `after` is present, we use `first=50`.
- * If `before` is present, we use `last=50`.
- * If neither is present, we do first=50 from the start.
+ * Regular search fetcher using cursors.
+ * (Not used in the file-based approach.)
  */
 async function regularSearch({
   request,
@@ -780,60 +751,11 @@ async function regularSearch({
   after = null,
   before = null,
 }) {
-  const {storefront} = context;
-
-  let first = null;
-  let last = null;
-  if (after) {
-    first = 50; // going forward
-  } else if (before) {
-    last = 50; // going backward
-  } else {
-    // default: first page
-    first = 50;
-  }
-
-  const variables = {
-    filterQuery,
-    sortKey,
-    reverse,
-    after,
-    before,
-    first,
-    last,
-  };
-
-  try {
-    const {products} = await storefront.query(FILTERED_PRODUCTS_QUERY, {
-      variables,
-    });
-
-    if (!products?.edges) {
-      return {
-        type: 'regular',
-        term: filterQuery,
-        result: {products: {edges: []}},
-      };
-    }
-
-    return {
-      type: 'regular',
-      term: filterQuery,
-      result: {products},
-    };
-  } catch (error) {
-    console.error('Regular search error:', error);
-    return {
-      type: 'regular',
-      term: filterQuery,
-      result: null,
-      error: error.message,
-    };
-  }
+  return {term: filterQuery, result: null};
 }
 
 /* ------------------------------------------------------------------
-   PREDICTIVE SEARCH (unchanged)
+   PREDICTIVE SEARCH (Not used in the file-based approach)
 ------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
@@ -952,55 +874,12 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
-async function predictiveSearch({ request, context, usePrefix }) {
-  const { storefront } = context;
-  const url = new URL(request.url);
-  const rawTerm = String(url.searchParams.get('q') || '').trim();
-  // Normalize by replacing hyphens with spaces
-  const normalizedTerm = rawTerm.replace(/-/g, ' ');
-  const limit = Number(url.searchParams.get('limit') || 10000);
-  const type = 'predictive';
-
-  if (!normalizedTerm) {
-    return { type, term: '', result: getEmptyPredictiveSearchResult() };
-  }
-
-  const terms = normalizedTerm
-    .split(/\s+/)
-    .map((w) => w.trim())
-    .filter(Boolean);
-
-  const queryTerm = terms
-    .map(
-      (word) =>
-        `(variants.sku:${usePrefix ? word : `*${word}*`} OR title:${
-          usePrefix ? word : `*${word}*`
-        } OR description:${usePrefix ? word : `*${word}*`})`
-    )
-    .join(' AND ');
-
-  const { predictiveSearch: items, errors } = await storefront.query(
-    PREDICTIVE_SEARCH_QUERY,
-    {
-      variables: {
-        limit,
-        limitScope: 'EACH',
-        term: queryTerm,
-      },
-    }
-  );
-
-  if (errors) {
-    throw new Error(
-      `Shopify API errors: ${errors.map(({ message }) => message).join(', ')}`
-    );
-  }
-  if (!items) {
-    throw new Error('No predictive search data returned from Shopify API');
-  }
-
-  const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
-  return { type, term: normalizedTerm, result: { items, total } };
+async function predictiveSearch({request, context, usePrefix}) {
+  return {
+    type: 'predictive',
+    term: '',
+    result: getEmptyPredictiveSearchResult(),
+  };
 }
 
 /**
