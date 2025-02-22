@@ -28,6 +28,33 @@ export async function loader({request, context}) {
   const usePrefix = searchParams.get('prefix') === 'true';
 
   // -----------------------------------------
+  // CUSTOM DICTIONARY - START
+  // Example synonyms or expansions. You can structure it however you like.
+  // Key = lowercased word, Value = array of expansions.
+  const dictionary = {
+    hp: ['HP', 'horsepower', 'H.P.'],
+    tv: ['television', 'smart-tv'],
+    bag: ['bags', 'handbag', 'handbags'],
+  };
+
+  function expandSearchTerms(baseTerms) {
+    const expanded = [];
+    for (const t of baseTerms) {
+      const lower = t.toLowerCase();
+      // Always include the original
+      expanded.push(t);
+      // If we have expansions, include them as well
+      if (dictionary[lower]) {
+        expanded.push(...dictionary[lower]);
+      }
+    }
+    // Remove duplicates
+    return [...new Set(expanded)];
+  }
+  // CUSTOM DICTIONARY - END
+  // -----------------------------------------
+
+  // -----------------------------------------
   // Check if predictive search
   // -----------------------------------------
   const isPredictive = searchParams.has('predictive');
@@ -74,7 +101,7 @@ export async function loader({request, context}) {
   const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
-      const rawKey = key.replace('filter_', ''); // e.g. vendor, productType
+      const rawKey = key.replace('filter_', '');
       if (!filterMap.has(rawKey)) {
         filterMap.set(rawKey, []);
       }
@@ -85,13 +112,10 @@ export async function loader({request, context}) {
   // Build the OR groups for each filter key
   const filterQueryParts = [];
   for (const [rawKey, values] of filterMap.entries()) {
-    // e.g. shopifyKey = product_type or vendor
     const shopifyKey = shopifyKeyMap[rawKey] || rawKey;
     if (values.length === 1) {
-      // single value => vendor:"Nike"
       filterQueryParts.push(`${shopifyKey}:"${values[0]}"`);
     } else {
-      // multiple => (vendor:"Nike" OR vendor:"Adidas")
       const orGroup = values.map((v) => `${shopifyKey}:"${v}"`).join(' OR ');
       filterQueryParts.push(`(${orGroup})`);
     }
@@ -105,39 +129,44 @@ export async function loader({request, context}) {
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // Process the search term to include wildcards and specify fields
-  const terms = normalizedTerm
+  // -----------------------------------------
+  // CUSTOM DICTIONARY USAGE
+  // -----------------------------------------
+  // Instead of directly mapping to wildcards, let's first expand them.
+  const baseTerms = normalizedTerm
     .split(/\s+/)
-    .map((word) => word.trim())
-    .filter(Boolean)
-    .map((word) => (usePrefix ? `${word}*` : `*${word}*`));
+    .map((w) => w.trim())
+    .filter(Boolean);
 
-  const fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
+  // Expand using our custom dictionary
+  const expandedTerms = expandSearchTerms(baseTerms);
 
-  // **Step 2 (Optional):** Include description and variants.sku if needed
-  // Uncomment the following lines to include additional fields after verifying titles work
+  // Then apply prefix/wildcard
+  const terms = expandedTerms.map((word) =>
+    usePrefix ? `${word}*` : `*${word}*`,
+  );
+
+  // Now build the field-specific search
+  let fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
+
   /*
-  const fieldSpecificTerms = terms
-    .map(
-      (word) =>
-        `(title:${word} OR description:${word} OR variants.sku:${word})`,
-    )
-    .join(' AND '); // Combine with AND for multiple terms
+  // If also searching descriptions/variants.sku, do:
+  // let fieldSpecificTerms = terms
+  //   .map(
+  //     (word) => `(title:${word} OR description:${word} OR variants.sku:${word})`
+  //   )
+  //   .join(' AND ');
   */
 
-  // Now, use 'fieldSpecificTerms' instead of 'termWithWildcards' in the filterQuery
   let filterQuery = fieldSpecificTerms;
-
   if (filterQueryParts.length > 0) {
     if (filterQuery) {
-      // e.g. "title:*XM5* AND (vendor:"Sony" OR vendor:"Adidas")"
       filterQuery += ' AND ' + filterQueryParts.join(' AND ');
     } else {
       filterQuery = filterQueryParts.join(' AND ');
     }
   }
 
-  // **Debugging Step:** Log the constructed filterQuery
   console.log('Filter Query:', filterQuery);
 
   // -----------------------------------------
@@ -173,7 +202,7 @@ export async function loader({request, context}) {
   });
 
   // -----------------------------------------
-  // Extract vendor / productType from *these* results
+  // Extract vendor / productType from these results
   // -----------------------------------------
   const filteredVendors = [
     ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
@@ -231,7 +260,7 @@ export default function SearchPage() {
     }, 300);
   };
 
-  // Filter changes (already supports multiple filters)
+  // Filter changes
   const handleFilterChange = (filterKey, value, checked) => {
     const params = new URLSearchParams(searchParams);
 
@@ -246,7 +275,6 @@ export default function SearchPage() {
       );
     }
 
-    // Reset cursors
     params.delete('after');
     params.delete('before');
     navigate(`/search?${params.toString()}`);
@@ -256,7 +284,6 @@ export default function SearchPage() {
   const handleSortChange = (e) => {
     const params = new URLSearchParams(searchParams);
     params.set('sort', e.target.value);
-    // Reset cursors
     params.delete('after');
     params.delete('before');
     navigate(`/search?${params.toString()}`);
@@ -275,7 +302,6 @@ export default function SearchPage() {
     } else {
       params.delete('maxPrice');
     }
-    // Reset cursors
     params.delete('after');
     params.delete('before');
     navigate(`/search?${params.toString()}`);
@@ -304,7 +330,6 @@ export default function SearchPage() {
   const hasNextPage = pageInfo.hasNextPage;
   const hasPreviousPage = pageInfo.hasPreviousPage;
 
-  // Handler: next => set after = pageInfo.endCursor
   const goNext = () => {
     if (!hasNextPage) return;
     const params = new URLSearchParams(searchParams);
@@ -313,7 +338,6 @@ export default function SearchPage() {
     navigate(`/search?${params.toString()}`);
   };
 
-  // Handler: prev => set before = pageInfo.startCursor
   const goPrev = () => {
     if (!hasPreviousPage) return;
     const params = new URLSearchParams(searchParams);
@@ -548,17 +572,22 @@ export default function SearchPage() {
                 <g>
                   <path
                     d="M285.08,230.397L456.218,59.27
-                    c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55
-                    c-4.127,0-8.08,1.639-10.993,4.55L285.08,171.705L59.25,4.565
-                    c-2.913-2.911-6.866-4.55-10.993-4.55
+                    c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565
+                    c-2.913-2.911-6.866-4.55-10.992-4.55
+                    c-4.127,0-8.08,1.639-10.993,4.55L285.08,171.705
+                    L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55
                     c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284
-                    c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128
-                    L4.575,401.505c-6.074,6.077-6.074,15.911,0,21.986
+                    c-6.077,6.075-6.077,15.909,0,21.986
+                    l171.138,171.128L4.575,401.505
+                    c-6.074,6.077-6.074,15.911,0,21.986
                     l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55
-                    c4.127,0,8.08-1.639,10.994-4.55l171.117-171.12
-                    l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55
-                    c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719
-                    c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"
+                    c4.127,0,8.08-1.639,10.994-4.55
+                    l171.117-171.12l171.118,171.12
+                    c2.913,2.911,6.866,4.55,10.993,4.55
+                    c4.128,0,8.081-1.639,10.992-4.55
+                    l32.709-32.719
+                    c6.074-6.075,6.074-15.909,0-21.986
+                    L285.08,230.397z"
                   />
                 </g>
               </svg>
@@ -585,11 +614,7 @@ export default function SearchPage() {
                           value={vendor}
                           checked={isChecked}
                           onChange={(e) =>
-                            handleFilterChange(
-                              'vendor',
-                              vendor,
-                              e.target.checked,
-                            )
+                            handleFilterChange('vendor', vendor, e.target.checked)
                           }
                         />
                         <label htmlFor={`mobile-vendor-${vendor}`}>
@@ -765,12 +790,6 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
   }
 `;
 
-/**
- * Regular search fetcher using cursors
- * If `after` is present, we use `first=50`.
- * If `before` is present, we use `last=50`.
- * If neither is present, we do first=50 from the start.
- */
 async function regularSearch({
   request,
   context,
@@ -789,7 +808,6 @@ async function regularSearch({
   } else if (before) {
     last = 50; // going backward
   } else {
-    // default: first page
     first = 50;
   }
 
@@ -952,11 +970,11 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
+
 async function predictiveSearch({ request, context, usePrefix }) {
   const { storefront } = context;
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
-  // Normalize by replacing hyphens with spaces
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
@@ -1010,4 +1028,4 @@ async function predictiveSearch({ request, context, usePrefix }) {
  * @typedef {import('~/lib/search').RegularSearchReturn} RegularSearchReturn
  * @typedef {import('~/lib/search').PredictiveSearchReturn} PredictiveSearchReturn
  * @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData
- */
+*/
