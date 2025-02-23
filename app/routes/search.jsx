@@ -175,6 +175,7 @@ export async function loader({request, context}) {
     before,
   }).catch((error) => {
     console.error('Search Error:', error);
+    console.log(customDictionary)
     return {term: '', result: null, error: error.message};
   });
 
