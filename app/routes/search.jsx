@@ -9,7 +9,6 @@ import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
-import customDictionary from '~/lib/customDictionary.json';
 
 /**
  * @type {import('@remix-run/react').MetaFunction}
@@ -21,9 +20,21 @@ export const meta = () => {
 /* ------------------------------------------------------------------
    TWO-WAY DICTIONARY
 ------------------------------------------------------------------- */
-function buildSynonymMap(dictionary) {
+const originalDictionary = {
+  'apple': ['appel', 'aple', 'apl'],
+  iphone: ['iphone 16 pro max', 'iphon', 'iphne'],
+  airpods: ['earpods', 'airpod'],
+  pro: ['prof', 'pro.'],
+  '2nd': ['2', '2th', '2nd.'],
+  hp: ['HP', 'horsepower', 'H.P.'],
+  tv: ['Television', 'smart-tv'],
+  bag: ['bags', 'handbag', 'handbags'],
+  'WH-1000XM5': ['xm5', '1000xm5'],
+};
+
+function buildSynonymMap(originalDict) {
   const map = {};
-  for (const [key, synonyms] of Object.entries(dictionary)) {
+  for (const [key, synonyms] of Object.entries(originalDict)) {
     const allForms = new Set([key.toLowerCase(), ...synonyms.map((s) => s.toLowerCase())]);
     const uniqueGroup = Array.from(new Set([key, ...synonyms]));
     for (const form of allForms) {
@@ -33,7 +44,7 @@ function buildSynonymMap(dictionary) {
   return map;
 }
 
-const dictionaryMap = buildSynonymMap(customDictionary);
+const dictionaryMap = buildSynonymMap(originalDictionary);
 
 function expandSearchTerms(terms) {
   const expanded = [];
@@ -175,7 +186,6 @@ export async function loader({request, context}) {
     before,
   }).catch((error) => {
     console.error('Search Error:', error);
-    console.log(customDictionary)
     return {term: '', result: null, error: error.message};
   });
 
@@ -1000,4 +1010,4 @@ async function predictiveSearch({request, context, usePrefix}) {
  * @typedef {import('~/lib/search').RegularSearchReturn} RegularSearchReturn
  * @typedef {import('~/lib/search').PredictiveSearchReturn} PredictiveSearchReturn
  * @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData
- */
+*/
