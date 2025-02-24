@@ -130,7 +130,13 @@ export async function loader({request, context}) {
   );
 
   // Field-specific (title by default)
-  let fieldSpecificTerms = terms.map((word) => `title:${word}`).join(' OR ');
+  let fieldSpecificTerms = terms
+    .map(
+      (word) =>
+        `(title:${word} OR product_type:${word} OR description:${word} OR variants.sku:${word})`,
+    )
+    .join(' OR ');
+
   /*
   // If you want multiple fields:
   // fieldSpecificTerms = terms
