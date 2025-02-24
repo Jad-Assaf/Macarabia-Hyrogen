@@ -869,6 +869,7 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
     title
     vendor
     description
+    productType
     handle
     trackingParameters
     variants(first: 1) {
