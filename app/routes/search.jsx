@@ -870,6 +870,7 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
     vendor
     description
     productType
+    tags
     handle
     trackingParameters
     variants(first: 1) {
@@ -972,7 +973,7 @@ async function predictiveSearch({request, context, usePrefix}) {
     // then OR them together
     const orSynonyms = synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
-      return `(variants.sku:${termWithWildcard} OR title:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard})`;
+      return `(variants.sku:${termWithWildcard} OR title:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
     });
     // Wrap this single word's synonyms in parentheses and join with OR
     return `(${orSynonyms.join(' OR ')})`;
