@@ -57,6 +57,8 @@ export default async function handleRequest(
       'https://td.doubleclick.net/',
       'https://stats.g.doubleclick.net/',
       'https://googleads.g.doubleclick.net',
+      'https://searchserverapi.com/',
+      'https://www.searchserverapi.com/',
     ],
     connectSrc: [
       "'self'", // Allow scripts from the same origin
@@ -81,6 +83,8 @@ export default async function handleRequest(
       'https://td.doubleclick.net/',
       'https://stats.g.doubleclick.net/',
       'https://googleads.g.doubleclick.net',
+      'https://searchserverapi.com/',
+      'https://www.searchserverapi.com/',
     ],
     frameSrc: [
       "'self'", // Allow frames from the same origin
@@ -107,6 +111,8 @@ export default async function handleRequest(
       'https://td.doubleclick.net/',
       'https://stats.g.doubleclick.net/',
       'https://googleads.g.doubleclick.net',
+      'https://searchserverapi.com/',
+      'https://www.searchserverapi.com/',
     ],
     imgSrc: [
       "'self'", // Allow images from the same origin
@@ -133,6 +139,8 @@ export default async function handleRequest(
       'https://td.doubleclick.net/',
       'https://stats.g.doubleclick.net/',
       'https://googleads.g.doubleclick.net',
+      'https://searchserverapi.com/',
+      'https://www.searchserverapi.com/',
     ],
     mediaSrc: [
       "'self'",
@@ -145,6 +153,8 @@ export default async function handleRequest(
       'https://img.icons8.com',
       'https://youtube.com',
       'https://youtu.be',
+      'https://searchserverapi.com/',
+      'https://www.searchserverapi.com/',
       // Add other media sources as needed
     ],
   });
