@@ -123,6 +123,7 @@ export default function AlgoliaInstantSearch() {
         'shopify_collections-temp-7666b8c1-8865-4277-aeaa-0f866569e14d',
       searchClient,
       onStateChange({uiState, setUiState}) {
+        console.log('UI state:', uiState);
         const hitsContainer = document.querySelector('#hits');
         const footerContainer = document.querySelector('#algolia-footer');
 
