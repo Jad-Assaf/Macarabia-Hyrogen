@@ -59,6 +59,7 @@ export default async function handleRequest(
       'https://googleads.g.doubleclick.net',
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
+      'https://cdn.amplitude.com',
     ],
     connectSrc: [
       "'self'", // Allow scripts from the same origin
