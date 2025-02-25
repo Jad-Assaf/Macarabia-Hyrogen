@@ -1006,17 +1006,28 @@ async function predictiveSearch({request, context, usePrefix}) {
         limitScope: 'EACH',
         term: queryTerm,
       },
-    }
+    },
   );
 
   if (errors) {
     throw new Error(
-      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`
+      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
     );
   }
   if (!items) {
     throw new Error('No predictive search data returned from Shopify API');
   }
+
+  // --- New code: sort product results by price descending ---
+  if (items.products && items.products.length > 0) {
+    items.products.sort((a, b) => {
+      // Retrieve the price from the first variant (fallback to 0 if missing)
+      const priceA = parseFloat(a.variants.nodes[0]?.price.amount) || 0;
+      const priceB = parseFloat(b.variants.nodes[0]?.price.amount) || 0;
+      return priceB - priceA; // sort descending (high to low)
+    });
+  }
+  // ---------------------------------------------------------
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
   return {type, term: normalizedTerm, result: {items, total}};
