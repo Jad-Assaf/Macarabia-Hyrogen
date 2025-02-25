@@ -6,11 +6,6 @@ import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
 import { trackSearch } from '~/lib/metaPixelEvents'; // Added: Import the trackSearch function
 
-import {Suspense, useEffect, useState} from 'react';
-import {Await, Link, NavLink} from '@remix-run/react';
-import {useAside} from '~/components/Aside';
-import {Image} from '@shopify/hydrogen-react';
-
 // Import Algolia dependencies
 import algoliasearch from 'algoliasearch/lite';
 import instantsearch from 'instantsearch.js';
