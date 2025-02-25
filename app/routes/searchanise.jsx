@@ -1,42 +1,43 @@
 // app/routes/test-search.jsx
-import { json, useLoaderData } from '@remix-run/react';
-import { useState } from 'react';
+import {json, useLoaderData} from '@remix-run/react';
+import {useState} from 'react';
 
-export async function loader({ request }) {
+export async function loader({request}) {
   const url = new URL(request.url);
-  const query = url.searchParams.get('q');
+  const query = url.searchParams.get('q') || '';
 
-  // If no query is provided, return an empty result set.
+  // If no query is provided, return empty results.
   if (!query) {
-    return json({ results: [] });
+    return json({results: []});
   }
 
-  // Prepare URL-encoded parameters as required by the Search API
-  const params = new URLSearchParams();
-  params.append('api_key', '2q4z1o1Y1r7H9Z0R6w6X'); // your correct API key
-  params.append('query', query);
+  const apiKey = '2q4z1o1Y1r7H9Z0R6w6X';
+  // Use the /getresults endpoint to get extended search info (as per documentation)
+  const searchUrl = `https://searchserverapi.com/getresults?apiKey=${apiKey}&q=${encodeURIComponent(
+    query,
+  )}&output=json`;
 
-  // Use HTTP (not HTTPS) per the documentation
-  const res = await fetch('http://searchserverapi.com/api/search/json', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: params.toString(),
+  const res = await fetch(searchUrl, {
+    method: 'GET',
   });
 
   if (!res.ok) {
     const errorText = await res.text();
     console.error('API error:', errorText);
-    throw new Response(errorText || 'Unexpected Server Error', { status: res.status });
+    throw new Response(errorText || 'Unexpected Server Error', {
+      status: res.status,
+    });
   }
 
   const data = await res.json();
-  return json({ results: data.results || [] });
+
+  // According to the docs, extended information is returned.
+  // We assume that the products are in the "items" array.
+  return json({results: data.items || []});
 }
 
 export default function TestSearch() {
-  const { results } = useLoaderData();
+  const {results} = useLoaderData();
   const [searchTerm, setSearchTerm] = useState('');
 
   return (
@@ -55,10 +56,15 @@ export default function TestSearch() {
       <div>
         {results.length > 0 ? (
           results.map((item) => (
-            <div key={item.id}>
+            <div key={item.product_id || item.id}>
               <h3>{item.title}</h3>
-              <img src={item.image} alt={item.title} style={{ maxWidth: '200px' }} />
-              {/* Render additional product details as needed */}
+              <p>{item.description}</p>
+              <img
+                src={item.image_link}
+                alt={item.title}
+                style={{maxWidth: '200px'}}
+              />
+              <p>Price: {item.price}</p>
             </div>
           ))
         ) : (
