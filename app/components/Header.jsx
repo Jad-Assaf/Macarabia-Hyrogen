@@ -5,7 +5,7 @@ import {Image} from '@shopify/hydrogen-react';
 import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
 import { trackSearch } from '~/lib/metaPixelEvents'; // Added: Import the trackSearch function
-import SearchaniseWidget from '~/components/SearchaniseWidget.client';
+import SearchaniseWidget from './SearchaniseWidget.client';
 
 export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   const {shop, menu} = header;
