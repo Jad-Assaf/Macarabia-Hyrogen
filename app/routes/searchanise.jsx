@@ -1,47 +1,65 @@
-import {useEffect} from 'react';
+import {useState} from 'react';
 
-export default function SearchanisePage() {
-  useEffect(() => {
-    window.SearchaniseAdmin = {
-      host: 'https://searchserverapi.com',
-      PrivateKey: '7i4P6A4r3u7m2L7y1f5p',
-      ReSyncLink:
-        'https://d40293-4.myshopify.com/admin/searchanise/start_resync',
-      LastRequest: '12.06.2022', // or dynamically generate the timestamp
-      LastResync: '12.06.2022',
-      ConnectLink: 'https://d40293-4.myshopify.com/admin/searchanise/connect',
-      AddonStatus: 'enabled',
-      ShowResultsControlPanel: true,
-      Engines: [
+export default function SearchComponent() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+
+    // Prepare URL-encoded parameters
+    const params = new URLSearchParams();
+    params.append('api_key', '2q4z1o1Y1r7H9Z0R6w6X'); // your correct API key
+    params.append('query', query);
+    // Append other parameters if required by your API docs
+
+    try {
+      const response = await fetch(
+        'https://searchserverapi.com/api/search/json',
         {
-          PrivateKey: '7i4P6A4r3u7m2L7y1f5p',
-          LangCode: 'EN',
-          Name: 'English',
-          ExportStatus: 'done',
-          PriceFormat: {
-            rate: 1.0,
-            symbol: '$',
-            decimals: 2,
-            decimals_separator: '.',
-            thousands_separator: ',',
-            after: false,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
+          body: params.toString(),
         },
-      ],
-    };
-  }, []);
+      );
+      const data = await response.json();
+      // Adjust this based on the actual structure of the response
+      setResults(data.results || []);
+    } catch (error) {
+      console.error('Search error:', error);
+    }
+  };
 
   return (
     <div>
-      <h1>Searchanise Admin Panel</h1>
-      {/* Container for the Searchanise widget */}
-      <div className="snize" id="snize_container"></div>
-      {/* Load the Searchanise script */}
-      <script
-        type="text/javascript"
-        src="https://searchserverapi.com/js/init.js"
-        async
-      ></script>
+      <form onSubmit={handleSearch}>
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button type="submit">Search</button>
+      </form>
+      <div>
+        {results.length ? (
+          results.map((item) => (
+            <div key={item.id}>
+              <h3>{item.title}</h3>
+              <img
+                src={item.image}
+                alt={item.title}
+                style={{maxWidth: '200px'}}
+              />
+              {/* Render additional product details as needed */}
+            </div>
+          ))
+        ) : (
+          <p>No results found.</p>
+        )}
+      </div>
     </div>
   );
 }
