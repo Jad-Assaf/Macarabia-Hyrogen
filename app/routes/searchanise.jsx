@@ -1,14 +1,14 @@
 // app/routes/test-search.jsx
-import {json, useLoaderData} from '@remix-run/react';
-import {useState} from 'react';
+import { json, useLoaderData } from '@remix-run/react';
+import { useState } from 'react';
 
-export async function loader({request}) {
+export async function loader({ request }) {
   const url = new URL(request.url);
   const query = url.searchParams.get('q');
 
   // If no query is provided, return an empty result set.
   if (!query) {
-    return json({results: []});
+    return json({ results: [] });
   }
 
   // Prepare URL-encoded parameters as required by the Search API
@@ -16,8 +16,8 @@ export async function loader({request}) {
   params.append('api_key', '2q4z1o1Y1r7H9Z0R6w6X'); // your correct API key
   params.append('query', query);
 
-  // Make a server-side POST request to the Searchanise Search API
-  const res = await fetch('https://searchserverapi.com/api/search/json', {
+  // Use HTTP (not HTTPS) per the documentation
+  const res = await fetch('http://searchserverapi.com/api/search/json', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -26,28 +26,22 @@ export async function loader({request}) {
   });
 
   if (!res.ok) {
-    // Log the error response text for debugging purposes
     const errorText = await res.text();
     console.error('API error:', errorText);
-    throw new Response(errorText || 'Unexpected Server Error', {
-      status: res.status,
-    });
+    throw new Response(errorText || 'Unexpected Server Error', { status: res.status });
   }
 
-  // Parse the response as JSON (the response structure should include your search results)
   const data = await res.json();
-
-  return json({results: data.results || []});
+  return json({ results: data.results || [] });
 }
 
 export default function TestSearch() {
-  const {results} = useLoaderData();
+  const { results } = useLoaderData();
   const [searchTerm, setSearchTerm] = useState('');
 
   return (
     <div>
       <h1>Test Search Page</h1>
-      {/* A simple search form that sends the query via GET */}
       <form method="get">
         <input
           type="text"
@@ -63,11 +57,7 @@ export default function TestSearch() {
           results.map((item) => (
             <div key={item.id}>
               <h3>{item.title}</h3>
-              <img
-                src={item.image}
-                alt={item.title}
-                style={{maxWidth: '200px'}}
-              />
+              <img src={item.image} alt={item.title} style={{ maxWidth: '200px' }} />
               {/* Render additional product details as needed */}
             </div>
           ))
