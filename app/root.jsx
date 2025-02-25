@@ -252,7 +252,7 @@ export function Layout({children}) {
             shop={data.shop}
             consent={data.consent}
           >
-            <div className="snize" id="snize_container"></div>
+            {/* <div className="snize" id="snize_container"></div> */}
             <PageLayout {...data}>{children}</PageLayout>
           </Analytics.Provider>
         ) : (
