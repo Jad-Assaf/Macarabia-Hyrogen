@@ -106,7 +106,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
             />
           </NavLink>
 
-          {/*<SearchFormPredictive className="header-search">
+          <SearchFormPredictive className="header-search">
             {({inputRef, fetchResults, goToSearch, fetcher}) => {
               useFocusOnCmdK(inputRef);
 
@@ -275,7 +275,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                 </>
               );
             }}
-          </SearchFormPredictive> */}
+          </SearchFormPredictive>
           <SearchaniseWidget />
 
           <div className="header-ctas">
