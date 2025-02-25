@@ -1019,12 +1019,22 @@ async function predictiveSearch({request, context, usePrefix}) {
   }
 
   // --- New code: sort product results by price descending ---
+  // --- New code: sort products so that 'accessories' products show at the end, then by price descending ---
   if (items.products && items.products.length > 0) {
     items.products.sort((a, b) => {
-      // Retrieve the price from the first variant (fallback to 0 if missing)
-      const priceA = parseFloat(a.variants.nodes[0]?.price.amount) || 0;
-      const priceB = parseFloat(b.variants.nodes[0]?.price.amount) || 0;
-      return priceB - priceA; // sort descending (high to low)
+      const isAccA = a.tags && a.tags.includes('accessories');
+      const isAccB = b.tags && b.tags.includes('accessories');
+      // If one product is tagged 'accessories' and the other isn't, put the one without 'accessories' first
+      if (isAccA && !isAccB) {
+        return 1; // a should come after b
+      } else if (!isAccA && isAccB) {
+        return -1; // a should come before b
+      } else {
+        // If both have or both don't have the tag, sort by price descending.
+        const priceA = parseFloat(a.variants.nodes[0]?.price.amount) || 0;
+        const priceB = parseFloat(b.variants.nodes[0]?.price.amount) || 0;
+        return priceB - priceA;
+      }
     });
   }
   // ---------------------------------------------------------
