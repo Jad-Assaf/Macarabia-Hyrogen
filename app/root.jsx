@@ -230,6 +230,8 @@ export function Layout({children}) {
   );
 }
 
+
+
 /**
  * Main app component rendering the current route.
  */

@@ -105,7 +105,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
             />
           </NavLink>
 
-          <SearchFormPredictive className="header-search">
+          {/*<SearchFormPredictive className="header-search">
             {({inputRef, fetchResults, goToSearch, fetcher}) => {
               useFocusOnCmdK(inputRef);
 
@@ -172,7 +172,6 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
 
               return (
                 <>
-                  {/* Fullscreen Overlay */}
                   <div
                     className={`search-overlay ${
                       isOverlayVisible ? 'active' : ''
@@ -180,7 +179,6 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                     onClick={handleCloseSearch}
                   ></div>
 
-                  {/* Main Search Form */}
                   <div ref={searchContainerRef} className="main-search">
                     <div className="search-container">
                       <input
@@ -276,8 +274,9 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                 </>
               );
             }}
-          </SearchFormPredictive>
-
+          </SearchFormPredictive> */}
+          <SearchaniseWidget />
+          
           <div className="header-ctas">
             <NavLink
               prefetch="intent"
