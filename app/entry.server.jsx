@@ -1,8 +1,8 @@
 // entry.server.jsx
-import { RemixServer } from '@remix-run/react';
+import {RemixServer} from '@remix-run/react';
 import isbot from 'isbot';
-import { renderToReadableStream } from 'react-dom/server';
-import { createContentSecurityPolicy } from '@shopify/hydrogen';
+import {renderToReadableStream} from 'react-dom/server';
+import {createContentSecurityPolicy} from '@shopify/hydrogen';
 
 /**
  * @param {Request} request
@@ -16,7 +16,7 @@ export default async function handleRequest(
   responseStatusCode,
   responseHeaders,
   remixContext,
-  context
+  context,
 ) {
   const url = new URL(request.url);
   if (url.hostname === 'www.macarabia.me') {
@@ -157,6 +157,10 @@ export default async function handleRequest(
       'https://www.searchserverapi.com/',
       // Add other media sources as needed
     ],
+    styleSrc: [
+      'https://searchserverapi.com/',
+      'https://www.searchserverapi.com/',
+    ],
   });
 
   const body = await renderToReadableStream(
@@ -171,7 +175,7 @@ export default async function handleRequest(
         console.error(error);
         responseStatusCode = 500;
       },
-    }
+    },
   );
 
   if (isbot(request.headers.get('user-agent'))) {
