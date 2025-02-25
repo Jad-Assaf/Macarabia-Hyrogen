@@ -6,6 +6,7 @@ import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
 import customDictionary from '~/lib/customDictionary.json';
+import Fuse from 'fuse.js';
 
 /**
  * @type {import('@remix-run/react').MetaFunction}
@@ -34,6 +35,18 @@ function buildSynonymMap(dictionary) {
 
 const dictionaryMap = buildSynonymMap(customDictionary);
 
+// Prepare an array of dictionary entries for Fuse.js.
+const dictionaryEntries = Object.entries(customDictionary).map(
+  ([key, synonyms]) => ({key, synonyms}),
+);
+
+const fuseOptions = {
+  keys: ['key'],
+  threshold: 0.3, // Adjust threshold as needed for fuzziness.
+};
+
+const fuse = new Fuse(dictionaryEntries, fuseOptions);
+
 function expandSearchTerms(terms) {
   const expanded = [];
   for (const t of terms) {
@@ -41,7 +54,14 @@ function expandSearchTerms(terms) {
     if (dictionaryMap[lower]) {
       expanded.push(...dictionaryMap[lower]);
     } else {
-      expanded.push(t);
+      // Use Fuse.js for a fuzzy search if there is no exact match.
+      const fuzzyResults = fuse.search(t);
+      if (fuzzyResults.length > 0) {
+        const bestMatch = fuzzyResults[0].item;
+        expanded.push(...[bestMatch.key, ...bestMatch.synonyms]);
+      } else {
+        expanded.push(t);
+      }
     }
   }
   // Remove duplicates
