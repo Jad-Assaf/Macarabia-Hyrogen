@@ -13,7 +13,7 @@ export async function loader({request}) {
 
   const apiKey = '2q4z1o1Y1r7H9Z0R6w6X';
   // Use the /getresults endpoint to get extended search info (as per documentation)
-  const searchUrl = `https://searchserverapi.com/getresults?apiKey=${apiKey}&q=${encodeURIComponent(
+  const searchUrl = `https://searchserverapi.com/getresults?apiKey=2q4z1o1Y1r7H9Z0R6w6X&q=${encodeURIComponent(
     query,
   )}&output=json`;
 
