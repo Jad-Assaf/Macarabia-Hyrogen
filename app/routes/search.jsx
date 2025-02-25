@@ -137,6 +137,13 @@ export async function loader({request, context}) {
     )
     .join(' OR ');
 
+  /*
+  // If you want multiple fields:
+  // fieldSpecificTerms = terms
+  //   .map((w) => `(title:${w} OR description:${w} OR variants.sku:${w})`)
+  //   .join(' AND ');
+  */
+
   let filterQuery = fieldSpecificTerms;
   if (filterQueryParts.length > 0) {
     if (filterQuery) {
@@ -280,18 +287,7 @@ export default function SearchPage() {
     }
   }, [term]);
 
-  // Retrieve edges
-  let edges = result?.products?.edges || [];
-
-  // NEW: Sort so that products tagged with "accessories" appear last
-  edges = edges.sort((a, b) => {
-    const aHasAccessories = a.node?.tags?.includes('accessories');
-    const bHasAccessories = b.node?.tags?.includes('accessories');
-    if (aHasAccessories && !bHasAccessories) return 1; // push "a" down
-    if (!aHasAccessories && bHasAccessories) return -1; // push "b" down
-    return 0; // otherwise, keep the original order
-  });
-
+  const edges = result?.products?.edges || [];
   if (!edges.length) {
     return (
       <div className="search">
@@ -714,7 +710,6 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
           handle
           productType
           description
-          tags
           images(first: 3) {
             nodes {
               url
@@ -823,7 +818,7 @@ async function regularSearch({
 }
 
 /* ------------------------------------------------------------------
-   PREDICTIVE SEARCH
+   PREDICTIVE SEARCH (Important: OR synonyms within each word, AND across words)
 ------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
@@ -945,6 +940,12 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 
+/**
+ * For each typed word:
+ *   1) Expand synonyms => [syn1, syn2, ...]
+ *   2) OR them all together for that single word
+ * Then AND across multiple typed words.
+ */
 async function predictiveSearch({request, context, usePrefix}) {
   const {storefront} = context;
   const url = new URL(request.url);
@@ -964,36 +965,23 @@ async function predictiveSearch({request, context, usePrefix}) {
     .map((w) => w.trim())
     .filter(Boolean);
 
-  // Expand synonyms for THIS typed word
-  function expandSearchTerms(terms) {
-    const expanded = [];
-    for (const t of terms) {
-      const lower = t.toLowerCase();
-      if (dictionaryMap[lower]) {
-        expanded.push(...dictionaryMap[lower]);
-      } else {
-        expanded.push(t);
-      }
-    }
-    // Remove duplicates
-    return [...new Set(expanded)];
-  }
-
   // For each typed word, build an OR group of synonyms
   const wordGroups = typedWords.map((baseWord) => {
     // Expand synonyms for THIS typed word
     const synonyms = expandSearchTerms([baseWord]);
-    // For each synonym, build the wildcard expression
-    return synonyms.map((syn) => {
+    // For each synonym, build the triple check (variants.sku / title / description)
+    // then OR them together
+    const orSynonyms = synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(variants.sku:${termWithWildcard} OR title:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
     });
+    // Wrap this single word's synonyms in parentheses and join with OR
+    return `(${orSynonyms.join(' OR ')})`;
   });
 
-  // AND across multiple typed words
-  const queryTerm = wordGroups
-    .map((group) => `(${group.join(' OR ')})`)
-    .join(' AND ');
+  // Now AND across multiple typed words
+  // e.g. if user typed "horsepower car" => (all synonyms for "horsepower") AND (all synonyms for "car")
+  const queryTerm = wordGroups.join(' AND ');
 
   // Query the Shopify predictiveSearch API
   const {predictiveSearch: items, errors} = await storefront.query(
