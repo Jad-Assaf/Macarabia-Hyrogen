@@ -37,7 +37,7 @@ export function SearchFormPredictive({
   /** Fetch search results based on the input value */
   function fetchResults(event) {
     fetcher.submit(
-      {q: event.target.value || '', limit: 10000, predictive: true, prefix: 'last'},
+      {q: event.target.value || '', limit: 10000, predictive: false, prefix: 'last'},
       {method: 'GET', action: SEARCH_ENDPOINT},
     );
   }
