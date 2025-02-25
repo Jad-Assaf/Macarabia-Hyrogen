@@ -5,31 +5,47 @@ import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
-import Fuse from 'fuse.js';
-import wordsArray from '~/lib/customDictionary.json';
-
-// Create a Fuse instance for fuzzy matching on the wordsArray.
-const fuse = new Fuse(wordsArray, {
-  includeScore: true,
-  threshold: 0.3, // Adjust threshold to control fuzziness.
-});
+import customDictionary from '~/lib/customDictionary.json';
 
 /**
- * Fuzzy search expansion using Fuse.js.
- * For each term, we return all fuzzy-matched words.
+ * @type {import('@remix-run/react').MetaFunction}
  */
-function expandSearchTerms(terms) {
-  const expandedTerms = new Set();
-  for (const term of terms) {
-    const results = fuse.search(term);
-    // If we have matches, add them all; otherwise, use the original term.
-    if (results.length > 0) {
-      results.forEach(result => expandedTerms.add(result.item));
-    } else {
-      expandedTerms.add(term);
+export const meta = () => {
+  return [{title: `Macarabia | Search`}];
+};
+
+/* ------------------------------------------------------------------
+   TWO-WAY DICTIONARY
+------------------------------------------------------------------- */
+function buildSynonymMap(dictionary) {
+  const map = {};
+  for (const [key, synonyms] of Object.entries(dictionary)) {
+    const allForms = new Set([
+      key.toLowerCase(),
+      ...synonyms.map((s) => s.toLowerCase()),
+    ]);
+    const uniqueGroup = Array.from(new Set([key, ...synonyms]));
+    for (const form of allForms) {
+      map[form] = uniqueGroup;
     }
   }
-  return Array.from(expandedTerms);
+  return map;
+}
+
+const dictionaryMap = buildSynonymMap(customDictionary);
+
+function expandSearchTerms(terms) {
+  const expanded = [];
+  for (const t of terms) {
+    const lower = t.toLowerCase();
+    if (dictionaryMap[lower]) {
+      expanded.push(...dictionaryMap[lower]);
+    } else {
+      expanded.push(t);
+    }
+  }
+  // Remove duplicates
+  return [...new Set(expanded)];
 }
 
 /* ------------------------------------------------------------------
@@ -66,7 +82,12 @@ export async function loader({request, context}) {
   const after = searchParams.get('after') || null;
   const before = searchParams.get('before') || null;
 
-  // Build filters (omitting vendor/product type filters for brevity)
+  // Filter building
+  const shopifyKeyMap = {
+    vendor: 'vendor',
+    productType: 'product_type',
+  };
+
   const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
@@ -77,12 +98,14 @@ export async function loader({request, context}) {
       filterMap.get(rawKey).push(value);
     }
   }
+
   const filterQueryParts = [];
   for (const [rawKey, values] of filterMap.entries()) {
+    const shopifyKey = shopifyKeyMap[rawKey] || rawKey;
     if (values.length === 1) {
-      filterQueryParts.push(`${rawKey}:"${values[0]}"`);
+      filterQueryParts.push(`${shopifyKey}:"${values[0]}"`);
     } else {
-      const orGroup = values.map((v) => `${rawKey}:"${v}"`).join(' OR ');
+      const orGroup = values.map((v) => `${shopifyKey}:"${v}"`).join(' OR ');
       filterQueryParts.push(`(${orGroup})`);
     }
   }
@@ -93,19 +116,20 @@ export async function loader({request, context}) {
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // Split into words and use Fuse.js fuzzy matching to expand each term
+  // Expand synonyms for normal search
   const baseTerms = normalizedTerm
     .split(/\s+/)
     .map((w) => w.trim())
     .filter(Boolean);
-  const fuzzyExpanded = expandSearchTerms(baseTerms);
+
+  const synonymsExpanded = expandSearchTerms(baseTerms);
 
   // If user chose prefix => "word*" else => "*word*"
-  const terms = fuzzyExpanded.map((word) =>
+  const terms = synonymsExpanded.map((word) =>
     usePrefix ? `${word}*` : `*${word}*`,
   );
 
-  // Construct field-specific query parts (using title, product_type, description, sku)
+  // Field-specific (title by default)
   let fieldSpecificTerms = terms
     .map(
       (word) =>
@@ -115,12 +139,16 @@ export async function loader({request, context}) {
 
   let filterQuery = fieldSpecificTerms;
   if (filterQueryParts.length > 0) {
-    filterQuery += ' AND ' + filterQueryParts.join(' AND ');
+    if (filterQuery) {
+      filterQuery += ' AND ' + filterQueryParts.join(' AND ');
+    } else {
+      filterQuery = filterQueryParts.join(' AND ');
+    }
   }
 
   console.log('Filter Query:', filterQuery);
 
-  // Sorting and pagination setup
+  // Sorting
   const sortKeyMapping = {
     featured: 'RELEVANCE',
     'price-low-high': 'PRICE',
@@ -134,7 +162,7 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // Perform search (using regularSearch function defined below)
+  // Perform search
   const result = await regularSearch({
     request,
     context,
@@ -148,7 +176,7 @@ export async function loader({request, context}) {
     return {term: '', result: null, error: error.message};
   });
 
-  // For filters: extract vendors & product types from the results.
+  // Vendors & productTypes for filters
   const filteredVendors = [
     ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
   ].sort();
@@ -166,9 +194,8 @@ export async function loader({request, context}) {
 }
 
 /* ------------------------------------------------------------------
-   The rest of the component remains unchanged...
+   REACT COMPONENT
 ------------------------------------------------------------------- */
-
 export default function SearchPage() {
   const {
     type,
@@ -253,7 +280,18 @@ export default function SearchPage() {
     }
   }, [term]);
 
-  const edges = result?.products?.edges || [];
+  // Retrieve edges
+  let edges = result?.products?.edges || [];
+
+  // NEW: Sort so that products tagged with "accessories" appear last
+  edges = edges.sort((a, b) => {
+    const aHasAccessories = a.node?.tags?.includes('accessories');
+    const bHasAccessories = b.node?.tags?.includes('accessories');
+    if (aHasAccessories && !bHasAccessories) return 1; // push "a" down
+    if (!aHasAccessories && bHasAccessories) return -1; // push "b" down
+    return 0; // otherwise, keep the original order
+  });
+
   if (!edges.length) {
     return (
       <div className="search">
@@ -676,6 +714,7 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
           handle
           productType
           description
+          tags
           images(first: 3) {
             nodes {
               url
@@ -784,7 +823,7 @@ async function regularSearch({
 }
 
 /* ------------------------------------------------------------------
-   PREDICTIVE SEARCH (Important: OR synonyms within each word, AND across words)
+   PREDICTIVE SEARCH
 ------------------------------------------------------------------- */
 const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment PredictiveArticle on Article {
@@ -906,12 +945,6 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 
-/**
- * For each typed word:
- *   1) Expand synonyms => [syn1, syn2, ...]
- *   2) OR them all together for that single word
- * Then AND across multiple typed words.
- */
 async function predictiveSearch({request, context, usePrefix}) {
   const {storefront} = context;
   const url = new URL(request.url);
@@ -931,23 +964,36 @@ async function predictiveSearch({request, context, usePrefix}) {
     .map((w) => w.trim())
     .filter(Boolean);
 
+  // Expand synonyms for THIS typed word
+  function expandSearchTerms(terms) {
+    const expanded = [];
+    for (const t of terms) {
+      const lower = t.toLowerCase();
+      if (dictionaryMap[lower]) {
+        expanded.push(...dictionaryMap[lower]);
+      } else {
+        expanded.push(t);
+      }
+    }
+    // Remove duplicates
+    return [...new Set(expanded)];
+  }
+
   // For each typed word, build an OR group of synonyms
   const wordGroups = typedWords.map((baseWord) => {
     // Expand synonyms for THIS typed word
     const synonyms = expandSearchTerms([baseWord]);
-    // For each synonym, build the triple check (variants.sku / title / description)
-    // then OR them together
-    const orSynonyms = synonyms.map((syn) => {
+    // For each synonym, build the wildcard expression
+    return synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(variants.sku:${termWithWildcard} OR title:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
     });
-    // Wrap this single word's synonyms in parentheses and join with OR
-    return `(${orSynonyms.join(' OR ')})`;
   });
 
-  // Now AND across multiple typed words
-  // e.g. if user typed "horsepower car" => (all synonyms for "horsepower") AND (all synonyms for "car")
-  const queryTerm = wordGroups.join(' AND ');
+  // AND across multiple typed words
+  const queryTerm = wordGroups
+    .map((group) => `(${group.join(' OR ')})`)
+    .join(' AND ');
 
   // Query the Shopify predictiveSearch API
   const {predictiveSearch: items, errors} = await storefront.query(
