@@ -179,10 +179,11 @@ export function Layout({children}) {
     window.SearchaniseAdmin = {
       host: 'https://searchserverapi.com',
       PrivateKey: '7i4P6A4r3u7m2L7y1f5p',
-      ReSyncLink: 'https://your_store/admin/searchanise/start_resync',
+      ReSyncLink:
+        'https://d40293-4.myshopify.com/admin/searchanise/start_resync',
       LastRequest: '12.06.2022', // or dynamically generate the timestamp
       LastResync: '12.06.2022',
-      ConnectLink: 'https://your_store/admin/searchanise/connect',
+      ConnectLink: 'https://d40293-4.myshopify.com/admin/searchanise/connect',
       AddonStatus: 'enabled',
       ShowResultsControlPanel: true,
       Engines: [
