@@ -5,6 +5,11 @@ import {Image} from '@shopify/hydrogen-react';
 import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
 import { trackSearch } from '~/lib/metaPixelEvents'; // Added: Import the trackSearch function
+import dynamic from 'next/dynamic';
+const SearchaniseWidget = dynamic(
+  () => import('~/components/SearchaniseWidget.client'),
+  {ssr: false},
+);
 
 export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   const {shop, menu} = header;
@@ -104,6 +109,8 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
               height="79px"
             />
           </NavLink>
+
+          <SearchaniseWidget />
 
           <SearchFormPredictive className="header-search">
             {({inputRef, fetchResults, goToSearch, fetcher}) => {
