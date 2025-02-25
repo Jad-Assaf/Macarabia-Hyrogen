@@ -20,6 +20,11 @@ export async function loader({request}) {
     body: params.toString(),
   });
 
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Error response:', errorText);
+    throw new Error('Unexpected Server Error');
+  }
   const data = await res.json();
 
   return json({results: data.results || []});
