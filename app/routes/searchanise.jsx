@@ -1,5 +1,5 @@
 // app/routes/test-search.jsx
-import {json, useLoaderData, useFetcher} from '@remix-run/react';
+import {json, useLoaderData} from '@remix-run/react';
 import {useState, useEffect} from 'react';
 
 export async function loader({request}) {
@@ -12,10 +12,11 @@ export async function loader({request}) {
   }
 
   const apiKey = '5c3N7y6v5T';
-  // Use the /getresults endpoint to get extended search info
+  // Use the /getresults endpoint to get extended search info (without suggestions)
   const searchUrl = `https://searchserverapi.com/getresults?apiKey=${apiKey}&q=${encodeURIComponent(
     query,
   )}&output=json`;
+
   const res = await fetch(searchUrl, {
     method: 'GET',
   });
@@ -37,28 +38,40 @@ export default function TestSearch() {
   const {results} = useLoaderData();
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const suggestionsFetcher = useFetcher();
 
-  // Fetch suggestions when searchTerm changes (with debounce)
+  // Client-side: fetch suggestions as user types
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm) {
-        suggestionsFetcher.load(
-          `/api/suggestions?q=${encodeURIComponent(searchTerm)}`,
-        );
+        // Construct the suggestions URL with suggestions=true
+        const apiKey = '5c3N7y6v5T';
+        const suggestionsUrl = `https://searchserverapi.com/getresults?apiKey=${apiKey}&q=${encodeURIComponent(
+          searchTerm,
+        )}&output=json&suggestions=true`;
+
+        fetch(suggestionsUrl, {method: 'GET'})
+          .then((res) => {
+            if (!res.ok) {
+              return res.text().then((text) => {
+                throw new Error(text);
+              });
+            }
+            return res.json();
+          })
+          .then((data) => {
+            setSuggestions(data.suggestions || []);
+          })
+          .catch((error) => {
+            console.error('Suggestions fetch error:', error);
+            setSuggestions([]);
+          });
       } else {
         setSuggestions([]);
       }
-    }, 300); // adjust debounce delay as needed
+    }, 300); // Debounce delay of 300ms
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, suggestionsFetcher]);
-
-  useEffect(() => {
-    if (suggestionsFetcher.data && suggestionsFetcher.data.suggestions) {
-      setSuggestions(suggestionsFetcher.data.suggestions);
-    }
-  }, [suggestionsFetcher.data]);
+  }, [searchTerm]);
 
   return (
     <div>
