@@ -7,7 +7,6 @@ import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
 import { trackSearch } from '~/lib/metaPixelEvents'; // Added: Import the trackSearch function
 
 // Import Algolia dependencies
-import algoliasearch from 'algoliasearch/lite';
 import instantsearch from 'instantsearch.js';
 import {
   searchBox,
@@ -17,6 +16,7 @@ import {
 } from 'instantsearch.js/es/widgets';
 
 import 'instantsearch.css/themes/reset.css';
+import { algoliasearch } from 'algoliasearch';
 
 export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   const {shop, menu} = header;
