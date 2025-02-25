@@ -5,7 +5,7 @@ export default function SearchaniseWidget() {
   useEffect(() => {
     // Set up the global configuration for Searchanise.
     window.Searchanise = {
-      ApiKey: 'YOUR_API_KEY_HERE', // Replace with your API key (e.g., "9c9A3t3j7A")
+      ApiKey: '5c3N7y6v5T', // Replace with your API key (e.g., "9c9A3t3j7A")
       SearchInput: '#search_input', // Selector for your search field
       options: {
         ResultsDiv: '#snize_results', // Container where search results will appear
