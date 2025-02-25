@@ -21,7 +21,6 @@ export const meta = () => {
 function buildSynonymMap(dictionary) {
   const map = {};
   for (const [key, synonyms] of Object.entries(dictionary)) {
-    // Normalize the key and each synonym to lowercase
     const allForms = new Set([
       key.toLowerCase(),
       ...synonyms.map((s) => s.toLowerCase()),
@@ -37,15 +36,13 @@ function buildSynonymMap(dictionary) {
 const dictionaryMap = buildSynonymMap(customDictionary);
 
 // Prepare an array of dictionary entries for Fuse.js.
-// Each entry contains both the product code (key) and its description(s) (synonyms).
 const dictionaryEntries = Object.entries(customDictionary).map(
-  ([key, synonyms]) => ({key, synonyms})
+  ([key, synonyms]) => ({key, synonyms}),
 );
 
-// Configure Fuse.js to search in both the 'key' and 'synonyms' fields.
 const fuseOptions = {
-  keys: ['key', 'synonyms'],
-  threshold: 0.3, // Adjust this value to control fuzziness
+  keys: ['key'],
+  threshold: 0.3, // Adjust threshold as needed for fuzziness.
 };
 
 const fuse = new Fuse(dictionaryEntries, fuseOptions);
@@ -57,7 +54,7 @@ function expandSearchTerms(terms) {
     if (dictionaryMap[lower]) {
       expanded.push(...dictionaryMap[lower]);
     } else {
-      // Use Fuse.js for a fuzzy search if no exact match is found.
+      // Use Fuse.js for a fuzzy search if there is no exact match.
       const fuzzyResults = fuse.search(t);
       if (fuzzyResults.length > 0) {
         const bestMatch = fuzzyResults[0].item;
@@ -91,7 +88,7 @@ export async function loader({request, context}) {
           result: null,
           error: error.message,
         };
-      }
+      },
     );
     return json({
       ...result,
@@ -149,16 +146,23 @@ export async function loader({request, context}) {
 
   // If user chose prefix => "word*" else => "*word*"
   const terms = synonymsExpanded.map((word) =>
-    usePrefix ? `${word}*` : `*${word}*`
+    usePrefix ? `${word}*` : `*${word}*`,
   );
 
-  // Field-specific search across multiple product fields.
+  // Field-specific (title by default)
   let fieldSpecificTerms = terms
     .map(
       (word) =>
-        `(title:${word} OR product_type:${word} OR description:${word} OR variants.sku:${word})`
+        `(title:${word} OR product_type:${word} OR description:${word} OR variants.sku:${word})`,
     )
     .join(' OR ');
+
+  /*
+  // If you want multiple fields:
+  // fieldSpecificTerms = terms
+  //   .map((w) => `(title:${w} OR description:${w} OR variants.sku:${w})`)
+  //   .join(' AND ');
+  */
 
   let filterQuery = fieldSpecificTerms;
   if (filterQueryParts.length > 0) {
@@ -205,7 +209,7 @@ export async function loader({request, context}) {
   ].sort();
   const filteredProductTypes = [
     ...new Set(
-      result?.result?.products?.edges.map(({node}) => node.productType)
+      result?.result?.products?.edges.map(({node}) => node.productType),
     ),
   ].sort();
 
@@ -263,7 +267,7 @@ export default function SearchPage() {
       const updatedFilters = currentFilters.filter((item) => item !== value);
       params.delete(`filter_${filterKey}`);
       updatedFilters.forEach((item) =>
-        params.append(`filter_${filterKey}`, item)
+        params.append(`filter_${filterKey}`, item),
       );
     }
 
@@ -405,7 +409,7 @@ export default function SearchPage() {
                           handleFilterChange(
                             'productType',
                             ptype,
-                            e.target.checked
+                            e.target.checked,
                           )
                         }
                       />
@@ -600,7 +604,7 @@ export default function SearchPage() {
                             handleFilterChange(
                               'vendor',
                               vendor,
-                              e.target.checked
+                              e.target.checked,
                             )
                           }
                         />
@@ -640,7 +644,7 @@ export default function SearchPage() {
                             handleFilterChange(
                               'productType',
                               type,
-                              e.target.checked
+                              e.target.checked,
                             )
                           }
                         />
@@ -1018,7 +1022,6 @@ async function predictiveSearch({request, context, usePrefix}) {
     throw new Error('No predictive search data returned from Shopify API');
   }
 
-  // --- New code: sort product results by price descending ---
   // --- New code: sort products so that 'accessories' products show at the end, then by price descending ---
   if (items.products && items.products.length > 0) {
     items.products.sort((a, b) => {
@@ -1037,7 +1040,6 @@ async function predictiveSearch({request, context, usePrefix}) {
       }
     });
   }
-  // ---------------------------------------------------------
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
   return {type, term: normalizedTerm, result: {items, total}};
