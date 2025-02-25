@@ -60,6 +60,7 @@ export default async function handleRequest(
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
       'https://cdn.amplitude.com',
+      'https://pe5t1m9ejs-dsn.algolia.net',
     ],
     connectSrc: [
       "'self'", // Allow scripts from the same origin
@@ -86,6 +87,7 @@ export default async function handleRequest(
       'https://googleads.g.doubleclick.net',
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
+      'https://pe5t1m9ejs-dsn.algolia.net',
     ],
     frameSrc: [
       "'self'", // Allow frames from the same origin
@@ -114,6 +116,7 @@ export default async function handleRequest(
       'https://googleads.g.doubleclick.net',
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
+      'https://pe5t1m9ejs-dsn.algolia.net',
     ],
     imgSrc: [
       "'self'", // Allow images from the same origin
@@ -142,6 +145,7 @@ export default async function handleRequest(
       'https://googleads.g.doubleclick.net',
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
+      'https://pe5t1m9ejs-dsn.algolia.net',
     ],
     mediaSrc: [
       "'self'",
@@ -156,11 +160,13 @@ export default async function handleRequest(
       'https://youtu.be',
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
+      'https://pe5t1m9ejs-dsn.algolia.net',
       // Add other media sources as needed
     ],
     styleSrc: [
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
+      'https://pe5t1m9ejs-dsn.algolia.net',
     ],
   });
 
