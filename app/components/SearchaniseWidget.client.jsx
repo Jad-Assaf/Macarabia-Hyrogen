@@ -1,38 +1,48 @@
-// components/SearchaniseWidget.client.jsx
-import { useEffect } from 'react';
+// In your root component (e.g., root.jsx)
+import {useEffect} from 'react';
 
-export default function SearchaniseWidget() {
+export default function RootLayout({children}) {
   useEffect(() => {
-    // Set up the global configuration for Searchanise.
-    window.Searchanise = {
-      ApiKey: '5c3N7y6v5T', // Replace with your API key (e.g., "9c9A3t3j7A")
-      SearchInput: '#search_input', // Selector for your search field
-      options: {
-        ResultsDiv: '#snize_results', // Container where search results will appear
-        PriceFormat: {
-          rate: 1.0,
-          symbol: '$',
-          decimals: 2,
-          decimals_separator: '.',
-          thousands_separator: ',',
-          after: false,
+    window.SearchaniseAdmin = {
+      host: 'https://searchserverapi.com',
+      PrivateKey: '9c9A3t3j7A',
+      ReSyncLink: 'https://your_store/admin/searchanise/start_resync',
+      LastRequest: '12.06.2022', // or dynamically generate the timestamp
+      LastResync: '12.06.2022',
+      ConnectLink: 'https://your_store/admin/searchanise/connect',
+      AddonStatus: 'enabled',
+      ShowResultsControlPanel: true,
+      Engines: [
+        {
+          PrivateKey: '7i4P6A4r3u7m2L7y1f5p',
+          LangCode: 'EN',
+          Name: 'English',
+          ExportStatus: 'done',
+          PriceFormat: {
+            rate: 1.0,
+            symbol: '$',
+            decimals: 2,
+            decimals_separator: '.',
+            thousands_separator: ',',
+            after: false,
+          },
         },
-      },
+        // Add more engines if your store supports additional languages
+      ],
     };
-
-    // Dynamically load the Searchanise widget script.
-    const script = document.createElement('script');
-    script.src = 'https://searchserverapi.com/widgets/v1.0/init.js';
-    script.async = true;
-    document.body.appendChild(script);
   }, []);
 
   return (
-    <div>
-      {/* Your search input field */}
-      <input type="text" id="search_input" placeholder="Search products..." />
-      {/* The container where search results will be rendered */}
-      <div id="snize_results"></div>
-    </div>
+    <html lang="en">
+      <head>
+        {/* Insert the Searchanise script */}
+        <script
+          type="text/javascript"
+          src="https://searchserverapi.com/js/init.js"
+          async
+        ></script>
+      </head>
+      <body>{children}</body>
+    </html>
   );
 }
