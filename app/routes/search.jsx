@@ -6,7 +6,6 @@ import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
 import customDictionary from '~/lib/customDictionary.json';
-import Fuse from 'fuse.js';
 
 /**
  * @type {import('@remix-run/react').MetaFunction}
@@ -35,18 +34,6 @@ function buildSynonymMap(dictionary) {
 
 const dictionaryMap = buildSynonymMap(customDictionary);
 
-// Prepare an array of dictionary entries for Fuse.js.
-const dictionaryEntries = Object.entries(customDictionary).map(
-  ([key, synonyms]) => ({key, synonyms}),
-);
-
-const fuseOptions = {
-  keys: ['key'],
-  threshold: 0.3, // Adjust threshold as needed for fuzziness.
-};
-
-const fuse = new Fuse(dictionaryEntries, fuseOptions);
-
 function expandSearchTerms(terms) {
   const expanded = [];
   for (const t of terms) {
@@ -54,14 +41,7 @@ function expandSearchTerms(terms) {
     if (dictionaryMap[lower]) {
       expanded.push(...dictionaryMap[lower]);
     } else {
-      // Use Fuse.js for a fuzzy search if there is no exact match.
-      const fuzzyResults = fuse.search(t);
-      if (fuzzyResults.length > 0) {
-        const bestMatch = fuzzyResults[0].item;
-        expanded.push(...[bestMatch.key, ...bestMatch.synonyms]);
-      } else {
-        expanded.push(t);
-      }
+      expanded.push(t);
     }
   }
   // Remove duplicates
@@ -989,7 +969,8 @@ async function predictiveSearch({request, context, usePrefix}) {
   const wordGroups = typedWords.map((baseWord) => {
     // Expand synonyms for THIS typed word
     const synonyms = expandSearchTerms([baseWord]);
-    // For each synonym, build the search query (variants.sku / title / description / product_type / tag)
+    // For each synonym, build the triple check (variants.sku / title / description)
+    // then OR them together
     const orSynonyms = synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(variants.sku:${termWithWildcard} OR title:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
@@ -999,6 +980,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   });
 
   // Now AND across multiple typed words
+  // e.g. if user typed "horsepower car" => (all synonyms for "horsepower") AND (all synonyms for "car")
   const queryTerm = wordGroups.join(' AND ');
 
   // Query the Shopify predictiveSearch API
@@ -1020,25 +1002,6 @@ async function predictiveSearch({request, context, usePrefix}) {
   }
   if (!items) {
     throw new Error('No predictive search data returned from Shopify API');
-  }
-
-  // --- New code: sort products so that 'accessories' products show at the end, then by price descending ---
-  if (items.products && items.products.length > 0) {
-    items.products.sort((a, b) => {
-      const isAccA = a.tags && a.tags.includes('accessories');
-      const isAccB = b.tags && b.tags.includes('accessories');
-      // If one product is tagged 'accessories' and the other isn't, put the one without 'accessories' first
-      if (isAccA && !isAccB) {
-        return 1; // a should come after b
-      } else if (!isAccA && isAccB) {
-        return -1; // a should come before b
-      } else {
-        // If both have or both don't have the tag, sort by price descending.
-        const priceA = parseFloat(a.variants.nodes[0]?.price.amount) || 0;
-        const priceB = parseFloat(b.variants.nodes[0]?.price.amount) || 0;
-        return priceB - priceA;
-      }
-    });
   }
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
