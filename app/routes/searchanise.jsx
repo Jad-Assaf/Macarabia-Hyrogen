@@ -1,37 +1,56 @@
-// In your route file, e.g., app/routes/search.jsx
-import { json, useLoaderData } from '@remix-run/react';
+import {json, useLoaderData} from '@remix-run/react';
+import {useState} from 'react';
 
-export async function loader({ request }) {
-  const formData = new URLSearchParams(await request.text());
-  const query = formData.get('query') || 'default query';
+export async function loader({request}) {
+  // Get the search query from the URL, defaulting to an empty string if not provided
+  const url = new URL(request.url);
+  const query = url.searchParams.get('q') || '';
 
+  // Prepare parameters for the API call
   const params = new URLSearchParams();
-  params.append('api_key', '2q4z1o1Y1r7H9Z0R6w6X');
+  params.append('api_key', '2q4z1o1Y1r7H9Z0R6w6X'); // your correct API key
   params.append('query', query);
 
+  // Make the POST request to the Searchanise API (server-side, so CORS is not an issue)
   const res = await fetch('https://searchserverapi.com/api/search/json', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
     body: params.toString(),
   });
+
   const data = await res.json();
 
-  return json({ results: data.results || [] });
+  return json({results: data.results || []});
 }
 
-export default function SearchPage() {
-  const { results } = useLoaderData();
+export default function TestSearch() {
+  const {results} = useLoaderData();
+  const [searchTerm, setSearchTerm] = useState('');
 
   return (
     <div>
-      <h1>Search Results</h1>
-      {results.length ? (
-        results.map(item => (
-          <div key={item.id}>
-            <h3>{item.title}</h3>
-            {/* Render other product details */}
-          </div>
-        ))
+      <h1>Test Search Page</h1>
+      <form method="get">
+        <input
+          type="text"
+          name="q"
+          placeholder="Enter search query"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <button type="submit">Search</button>
+      </form>
+      {results.length > 0 ? (
+        <div>
+          {results.map((item) => (
+            <div key={item.id}>
+              <h3>{item.title}</h3>
+              {/* Render additional product details as needed */}
+            </div>
+          ))}
+        </div>
       ) : (
         <p>No results found.</p>
       )}
