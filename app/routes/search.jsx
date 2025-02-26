@@ -11,7 +11,7 @@ import customDictionary from '~/lib/customDictionary.json';
  * @type {import('@remix-run/react').MetaFunction}
  */
 export const meta = () => {
-  return [{title: `Macarabia | Search`}];
+  return [{title: `961Souq | Search`}];
 };
 
 /* ------------------------------------------------------------------
@@ -135,7 +135,7 @@ export async function loader({request, context}) {
       (word) =>
         `(title:${word} OR product_type:${word} OR description:${word} OR variants.sku:${word})`,
     )
-    .join(' AND ');
+    .join(' OR ');
 
   /*
   // If you want multiple fields:
@@ -152,6 +152,8 @@ export async function loader({request, context}) {
       filterQuery = filterQueryParts.join(' AND ');
     }
   }
+
+  console.log('Filter Query:', filterQuery);
 
   // Sorting
   const sortKeyMapping = {
@@ -974,7 +976,7 @@ async function predictiveSearch({request, context, usePrefix}) {
       return `(title:${termWithWildcard} OR variants.sku:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
     });
     // Wrap this single word's synonyms in parentheses and join with OR
-    return `(${orSynonyms.join(' AND ')})`;
+    return `(${orSynonyms.join(' OR ')})`;
   });
 
   // Now AND across multiple typed words
