@@ -112,7 +112,7 @@ export async function loader({request, context}) {
 
   // Price range & text search
   const rawTerm = searchParams.get('q') || '';
-  const normalizedTerm = rawTerm;
+  const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
@@ -869,8 +869,6 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
     title
     vendor
     description
-    productType
-    tags
     handle
     trackingParameters
     variants(first: 1) {
@@ -951,7 +949,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
 
-  const normalizedTerm = rawTerm;
+  const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
 
@@ -973,8 +971,9 @@ async function predictiveSearch({request, context, usePrefix}) {
     // then OR them together
     const orSynonyms = synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
-      return `(title:${termWithWildcard} OR variants.sku:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
+      return `(variants.sku:${termWithWildcard} OR title:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard})`;
     });
+
     // Wrap this single word's synonyms in parentheses and join with OR
     return `(${orSynonyms.join(' OR ')})`;
   });
