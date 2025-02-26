@@ -133,16 +133,9 @@ export async function loader({request, context}) {
   let fieldSpecificTerms = terms
     .map(
       (word) =>
-        `(title:${word} OR product_type:${word} OR description:${word} OR variants.sku:${word})`,
+        `(title:${word} OR variants.sku:${word} OR description:${word} OR product_type:${word} OR tag:${word})`,
     )
     .join(' OR ');
-
-  /*
-  // If you want multiple fields:
-  // fieldSpecificTerms = terms
-  //   .map((w) => `(title:${w} OR description:${w} OR variants.sku:${w})`)
-  //   .join(' AND ');
-  */
 
   let filterQuery = fieldSpecificTerms;
   if (filterQueryParts.length > 0) {
@@ -183,18 +176,45 @@ export async function loader({request, context}) {
     return {term: '', result: null, error: error.message};
   });
 
+  // -- REORDER LOGIC --
+  const edges = result?.result?.products?.edges || [];
+
+  // Vendors you want to prioritize
+  const priorityVendors = ['Apple', 'Samsung', 'MSI'];
+
+  function reorderByPreferredVendors(edges, priorityVendors) {
+    return edges.sort((edgeA, edgeB) => {
+      const vendorA = edgeA.node.vendor;
+      const vendorB = edgeB.node.vendor;
+
+      const aIsPriority = priorityVendors.includes(vendorA);
+      const bIsPriority = priorityVendors.includes(vendorB);
+
+      if (aIsPriority && !bIsPriority) return -1;
+      if (!aIsPriority && bIsPriority) return 1;
+      return 0;
+    });
+  }
+
+  const reorderedEdges = reorderByPreferredVendors(edges, priorityVendors);
+
   // Vendors & productTypes for filters
   const filteredVendors = [
-    ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
+    ...new Set(reorderedEdges.map(({node}) => node.vendor)),
   ].sort();
   const filteredProductTypes = [
-    ...new Set(
-      result?.result?.products?.edges.map(({node}) => node.productType),
-    ),
+    ...new Set(reorderedEdges.map(({node}) => node.productType)),
   ].sort();
 
   return json({
     ...result,
+    result: {
+      ...result?.result,
+      products: {
+        ...result?.result?.products,
+        edges: reorderedEdges,
+      },
+    },
     vendors: filteredVendors,
     productTypes: filteredProductTypes,
   });
