@@ -121,6 +121,7 @@ export async function loader({request, context}) {
     .split(/\s+/)
     .map((w) => w.trim())
     .filter(Boolean);
+
   const synonymsExpanded = expandSearchTerms(baseTerms);
 
   // If user chose prefix => "word*" else => "*word*"
@@ -128,19 +129,31 @@ export async function loader({request, context}) {
     usePrefix ? `${word}*` : `*${word}*`,
   );
 
-  // Build the AND query: each word's clause must match
-  const andFieldSpecificTerms = terms
+  // Field-specific (title by default)
+  let fieldSpecificTerms = terms
     .map(
       (word) =>
         `(title:${word} OR variants.sku:${word} OR description:${word} OR product_type:${word} OR tag:${word})`,
     )
-    .join(' AND ');
+    .join(' OR ');
 
-  let filterQuery = andFieldSpecificTerms;
+  /*
+  // If you want multiple fields:
+  // fieldSpecificTerms = terms
+  //   .map((w) => `(title:${w} OR description:${w} OR variants.sku:${w})`)
+  //   .join(' AND ');
+  */
+
+  let filterQuery = fieldSpecificTerms;
   if (filterQueryParts.length > 0) {
-    filterQuery += ' AND ' + filterQueryParts.join(' AND ');
+    if (filterQuery) {
+      filterQuery += ' AND ' + filterQueryParts.join(' AND ');
+    } else {
+      filterQuery = filterQueryParts.join(' AND ');
+    }
   }
-  console.log('AND Filter Query:', filterQuery);
+
+  console.log('Filter Query:', filterQuery);
 
   // Sorting
   const sortKeyMapping = {
@@ -156,8 +169,8 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // Attempt search using the AND query
-  let result = await regularSearch({
+  // Perform search
+  const result = await regularSearch({
     request,
     context,
     filterQuery,
@@ -169,33 +182,6 @@ export async function loader({request, context}) {
     console.error('Search Error:', error);
     return {term: '', result: null, error: error.message};
   });
-
-  // If the AND query returns no results, fall back to an OR query.
-  if (!result?.result?.products?.edges.length) {
-    const orFieldSpecificTerms = terms
-      .map(
-        (word) =>
-          `(title:${word} OR variants.sku:${word} OR description:${word} OR product_type:${word} OR tag:${word})`,
-      )
-      .join(' OR ');
-    let fallbackFilterQuery = orFieldSpecificTerms;
-    if (filterQueryParts.length > 0) {
-      fallbackFilterQuery += ' AND ' + filterQueryParts.join(' AND ');
-    }
-    console.log('OR Filter Query (Fallback):', fallbackFilterQuery);
-    result = await regularSearch({
-      request,
-      context,
-      filterQuery: fallbackFilterQuery,
-      sortKey,
-      reverse,
-      after,
-      before,
-    }).catch((error) => {
-      console.error('Fallback Search Error:', error);
-      return {term: '', result: null, error: error.message};
-    });
-  }
 
   // Vendors & productTypes for filters
   const filteredVendors = [
@@ -311,7 +297,7 @@ export default function SearchPage() {
     );
   }
 
-  const pageInfo = result?.result?.products?.pageInfo || {};
+  const pageInfo = result?.products?.pageInfo || {};
   const hasNextPage = pageInfo.hasNextPage;
   const hasPreviousPage = pageInfo.hasPreviousPage;
 
