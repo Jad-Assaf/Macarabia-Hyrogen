@@ -56,7 +56,7 @@ export async function loader({request, context}) {
   const searchParams = url.searchParams;
   const usePrefix = searchParams.get('prefix') === 'true';
 
-  // Predictive search check
+  // Predictive search check (unchanged)
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
     const result = await predictiveSearch({request, context, usePrefix}).catch(
@@ -112,45 +112,24 @@ export async function loader({request, context}) {
 
   // Price range & text search
   const rawTerm = searchParams.get('q') || '';
+  // Use the whole term (without splitting) so that the search works like predictive search.
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // Expand synonyms for normal search
-  const baseTerms = normalizedTerm
-    .split(/\s+/)
-    .map((w) => w.trim())
-    .filter(Boolean);
+  // Instead of splitting the term into separate words, we use the entire normalized term.
+  // (You can still expand synonyms if needed, but here we treat it as one query.)
+  // For example, if rawTerm is "black shoes", normalizedTerm remains "black shoes"
+  // and we search for the entire phrase.
+  const termQuery = usePrefix ? `${normalizedTerm}*` : `*${normalizedTerm}*`;
 
-  const synonymsExpanded = expandSearchTerms(baseTerms);
+  // Build a field-specific search clause using the whole term.
+  let fieldSpecificTerms = `(title:${termQuery} OR variants.sku:${termQuery} OR description:${termQuery} OR product_type:${termQuery} OR tag:${termQuery})`;
 
-  // If user chose prefix => "word*" else => "*word*"
-  const terms = synonymsExpanded.map((word) =>
-    usePrefix ? `${word}*` : `*${word}*`,
-  );
-
-  // Field-specific (title by default)
-  let fieldSpecificTerms = terms
-    .map(
-      (word) =>
-        `(title:${word} OR variants.sku:${word} OR description:${word} OR product_type:${word} OR tag:${word})`,
-    )
-    .join(' OR ');
-
-  /*
-  // If you want multiple fields:
-  // fieldSpecificTerms = terms
-  //   .map((w) => `(title:${w} OR description:${w} OR variants.sku:${w})`)
-  //   .join(' AND ');
-  */
-
+  // Append any additional filters.
   let filterQuery = fieldSpecificTerms;
   if (filterQueryParts.length > 0) {
-    if (filterQuery) {
-      filterQuery += ' AND ' + filterQueryParts.join(' AND ');
-    } else {
-      filterQuery = filterQueryParts.join(' AND ');
-    }
+    filterQuery += ' AND ' + filterQueryParts.join(' AND ');
   }
 
   console.log('Filter Query:', filterQuery);
@@ -169,7 +148,7 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // Perform search
+  // Perform the search using the regularSearch function.
   const result = await regularSearch({
     request,
     context,
@@ -189,7 +168,7 @@ export async function loader({request, context}) {
   ].sort();
   const filteredProductTypes = [
     ...new Set(
-      result?.result?.products?.edges.map(({node}) => node.productType),
+      result?.result?.products?.edges.map(({node}) => node.productType)
     ),
   ].sort();
 
