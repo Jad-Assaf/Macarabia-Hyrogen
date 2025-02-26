@@ -11,7 +11,7 @@ import customDictionary from '~/lib/customDictionary.json';
  * @type {import('@remix-run/react').MetaFunction}
  */
 export const meta = () => {
-  return [{title: `961Souq | Search`}];
+  return [{title: `Macarabia | Search`}];
 };
 
 /* ------------------------------------------------------------------
