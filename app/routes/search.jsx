@@ -111,26 +111,42 @@ export async function loader({request, context}) {
   }
 
   // Price range & text search
+  // Price range & text search
   const rawTerm = searchParams.get('q') || '';
-  // Use the whole term (without splitting) so that the search works like predictive search.
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
-  // Instead of splitting the term into separate words, we use the entire normalized term.
-  // (You can still expand synonyms if needed, but here we treat it as one query.)
-  // For example, if rawTerm is "black shoes", normalizedTerm remains "black shoes"
-  // and we search for the entire phrase.
-  const termQuery = usePrefix ? `${normalizedTerm}*` : `*${normalizedTerm}*`;
+  // Build the whole-term clause (using the full normalized term)
+  const termQueryWhole = usePrefix
+    ? `${normalizedTerm}*`
+    : `*${normalizedTerm}*`;
+  const wholeClause = `(title:${termQueryWhole} OR variants.sku:${termQueryWhole} OR description:${termQueryWhole} OR product_type:${termQueryWhole} OR tag:${termQueryWhole})`;
 
-  // Build a field-specific search clause using the whole term.
-  let fieldSpecificTerms = `(title:${termQuery} OR variants.sku:${termQuery} OR description:${termQuery} OR product_type:${termQuery} OR tag:${termQuery})`;
+  // Build the split-term clause (splitting by spaces and expanding synonyms)
+  const baseWords = normalizedTerm.split(/\s+/).filter(Boolean);
+  const splitClauses = baseWords.map((word) => {
+    const synonyms = expandSearchTerms([word]);
+    // For each word, build a clause from its synonyms
+    const wordClauses = synonyms.map((syn) => {
+      const termQuery = usePrefix ? `${syn}*` : `*${syn}*`;
+      return `(title:${termQuery} OR variants.sku:${termQuery} OR description:${termQuery} OR product_type:${termQuery} OR tag:${termQuery})`;
+    });
+    // For this word, any synonym match is acceptable.
+    return `(${wordClauses.join(' OR ')})`;
+  });
+  const splitClause = splitClauses.join(' AND ');
 
-  // Append any additional filters.
-  let filterQuery = fieldSpecificTerms;
+  // Combine both clauses so that either approach can yield results
+  const combinedClause = `(${wholeClause} OR (${splitClause}))`;
+
+  // Append additional filter parts (if any)
+  let filterQuery = combinedClause;
   if (filterQueryParts.length > 0) {
     filterQuery += ' AND ' + filterQueryParts.join(' AND ');
   }
+
+  console.log('Filter Query:', filterQuery);
 
   console.log('Filter Query:', filterQuery);
 
@@ -168,7 +184,7 @@ export async function loader({request, context}) {
   ].sort();
   const filteredProductTypes = [
     ...new Set(
-      result?.result?.products?.edges.map(({node}) => node.productType)
+      result?.result?.products?.edges.map(({node}) => node.productType),
     ),
   ].sort();
 
