@@ -991,7 +991,6 @@ async function predictiveSearch({request, context, usePrefix}) {
         limit,
         limitScope: 'EACH',
         term: rawTerm, // Just the direct user text for typeahead
-        types: ['PRODUCT'], // or the set of types you want
       },
     },
   );
