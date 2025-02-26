@@ -121,6 +121,7 @@ export async function loader({request, context}) {
     .split(/\s+/)
     .map((w) => w.trim())
     .filter(Boolean);
+
   const synonymsExpanded = expandSearchTerms(baseTerms);
 
   // If user chose prefix => "word*" else => "*word*"
@@ -128,28 +129,24 @@ export async function loader({request, context}) {
     usePrefix ? `${word}*` : `*${word}*`,
   );
 
-  // Build two queries:
-  // 1. Title-only query (to prioritize title matches)
-  const titleQuery = terms.map((word) => `title:${word}`).join(' OR ');
-  // 2. Full query across multiple fields
-  const fullQuery = terms
+  // Field-specific (title by default) with AND so that every word must match.
+  let fieldSpecificTerms = terms
     .map(
       (word) =>
         `(title:${word} OR variants.sku:${word} OR description:${word} OR product_type:${word} OR tag:${word})`,
     )
-    .join(' OR ');
+    .join(' AND ');
 
-  // Helper function to append additional filter query parts
-  const appendFilters = (query) =>
-    filterQueryParts.length > 0
-      ? `${query} AND ${filterQueryParts.join(' AND ')}`
-      : query;
+  let filterQuery = fieldSpecificTerms;
+  if (filterQueryParts.length > 0) {
+    if (filterQuery) {
+      filterQuery += ' AND ' + filterQueryParts.join(' AND ');
+    } else {
+      filterQuery = filterQueryParts.join(' AND ');
+    }
+  }
 
-  const titleFilterQuery = appendFilters(titleQuery);
-  const fullFilterQuery = appendFilters(fullQuery);
-
-  console.log('Title Filter Query:', titleFilterQuery);
-  console.log('Full Filter Query:', fullFilterQuery);
+  console.log('Filter Query:', filterQuery);
 
   // Sorting
   const sortKeyMapping = {
@@ -165,35 +162,19 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // First, attempt search using the title-only query
-  let result = await regularSearch({
+  // Perform search
+  const result = await regularSearch({
     request,
     context,
-    filterQuery: titleFilterQuery,
+    filterQuery,
     sortKey,
     reverse,
     after,
     before,
   }).catch((error) => {
-    console.error('Title Search Error:', error);
+    console.error('Search Error:', error);
     return {term: '', result: null, error: error.message};
   });
-
-  // If no results are found, fall back to the full query search
-  if (!result?.result?.products?.edges.length) {
-    result = await regularSearch({
-      request,
-      context,
-      filterQuery: fullFilterQuery,
-      sortKey,
-      reverse,
-      after,
-      before,
-    }).catch((error) => {
-      console.error('Full Search Error:', error);
-      return {term: '', result: null, error: error.message};
-    });
-  }
 
   // Vendors & productTypes for filters
   const filteredVendors = [
@@ -309,7 +290,7 @@ export default function SearchPage() {
     );
   }
 
-  const pageInfo = result?.products?.pageInfo || {};
+  const pageInfo = result?.result?.products?.pageInfo || {};
   const hasNextPage = pageInfo.hasNextPage;
   const hasPreviousPage = pageInfo.hasPreviousPage;
 
@@ -964,7 +945,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   const rawTerm = String(url.searchParams.get('q') || '').trim();
 
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
-  const limit = 10000;
+  const limit = Number(url.searchParams.get('limit') || 10000);
   const type = 'predictive';
 
   if (!normalizedTerm) {
