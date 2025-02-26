@@ -137,6 +137,13 @@ export async function loader({request, context}) {
     )
     .join(' OR ');
 
+  /*
+  // If you want multiple fields:
+  // fieldSpecificTerms = terms
+  //   .map((w) => `(title:${w} OR description:${w} OR variants.sku:${w})`)
+  //   .join(' AND ');
+  */
+
   let filterQuery = fieldSpecificTerms;
   if (filterQueryParts.length > 0) {
     if (filterQuery) {
@@ -176,45 +183,18 @@ export async function loader({request, context}) {
     return {term: '', result: null, error: error.message};
   });
 
-  // -- REORDER LOGIC --
-  const edges = result?.result?.products?.edges || [];
-
-  // Vendors you want to prioritize
-  const priorityVendors = ['Apple', 'Samsung', 'MSI'];
-
-  function reorderByPreferredVendors(edges, priorityVendors) {
-    return edges.sort((edgeA, edgeB) => {
-      const vendorA = edgeA.node.vendor;
-      const vendorB = edgeB.node.vendor;
-
-      const aIsPriority = priorityVendors.includes(vendorA);
-      const bIsPriority = priorityVendors.includes(vendorB);
-
-      if (aIsPriority && !bIsPriority) return -1;
-      if (!aIsPriority && bIsPriority) return 1;
-      return 0;
-    });
-  }
-
-  const reorderedEdges = reorderByPreferredVendors(edges, priorityVendors);
-
   // Vendors & productTypes for filters
   const filteredVendors = [
-    ...new Set(reorderedEdges.map(({node}) => node.vendor)),
+    ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
   ].sort();
   const filteredProductTypes = [
-    ...new Set(reorderedEdges.map(({node}) => node.productType)),
+    ...new Set(
+      result?.result?.products?.edges.map(({node}) => node.productType),
+    ),
   ].sort();
 
   return json({
     ...result,
-    result: {
-      ...result?.result,
-      products: {
-        ...result?.result?.products,
-        edges: reorderedEdges,
-      },
-    },
     vendors: filteredVendors,
     productTypes: filteredProductTypes,
   });
@@ -889,6 +869,8 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
     title
     vendor
     description
+    productType
+    tags
     handle
     trackingParameters
     variants(first: 1) {
@@ -991,9 +973,8 @@ async function predictiveSearch({request, context, usePrefix}) {
     // then OR them together
     const orSynonyms = synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
-      return `(variants.sku:${termWithWildcard} OR title:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard})`;
+      return `(title:${termWithWildcard} OR variants.sku:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
     });
-
     // Wrap this single word's synonyms in parentheses and join with OR
     return `(${orSynonyms.join(' OR ')})`;
   });
