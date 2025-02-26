@@ -11,7 +11,7 @@ import customDictionary from '~/lib/customDictionary.json';
  * @type {import('@remix-run/react').MetaFunction}
  */
 export const meta = () => {
-  return [{title: `961Souq | Search`}];
+  return [{title: `Macarabia | Search`}];
 };
 
 /* ------------------------------------------------------------------
@@ -112,7 +112,7 @@ export async function loader({request, context}) {
 
   // Price range & text search
   const rawTerm = searchParams.get('q') || '';
-  const normalizedTerm = rawTerm.replace(/-/g, ' ');
+  const normalizedTerm = rawTerm;
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
 
@@ -135,7 +135,7 @@ export async function loader({request, context}) {
       (word) =>
         `(title:${word} OR product_type:${word} OR description:${word} OR variants.sku:${word})`,
     )
-    .join(' OR ');
+    .join(' AND ');
 
   /*
   // If you want multiple fields:
@@ -152,8 +152,6 @@ export async function loader({request, context}) {
       filterQuery = filterQueryParts.join(' AND ');
     }
   }
-
-  console.log('Filter Query:', filterQuery);
 
   // Sorting
   const sortKeyMapping = {
@@ -946,55 +944,66 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
  *   2) OR them all together for that single word
  * Then AND across multiple typed words.
  */
-async function predictiveSearch({request, context}) {
+async function predictiveSearch({request, context, usePrefix}) {
   const {storefront} = context;
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
-  if (!rawTerm) {
-    return {
-      type: 'predictive',
-      term: '',
-      result: getEmptyPredictiveSearchResult(),
-    };
+
+  const normalizedTerm = rawTerm;
+  const limit = Number(url.searchParams.get('limit') || 10000);
+  const type = 'predictive';
+
+  if (!normalizedTerm) {
+    return {type, term: '', result: getEmptyPredictiveSearchResult()};
   }
 
-  try {
-    const {predictiveSearch: items, errors} = await storefront.query(
-      PREDICTIVE_SEARCH_QUERY,
-      {
-        variables: {
-          limit: 10,
-          limitScope: 'EACH',
-          term: rawTerm,
-          types: ['PRODUCT'],
-        },
+  // Split the input into separate words
+  const typedWords = normalizedTerm
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter(Boolean);
+
+  // For each typed word, build an OR group of synonyms
+  const wordGroups = typedWords.map((baseWord) => {
+    // Expand synonyms for THIS typed word
+    const synonyms = expandSearchTerms([baseWord]);
+    // For each synonym, build the triple check (variants.sku / title / description)
+    // then OR them together
+    const orSynonyms = synonyms.map((syn) => {
+      const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
+      return `(title:${termWithWildcard} OR variants.sku:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
+    });
+    // Wrap this single word's synonyms in parentheses and join with OR
+    return `(${orSynonyms.join(' AND ')})`;
+  });
+
+  // Now AND across multiple typed words
+  // e.g. if user typed "horsepower car" => (all synonyms for "horsepower") AND (all synonyms for "car")
+  const queryTerm = wordGroups.join(' AND ');
+
+  // Query the Shopify predictiveSearch API
+  const {predictiveSearch: items, errors} = await storefront.query(
+    PREDICTIVE_SEARCH_QUERY,
+    {
+      variables: {
+        limit,
+        limitScope: 'EACH',
+        term: queryTerm,
       },
+    },
+  );
+
+  if (errors) {
+    throw new Error(
+      `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
     );
-
-    if (errors) {
-      console.error('Predictive Search Errors', errors);
-      throw new Error('Predictive search returned errors');
-    }
-
-    if (!items) {
-      throw new Error('No predictive search data returned');
-    }
-
-    // Summarize or pass through
-    const total = Object.values(items).reduce(
-      (acc, arr) => acc + arr.length,
-      0,
-    );
-    return {type: 'predictive', term: rawTerm, result: {items, total}};
-  } catch (err) {
-    console.error('Predictive Search Error:', err);
-    return {
-      type: 'predictive',
-      term: rawTerm,
-      result: null,
-      error: err.message,
-    };
   }
+  if (!items) {
+    throw new Error('No predictive search data returned from Shopify API');
+  }
+
+  const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
+  return {type, term: normalizedTerm, result: {items, total}};
 }
 
 /**
