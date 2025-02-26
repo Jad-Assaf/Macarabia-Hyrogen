@@ -1,22 +1,23 @@
+// app/routes/search.jsx
+
 import {json} from '@shopify/remix-oxygen';
 import {useLoaderData, useSearchParams, useNavigate} from '@remix-run/react';
 import {useState, useEffect} from 'react';
 import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
-import '../styles/SearchPage.css';
 import customDictionary from '~/lib/customDictionary.json';
 
-/**
- * @type {import('@remix-run/react').MetaFunction}
- */
+// -----------------------------------------------------
+// Meta
+// -----------------------------------------------------
 export const meta = () => {
-  return [{title: `Macarabia | Search`}];
+  return [{title: `961Souq | Search`}];
 };
 
-/* ------------------------------------------------------------------
-   TWO-WAY DICTIONARY
-------------------------------------------------------------------- */
+// -----------------------------------------------------
+// Synonym Handling
+// -----------------------------------------------------
 function buildSynonymMap(dictionary) {
   const map = {};
   for (const [key, synonyms] of Object.entries(dictionary)) {
@@ -44,32 +45,67 @@ function expandSearchTerms(terms) {
       expanded.push(t);
     }
   }
-  // Remove duplicates
   return [...new Set(expanded)];
 }
 
-/* ------------------------------------------------------------------
-   LOADER
-------------------------------------------------------------------- */
+// -----------------------------------------------------
+// Build Title-Only Query (for weighting titles more)
+// -----------------------------------------------------
+function buildTitleOnlyGroup(word) {
+  // Expand synonyms for this typed word
+  const synonyms = expandSearchTerms([word]);
+  // OR them together on the title field, with prefix matching
+  const orSyns = synonyms.map((syn) => `title:${syn}*`);
+  // e.g. (title:car* OR title:automobile*)
+  return `(${orSyns.join(' OR ')})`;
+}
+
+// -----------------------------------------------------
+// Build Broader Query (title OR description OR sku, etc.)
+// -----------------------------------------------------
+function buildBroadGroup(word) {
+  const synonyms = expandSearchTerms([word]);
+  // Each synonym becomes an OR chunk across multiple fields
+  const orSyns = synonyms.map(
+    (syn) =>
+      `(title:${syn}* OR variants.sku:${syn}* OR description:${syn}* OR product_type:${syn}* OR tag:${syn}*)`,
+  );
+  // e.g. ((title:car* OR variants.sku:car* OR ...) OR (title:automobile* OR ...))
+  return `(${orSyns.join(' OR ')})`;
+}
+
+// -----------------------------------------------------
+// Merge Query with Filters (vendor, productType, etc.)
+// -----------------------------------------------------
+function mergeWithFilterQuery(mainQuery, filterQueryParts) {
+  if (!mainQuery && filterQueryParts.length === 0) {
+    return '';
+  }
+  if (mainQuery && filterQueryParts.length > 0) {
+    return mainQuery + ' AND ' + filterQueryParts.join(' AND ');
+  }
+  return mainQuery || filterQueryParts.join(' AND ');
+}
+
+// -----------------------------------------------------
+// Loader
+// -----------------------------------------------------
 export async function loader({request, context}) {
   const url = new URL(request.url);
   const searchParams = url.searchParams;
-  const usePrefix = searchParams.get('prefix') === 'true';
 
-  // Predictive search check
+  // Check if this is for predictive search
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
-    const result = await predictiveSearch({request, context, usePrefix}).catch(
-      (error) => {
-        console.error('Predictive Search Error:', error);
-        return {
-          type: 'predictive',
-          term: '',
-          result: null,
-          error: error.message,
-        };
-      },
-    );
+    const result = await predictiveSearch({request, context}).catch((error) => {
+      console.error('Predictive Search Error:', error);
+      return {
+        type: 'predictive',
+        term: '',
+        result: null,
+        error: error.message,
+      };
+    });
     return json({
       ...result,
       vendors: [],
@@ -82,12 +118,11 @@ export async function loader({request, context}) {
   const after = searchParams.get('after') || null;
   const before = searchParams.get('before') || null;
 
-  // Filter building
+  // Build filter parts (e.g., vendor, productType)
   const shopifyKeyMap = {
     vendor: 'vendor',
     productType: 'product_type',
   };
-
   const filterMap = new Map();
   for (const [key, value] of searchParams.entries()) {
     if (key.startsWith('filter_')) {
@@ -98,7 +133,6 @@ export async function loader({request, context}) {
       filterMap.get(rawKey).push(value);
     }
   }
-
   const filterQueryParts = [];
   for (const [rawKey, values] of filterMap.entries()) {
     const shopifyKey = shopifyKeyMap[rawKey] || rawKey;
@@ -110,52 +144,30 @@ export async function loader({request, context}) {
     }
   }
 
-  // Price range & text search
+  // Handle user-typed search
   const rawTerm = searchParams.get('q') || '';
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
-  const minPrice = searchParams.get('minPrice');
-  const maxPrice = searchParams.get('maxPrice');
-
-  // Expand synonyms for normal search
-  const baseTerms = normalizedTerm
+  const typedWords = normalizedTerm
     .split(/\s+/)
     .map((w) => w.trim())
     .filter(Boolean);
 
-  const synonymsExpanded = expandSearchTerms(baseTerms);
-
-  // If user chose prefix => "word*" else => "*word*"
-  const terms = synonymsExpanded.map((word) =>
-    usePrefix ? `${word}*` : `*${word}*`,
+  // Build the “title-only” query first (weighting titles more)
+  const titleOnlyQuery = typedWords
+    .map((word) => buildTitleOnlyGroup(word))
+    .join(' AND ');
+  const titleOnlyFilterQuery = mergeWithFilterQuery(
+    titleOnlyQuery,
+    filterQueryParts,
   );
 
-  // Field-specific (title by default)
-  let fieldSpecificTerms = terms
-    .map(
-      (word) =>
-        `(title:${word} OR variants.sku:${word} OR description:${word} OR product_type:${word} OR tag:${word})`,
-    )
-    .join(' OR ');
+  // Build the fallback “broad” query (title OR description OR sku, etc.)
+  const broadQuery = typedWords
+    .map((word) => buildBroadGroup(word))
+    .join(' AND ');
+  const broadFilterQuery = mergeWithFilterQuery(broadQuery, filterQueryParts);
 
-  /*
-  // If you want multiple fields:
-  // fieldSpecificTerms = terms
-  //   .map((w) => `(title:${w} OR description:${w} OR variants.sku:${w})`)
-  //   .join(' AND ');
-  */
-
-  let filterQuery = fieldSpecificTerms;
-  if (filterQueryParts.length > 0) {
-    if (filterQuery) {
-      filterQuery += ' AND ' + filterQueryParts.join(' AND ');
-    } else {
-      filterQuery = filterQueryParts.join(' AND ');
-    }
-  }
-
-  console.log('Filter Query:', filterQuery);
-
-  // Sorting
+  // Sorting logic
   const sortKeyMapping = {
     featured: 'RELEVANCE',
     'price-low-high': 'PRICE',
@@ -169,40 +181,95 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // Perform search
-  const result = await regularSearch({
+  // Example for price range (optional / commented out):
+  /*
+  const minPrice = searchParams.get('minPrice');
+  const maxPrice = searchParams.get('maxPrice');
+  if (minPrice && maxPrice) {
+    // One approach is to include something like
+    // filterQueryParts.push(`price:[${minPrice} TO ${maxPrice}]`)
+    // If not, handle the price filter in a separate step, or combine with your main query.
+  }
+  */
+
+  // ---------------------------------------------------------------
+  // 1) Try the title-only query
+  // ---------------------------------------------------------------
+  let firstPassResult = await regularSearch({
     request,
     context,
-    filterQuery,
+    filterQuery: titleOnlyFilterQuery,
     sortKey,
     reverse,
     after,
     before,
   }).catch((error) => {
-    console.error('Search Error:', error);
+    console.error('Search Error (title-only):', error);
     return {term: '', result: null, error: error.message};
   });
 
+  // If no results, fallback to the broader query
+  if (!firstPassResult?.result?.products?.edges?.length) {
+    firstPassResult = await regularSearch({
+      request,
+      context,
+      filterQuery: broadFilterQuery,
+      sortKey,
+      reverse,
+      after,
+      before,
+    }).catch((error) => {
+      console.error('Search Error (broad fallback):', error);
+      return {term: '', result: null, error: error.message};
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // Vendor Boosting (optional)
+  // ---------------------------------------------------------------
+  const edges = firstPassResult?.result?.products?.edges || [];
+  const priorityVendors = ['Vendor A', 'Vendor B'];
+
+  function reorderByPreferredVendors(edges, priorityVendors) {
+    return edges.sort((edgeA, edgeB) => {
+      const vendorA = edgeA.node.vendor;
+      const vendorB = edgeB.node.vendor;
+      const aIsPriority = priorityVendors.includes(vendorA);
+      const bIsPriority = priorityVendors.includes(vendorB);
+      if (aIsPriority && !bIsPriority) return -1;
+      if (!aIsPriority && bIsPriority) return 1;
+      return 0;
+    });
+  }
+
+  const reorderedEdges = reorderByPreferredVendors(edges, priorityVendors);
+
   // Vendors & productTypes for filters
   const filteredVendors = [
-    ...new Set(result?.result?.products?.edges.map(({node}) => node.vendor)),
+    ...new Set(reorderedEdges.map(({node}) => node.vendor)),
   ].sort();
   const filteredProductTypes = [
-    ...new Set(
-      result?.result?.products?.edges.map(({node}) => node.productType),
-    ),
+    ...new Set(reorderedEdges.map(({node}) => node.productType)),
   ].sort();
 
   return json({
-    ...result,
+    ...firstPassResult,
+    result: {
+      ...firstPassResult?.result,
+      products: {
+        ...firstPassResult?.result?.products,
+        edges: reorderedEdges,
+      },
+    },
     vendors: filteredVendors,
     productTypes: filteredProductTypes,
   });
 }
 
-/* ------------------------------------------------------------------
-   REACT COMPONENT
-------------------------------------------------------------------- */
+// -----------------------------------------------------
+// The main SearchPage component
+// (same structure as your original, with any needed adjustments)
+// -----------------------------------------------------
 export default function SearchPage() {
   const {
     type,
@@ -680,9 +747,9 @@ export default function SearchPage() {
   );
 }
 
-/* ------------------------------------------------------------------
-   GRAPHQL + REGULAR SEARCH
-------------------------------------------------------------------- */
+// -----------------------------------------------------
+// GraphQL Query for Regular Search
+// -----------------------------------------------------
 const FILTERED_PRODUCTS_QUERY = `#graphql
   query FilteredProducts(
     $filterQuery: String,
@@ -757,6 +824,9 @@ const FILTERED_PRODUCTS_QUERY = `#graphql
   }
 `;
 
+// -----------------------------------------------------
+// regularSearch Helper
+// -----------------------------------------------------
 async function regularSearch({
   request,
   context,
@@ -817,92 +887,9 @@ async function regularSearch({
   }
 }
 
-/* ------------------------------------------------------------------
-   PREDICTIVE SEARCH (Important: OR synonyms within each word, AND across words)
-------------------------------------------------------------------- */
-const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
-  fragment PredictiveArticle on Article {
-    __typename
-    id
-    title
-    handle
-    blog {
-      handle
-    }
-    image {
-      url
-      altText
-      width
-      height
-    }
-    trackingParameters
-  }
-`;
-const PREDICTIVE_SEARCH_COLLECTION_FRAGMENT = `#graphql
-  fragment PredictiveCollection on Collection {
-    __typename
-    id
-    title
-    handle
-    image {
-      url
-      altText
-      width
-      height
-    }
-    trackingParameters
-  }
-`;
-const PREDICTIVE_SEARCH_PAGE_FRAGMENT = `#graphql
-  fragment PredictivePage on Page {
-    __typename
-    id
-    title
-    handle
-    trackingParameters
-  }
-`;
-const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
-  fragment PredictiveProduct on Product {
-    __typename
-    id
-    title
-    vendor
-    description
-    productType
-    tags
-    handle
-    trackingParameters
-    variants(first: 1) {
-      nodes {
-        id
-        sku
-        image {
-          url
-          altText
-          width
-          height
-        }
-        price {
-          amount
-          currencyCode
-        }
-        compareAtPrice {
-          amount
-          currencyCode
-        }
-      }
-    }
-  }
-`;
-const PREDICTIVE_SEARCH_QUERY_FRAGMENT = `#graphql
-  fragment PredictiveQuery on SearchQuerySuggestion {
-    __typename
-    text
-    styledText
-    trackingParameters
-  }
-`;
+// -----------------------------------------------------
+// Predictive Search (optional, if you need it)
+// -----------------------------------------------------
 const PREDICTIVE_SEARCH_QUERY = `#graphql
   query PredictiveSearch(
     $country: CountryCode
@@ -917,80 +904,63 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
       types: $types
     ) {
       articles {
-        ...PredictiveArticle
+        __typename
+        id
+        title
+        handle
       }
       collections {
-        ...PredictiveCollection
+        __typename
+        id
+        title
+        handle
       }
       pages {
-        ...PredictivePage
+        __typename
+        id
+        title
+        handle
       }
       products {
-        ...PredictiveProduct
+        __typename
+        id
+        title
+        vendor
+        description
+        productType
+        tags
+        handle
       }
       queries {
-        ...PredictiveQuery
+        __typename
+        text
+        styledText
       }
     }
   }
-  ${PREDICTIVE_SEARCH_ARTICLE_FRAGMENT}
-  ${PREDICTIVE_SEARCH_COLLECTION_FRAGMENT}
-  ${PREDICTIVE_SEARCH_PAGE_FRAGMENT}
-  ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
-  ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 
-/**
- * For each typed word:
- *   1) Expand synonyms => [syn1, syn2, ...]
- *   2) OR them all together for that single word
- * Then AND across multiple typed words.
- */
-async function predictiveSearch({request, context, usePrefix}) {
+async function predictiveSearch({request, context}) {
   const {storefront} = context;
   const url = new URL(request.url);
   const rawTerm = String(url.searchParams.get('q') || '').trim();
 
-  const normalizedTerm = rawTerm.replace(/-/g, ' ');
-  const limit = Number(url.searchParams.get('limit') || 10000);
-  const type = 'predictive';
-
-  if (!normalizedTerm) {
-    return {type, term: '', result: getEmptyPredictiveSearchResult()};
+  if (!rawTerm) {
+    return {
+      type: 'predictive',
+      term: '',
+      result: getEmptyPredictiveSearchResult(),
+    };
   }
 
-  // Split the input into separate words
-  const typedWords = normalizedTerm
-    .split(/\s+/)
-    .map((w) => w.trim())
-    .filter(Boolean);
-
-  // For each typed word, build an OR group of synonyms
-  const wordGroups = typedWords.map((baseWord) => {
-    // Expand synonyms for THIS typed word
-    const synonyms = expandSearchTerms([baseWord]);
-    // For each synonym, build the triple check (variants.sku / title / description)
-    // then OR them together
-    const orSynonyms = synonyms.map((syn) => {
-      const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
-      return `(title:${termWithWildcard} OR variants.sku:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
-    });
-    // Wrap this single word's synonyms in parentheses and join with OR
-    return `(${orSynonyms.join(' OR ')})`;
-  });
-
-  // Now AND across multiple typed words
-  // e.g. if user typed "horsepower car" => (all synonyms for "horsepower") AND (all synonyms for "car")
-  const queryTerm = wordGroups.join(' AND ');
-
-  // Query the Shopify predictiveSearch API
+  const limit = Number(url.searchParams.get('limit') || 10000);
   const {predictiveSearch: items, errors} = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
       variables: {
         limit,
         limitScope: 'EACH',
-        term: queryTerm,
+        term: rawTerm,
       },
     },
   );
@@ -1005,7 +975,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   }
 
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
-  return {type, term: normalizedTerm, result: {items, total}};
+  return {type: 'predictive', term: rawTerm, result: {items, total}};
 }
 
 /**
