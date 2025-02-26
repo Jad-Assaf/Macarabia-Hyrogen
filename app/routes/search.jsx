@@ -964,7 +964,7 @@ async function predictiveSearch({request, context, usePrefix}) {
   const rawTerm = String(url.searchParams.get('q') || '').trim();
 
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
-  const limit = Number(url.searchParams.get('limit') || 10000);
+  const limit = 10000;
   const type = 'predictive';
 
   if (!normalizedTerm) {
