@@ -5,6 +5,13 @@ import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
+
+/**
+ * IMPORTANT: New imports for Fuse.js & words_array.json
+ */
+import Fuse from 'fuse.js';
+import wordsArray from '~/lib/words_array.json'; // Make sure this path is correct for your project
+
 import customDictionary from '~/lib/customDictionary.json';
 
 /**
@@ -15,7 +22,17 @@ export const meta = () => {
 };
 
 /* ------------------------------------------------------------------
-   TWO-WAY DICTIONARY
+   FUSE SETUP
+------------------------------------------------------------------- */
+const fuseOptions = {
+  // Adjust threshold / options to your needs
+  threshold: 0.3,
+  minMatchCharLength: 1,
+};
+const fuse = new Fuse(wordsArray, fuseOptions);
+
+/* ------------------------------------------------------------------
+   TWO-WAY DICTIONARY (SYNONYMS ONLY)
 ------------------------------------------------------------------- */
 function buildSynonymMap(dictionary) {
   const map = {};
@@ -34,14 +51,24 @@ function buildSynonymMap(dictionary) {
 
 const dictionaryMap = buildSynonymMap(customDictionary);
 
+/**
+ * Updated expandSearchTerms to include fuzzy matches from words_array.json
+ */
 function expandSearchTerms(terms) {
   const expanded = [];
   for (const t of terms) {
     const lower = t.toLowerCase();
+    // If the typed word has synonyms in our custom dictionary, add them
     if (dictionaryMap[lower]) {
       expanded.push(...dictionaryMap[lower]);
     } else {
       expanded.push(t);
+    }
+
+    // Also run the typed word through Fuse for fuzzy suggestions
+    const fuseResults = fuse.search(t);
+    for (const {item} of fuseResults) {
+      expanded.push(item);
     }
   }
   // Remove duplicates
@@ -111,7 +138,6 @@ export async function loader({request, context}) {
   }
 
   // Price range & text search
-  // Price range & text search
   const rawTerm = searchParams.get('q') || '';
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const minPrice = searchParams.get('minPrice');
@@ -132,7 +158,7 @@ export async function loader({request, context}) {
       const termQuery = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(title:${termQuery} OR variants.sku:${termQuery} OR description:${termQuery} OR product_type:${termQuery} OR tag:${termQuery})`;
     });
-    // For this word, any synonym match is acceptable.
+    // For this word, any synonym match is acceptable
     return `(${wordClauses.join(' OR ')})`;
   });
   const splitClause = splitClauses.join(' AND ');
@@ -145,8 +171,6 @@ export async function loader({request, context}) {
   if (filterQueryParts.length > 0) {
     filterQuery += ' AND ' + filterQueryParts.join(' AND ');
   }
-
-  console.log('Filter Query:', filterQuery);
 
   console.log('Filter Query:', filterQuery);
 
@@ -164,7 +188,7 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // Perform the search using the regularSearch function.
+  // Perform the search using the regularSearch function
   const result = await regularSearch({
     request,
     context,
@@ -962,10 +986,9 @@ async function predictiveSearch({request, context, usePrefix}) {
 
   // For each typed word, build an OR group of synonyms
   const wordGroups = typedWords.map((baseWord) => {
-    // Expand synonyms for THIS typed word
+    // Expand synonyms + fuzzy matches for THIS typed word
     const synonyms = expandSearchTerms([baseWord]);
     // For each synonym, build the triple check (variants.sku / title / description)
-    // then OR them together
     const orSynonyms = synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(title:${termWithWildcard} OR variants.sku:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
@@ -975,7 +998,6 @@ async function predictiveSearch({request, context, usePrefix}) {
   });
 
   // Now AND across multiple typed words
-  // e.g. if user typed "horsepower car" => (all synonyms for "horsepower") AND (all synonyms for "car")
   const queryTerm = wordGroups.join(' AND ');
 
   // Query the Shopify predictiveSearch API
@@ -1002,12 +1024,3 @@ async function predictiveSearch({request, context, usePrefix}) {
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
   return {type, term: normalizedTerm, result: {items, total}};
 }
-
-/**
- * @typedef {import('@shopify/remix-oxygen').LoaderFunctionArgs} LoaderFunctionArgs
- * @typedef {import('@shopify/remix-oxygen').ActionFunctionArgs} ActionFunctionArgs
- * @template T @typedef {import('@remix-run/react').MetaFunction<T>} MetaFunction
- * @typedef {import('~/lib/search').RegularSearchReturn} RegularSearchReturn
- * @typedef {import('~/lib/search').PredictiveSearchReturn} PredictiveSearchReturn
- * @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData
- */
