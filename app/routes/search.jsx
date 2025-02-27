@@ -47,7 +47,7 @@ function expandSearchTerms(terms) {
     }
   }
   // Remove duplicates
-  return [...new Set(expanded)];
+  return [...new Set(expanded)]; 
 }
 
 /* ------------------------------------------------------------------
