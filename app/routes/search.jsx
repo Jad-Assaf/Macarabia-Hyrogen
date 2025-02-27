@@ -5,13 +5,6 @@ import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
-
-/**
- * IMPORTANT: Import Fuse.js & words_array.json
- */
-import Fuse from 'fuse.js';
-import wordsArray from '~/lib/words_array.json'; // Make sure this path is correct for your project
-
 import customDictionary from '~/lib/customDictionary.json';
 
 /**
@@ -22,25 +15,7 @@ export const meta = () => {
 };
 
 /* ------------------------------------------------------------------
-   FUSE SETUP
-------------------------------------------------------------------- */
-/**
- * Adjusted Fuse options to be more lenient:
- * - threshold: 0.8 (allows fuzzier matches)
- * - minMatchCharLength: 1 (matches even single characters)
- * - ignoreLocation: true (position in the string is not penalized)
- * - findAllMatches: true (all matching results are returned)
- */
-const fuseOptions = {
-  threshold: 0.8,
-  minMatchCharLength: 1,
-  ignoreLocation: true,
-  findAllMatches: true,
-};
-const fuse = new Fuse(wordsArray, fuseOptions);
-
-/* ------------------------------------------------------------------
-   TWO-WAY DICTIONARY (SYNONYMS ONLY)
+   TWO-WAY DICTIONARY
 ------------------------------------------------------------------- */
 function buildSynonymMap(dictionary) {
   const map = {};
@@ -59,26 +34,14 @@ function buildSynonymMap(dictionary) {
 
 const dictionaryMap = buildSynonymMap(customDictionary);
 
-/**
- * Updated expandSearchTerms to include fuzzy matches from words_array.json.
- * This function automatically expands each typed word with its custom synonyms
- * (from the dictionary) and fuzzy matches (from Fuse) so that even near-matches
- * like "aple" will be expanded to include "Apple" if present in wordsArray.
- */
 function expandSearchTerms(terms) {
   const expanded = [];
   for (const t of terms) {
     const lower = t.toLowerCase();
-    // Add custom dictionary synonyms if available
     if (dictionaryMap[lower]) {
       expanded.push(...dictionaryMap[lower]);
     } else {
       expanded.push(t);
-    }
-    // Also add fuzzy matches from Fuse.js
-    const fuseResults = fuse.search(t);
-    for (const {item} of fuseResults) {
-      expanded.push(item);
     }
   }
   // Remove duplicates
@@ -148,6 +111,7 @@ export async function loader({request, context}) {
   }
 
   // Price range & text search
+  // Price range & text search
   const rawTerm = searchParams.get('q') || '';
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
   const minPrice = searchParams.get('minPrice');
@@ -168,7 +132,7 @@ export async function loader({request, context}) {
       const termQuery = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(title:${termQuery} OR variants.sku:${termQuery} OR description:${termQuery} OR product_type:${termQuery} OR tag:${termQuery})`;
     });
-    // Any synonym match for the word is acceptable
+    // For this word, any synonym match is acceptable.
     return `(${wordClauses.join(' OR ')})`;
   });
   const splitClause = splitClauses.join(' AND ');
@@ -181,6 +145,8 @@ export async function loader({request, context}) {
   if (filterQueryParts.length > 0) {
     filterQuery += ' AND ' + filterQueryParts.join(' AND ');
   }
+
+  console.log('Filter Query:', filterQuery);
 
   console.log('Filter Query:', filterQuery);
 
@@ -994,16 +960,22 @@ async function predictiveSearch({request, context, usePrefix}) {
     .map((w) => w.trim())
     .filter(Boolean);
 
-  // For each typed word, build an OR group of synonyms (including fuzzy matches)
+  // For each typed word, build an OR group of synonyms
   const wordGroups = typedWords.map((baseWord) => {
+    // Expand synonyms for THIS typed word
     const synonyms = expandSearchTerms([baseWord]);
+    // For each synonym, build the triple check (variants.sku / title / description)
+    // then OR them together
     const orSynonyms = synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(title:${termWithWildcard} OR variants.sku:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
     });
+    // Wrap this single word's synonyms in parentheses and join with OR
     return `(${orSynonyms.join(' OR ')})`;
   });
 
+  // Now AND across multiple typed words
+  // e.g. if user typed "horsepower car" => (all synonyms for "horsepower") AND (all synonyms for "car")
   const queryTerm = wordGroups.join(' AND ');
 
   // Query the Shopify predictiveSearch API
