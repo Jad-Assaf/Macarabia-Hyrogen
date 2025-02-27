@@ -6,6 +6,8 @@ import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
 import customDictionary from '~/lib/customDictionary.json';
+import fuzzysort from 'fuzzysort';
+import wordsArray from '~/lib/words_array.json';
 
 /**
  * @type {import('@remix-run/react').MetaFunction}
@@ -56,7 +58,7 @@ export async function loader({request, context}) {
   const searchParams = url.searchParams;
   const usePrefix = searchParams.get('prefix') === 'true';
 
-  // Predictive search check (unchanged)
+  // Check for predictive search mode
   const isPredictive = searchParams.has('predictive');
   if (isPredictive) {
     const result = await predictiveSearch({request, context, usePrefix}).catch(
@@ -78,6 +80,21 @@ export async function loader({request, context}) {
     });
   }
 
+  // Get the search term
+  const rawTerm = searchParams.get('q') || '';
+  const normalizedTerm = rawTerm.replace(/-/g, ' ');
+
+  // NEW: Check for fuzzy search mode
+  const isFuzzy = searchParams.has('fuzzy');
+  if (isFuzzy) {
+    // Use fuzzysort to perform a fuzzy search on the words array.
+    // Adjust the limit option as needed.
+    const fuzzyResults = fuzzysort.go(normalizedTerm, wordsArray, {limit: 10});
+    const fuzzyMatches = fuzzyResults.map((result) => result.target);
+    return json({type: 'fuzzy', term: normalizedTerm, result: fuzzyMatches});
+  }
+
+  // Continue with the existing regular search
   // Cursor-based pagination
   const after = searchParams.get('after') || null;
   const before = searchParams.get('before') || null;
@@ -111,12 +128,6 @@ export async function loader({request, context}) {
   }
 
   // Price range & text search
-  // Price range & text search
-  const rawTerm = searchParams.get('q') || '';
-  const normalizedTerm = rawTerm.replace(/-/g, ' ');
-  const minPrice = searchParams.get('minPrice');
-  const maxPrice = searchParams.get('maxPrice');
-
   // Build the whole-term clause (using the full normalized term)
   const termQueryWhole = usePrefix
     ? `${normalizedTerm}*`
@@ -145,8 +156,6 @@ export async function loader({request, context}) {
   if (filterQueryParts.length > 0) {
     filterQuery += ' AND ' + filterQueryParts.join(' AND ');
   }
-
-  console.log('Filter Query:', filterQuery);
 
   console.log('Filter Query:', filterQuery);
 
@@ -281,6 +290,24 @@ export default function SearchPage() {
       trackSearch(term);
     }
   }, [term]);
+
+  // For fuzzy search, display the fuzzy matches list instead of product grid.
+  if (type === 'fuzzy') {
+    return (
+      <div className="search">
+        <h1>Fuzzy Search Results</h1>
+        {result && result.length > 0 ? (
+          <ul>
+            {result.map((word, idx) => (
+              <li key={idx}>{word}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>No fuzzy matches found</p>
+        )}
+      </div>
+    );
+  }
 
   const edges = result?.products?.edges || [];
   if (!edges.length) {
