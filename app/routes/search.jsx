@@ -25,14 +25,14 @@ export const meta = () => {
    FUSE SETUP
 ------------------------------------------------------------------- */
 /**
- * KEY CHANGES HERE:
- * - threshold: Higher threshold => more matches (even if the typed input is partially off)
- * - ignoreLocation: true => "distance" from typed location in the string is not penalized
- * - minMatchCharLength: 1 => even single-character input can match
- * - findAllMatches: true => returns all matching results, not just the first few
+ * Adjusted Fuse options to be more lenient:
+ * - threshold: 0.8 (allows fuzzier matches)
+ * - minMatchCharLength: 1 (matches even single characters)
+ * - ignoreLocation: true (position in the string is not penalized)
+ * - findAllMatches: true (all matching results are returned)
  */
 const fuseOptions = {
-  threshold: 0.5,
+  threshold: 0.8,
   minMatchCharLength: 1,
   ignoreLocation: true,
   findAllMatches: true,
@@ -60,20 +60,22 @@ function buildSynonymMap(dictionary) {
 const dictionaryMap = buildSynonymMap(customDictionary);
 
 /**
- * Updated expandSearchTerms to include fuzzy matches from words_array.json
+ * Updated expandSearchTerms to include fuzzy matches from words_array.json.
+ * This function automatically expands each typed word with its custom synonyms
+ * (from the dictionary) and fuzzy matches (from Fuse) so that even near-matches
+ * like "aple" will be expanded to include "Apple" if present in wordsArray.
  */
 function expandSearchTerms(terms) {
   const expanded = [];
   for (const t of terms) {
     const lower = t.toLowerCase();
-    // If the typed word has synonyms in our custom dictionary, add them
+    // Add custom dictionary synonyms if available
     if (dictionaryMap[lower]) {
       expanded.push(...dictionaryMap[lower]);
     } else {
       expanded.push(t);
     }
-
-    // Also run the typed word through Fuse for fuzzy suggestions
+    // Also add fuzzy matches from Fuse.js
     const fuseResults = fuse.search(t);
     for (const {item} of fuseResults) {
       expanded.push(item);
@@ -166,7 +168,7 @@ export async function loader({request, context}) {
       const termQuery = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(title:${termQuery} OR variants.sku:${termQuery} OR description:${termQuery} OR product_type:${termQuery} OR tag:${termQuery})`;
     });
-    // For this word, any synonym match is acceptable
+    // Any synonym match for the word is acceptable
     return `(${wordClauses.join(' OR ')})`;
   });
   const splitClause = splitClauses.join(' AND ');
@@ -196,7 +198,7 @@ export async function loader({request, context}) {
   const sortKey = sortKeyMapping[searchParams.get('sort')] || 'RELEVANCE';
   const reverse = reverseMapping[searchParams.get('sort')] || false;
 
-  // Perform the search using the regularSearch function
+  // Perform the search using the regularSearch function.
   const result = await regularSearch({
     request,
     context,
@@ -992,20 +994,16 @@ async function predictiveSearch({request, context, usePrefix}) {
     .map((w) => w.trim())
     .filter(Boolean);
 
-  // For each typed word, build an OR group of synonyms
+  // For each typed word, build an OR group of synonyms (including fuzzy matches)
   const wordGroups = typedWords.map((baseWord) => {
-    // Expand synonyms + fuzzy matches for THIS typed word
     const synonyms = expandSearchTerms([baseWord]);
-    // For each synonym, build the triple check (variants.sku / title / description)
     const orSynonyms = synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(title:${termWithWildcard} OR variants.sku:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
     });
-    // Wrap this single word's synonyms in parentheses and join with OR
     return `(${orSynonyms.join(' OR ')})`;
   });
 
-  // Now AND across multiple typed words
   const queryTerm = wordGroups.join(' AND ');
 
   // Query the Shopify predictiveSearch API
@@ -1032,3 +1030,12 @@ async function predictiveSearch({request, context, usePrefix}) {
   const total = Object.values(items).reduce((acc, arr) => acc + arr.length, 0);
   return {type, term: normalizedTerm, result: {items, total}};
 }
+
+/**
+ * @typedef {import('@shopify/remix-oxygen').LoaderFunctionArgs} LoaderFunctionArgs
+ * @typedef {import('@shopify/remix-oxygen').ActionFunctionArgs} ActionFunctionArgs
+ * @template T @typedef {import('@remix-run/react').MetaFunction<T>} MetaFunction
+ * @typedef {import('~/lib/search').RegularSearchReturn} RegularSearchReturn
+ * @typedef {import('~/lib/search').PredictiveSearchReturn} PredictiveSearchReturn
+ * @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData
+ */
