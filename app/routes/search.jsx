@@ -6,7 +6,7 @@ import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
 import customDictionary from '~/lib/customDictionary.json';
-import fuzzysort from 'fuzzysort';
+import Fuse from 'fuse.js';
 import wordsArray from '~/lib/words_array.json';
 
 /**
@@ -84,29 +84,22 @@ export async function loader({request, context}) {
   const rawTerm = searchParams.get('q') || '';
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
 
-  // NEW: Check for fuzzy search mode
+  // NEW: Check for fuzzy search mode using Fuse.js
   const isFuzzy = searchParams.has('fuzzy');
   if (isFuzzy) {
-    // Try using fuzzysort first (without wildcards)
-    let fuzzyResults = fuzzysort.go(normalizedTerm, wordsArray, {
-      limit: 10,
-      allowTypo: false,
+    const fuseOptions = {
+      includeScore: true,
+      threshold: 0.3, // adjust threshold as needed (lower = stricter matching)
+      isCaseSensitive: false,
+    };
+    const fuse = new Fuse(wordsArray, fuseOptions);
+    const fuseResults = fuse.search(normalizedTerm);
+    const fuseMatches = fuseResults.map((result) => result.item);
+    return json({
+      type: 'fuzzy',
+      term: normalizedTerm,
+      result: fuseMatches.slice(0, 10),
     });
-
-    // If no results, fallback to a basic substring search (case-insensitive)
-    if (fuzzyResults.length === 0) {
-      const substringMatches = wordsArray.filter((word) =>
-        word.toLowerCase().includes(normalizedTerm.toLowerCase()),
-      );
-      return json({
-        type: 'fuzzy',
-        term: normalizedTerm,
-        result: substringMatches.slice(0, 10),
-      });
-    }
-
-    const fuzzyMatches = fuzzyResults.map((result) => result.target);
-    return json({type: 'fuzzy', term: normalizedTerm, result: fuzzyMatches});
   }
 
   // Continue with the existing regular search
