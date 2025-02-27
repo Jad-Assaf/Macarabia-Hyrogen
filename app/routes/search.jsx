@@ -89,7 +89,9 @@ export async function loader({request, context}) {
   if (isFuzzy) {
     // Use fuzzysort to perform a fuzzy search on the words array.
     // Adjust the limit option as needed.
-    const fuzzyResults = fuzzysort.go(normalizedTerm, wordsArray, {limit: 10});
+    const fuzzyResults = fuzzysort.go(`*${normalizedTerm}*`, wordsArray, {
+      limit: 10,
+    });
     const fuzzyMatches = fuzzyResults.map((result) => result.target);
     return json({type: 'fuzzy', term: normalizedTerm, result: fuzzyMatches});
   }
