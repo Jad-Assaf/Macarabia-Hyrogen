@@ -1,8 +1,6 @@
 import {json} from '@shopify/remix-oxygen';
 import {useLoaderData, useSearchParams, useNavigate} from '@remix-run/react';
 import {useState, useEffect} from 'react';
-import Fuse from 'fuse.js'; // <-- Import Fuse.js
-import wordArray from '~/lib/words_array.json'; // <-- Import the JSON array
 import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
@@ -113,19 +111,11 @@ export async function loader({request, context}) {
   }
 
   // Price range & text search
+  // Price range & text search
   const rawTerm = searchParams.get('q') || '';
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
-
-  // 1) Fuzzy search in word_array.json using Fuse.js
-  // Use normalizedTerm so that the search input is clean and nonempty.
-  const fuseOptions = {
-    threshold: 0.3,
-    includeScore: true, // optional: includes score in result objects
-  };
-  const fuse = new Fuse(wordArray, fuseOptions);
-  const fuzzySearchResults = normalizedTerm.trim()
-    ? fuse.search(normalizedTerm).map((result) => result.item)
-    : [];
+  const minPrice = searchParams.get('minPrice');
+  const maxPrice = searchParams.get('maxPrice');
 
   // Build the whole-term clause (using the full normalized term)
   const termQueryWhole = usePrefix
@@ -155,6 +145,8 @@ export async function loader({request, context}) {
   if (filterQueryParts.length > 0) {
     filterQuery += ' AND ' + filterQueryParts.join(' AND ');
   }
+
+  console.log('Filter Query:', filterQuery);
 
   console.log('Filter Query:', filterQuery);
 
@@ -200,8 +192,6 @@ export async function loader({request, context}) {
     ...result,
     vendors: filteredVendors,
     productTypes: filteredProductTypes,
-    // Pass fuzzy results to the UI
-    fuzzySearchResults,
   });
 }
 
@@ -216,7 +206,6 @@ export default function SearchPage() {
     vendors = [],
     productTypes = [],
     error,
-    fuzzySearchResults = [],
   } = useLoaderData();
 
   const [searchParams] = useSearchParams();
@@ -292,13 +281,6 @@ export default function SearchPage() {
       trackSearch(term);
     }
   }, [term]);
-
-  // Log or render your fuzzy results as desired
-  useEffect(() => {
-    if (fuzzySearchResults.length) {
-      console.log('Fuzzy matches from word_array.json:', fuzzySearchResults);
-    }
-  }, [fuzzySearchResults]);
 
   const edges = result?.products?.edges || [];
   if (!edges.length) {
@@ -953,6 +935,12 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 
+/**
+ * For each typed word:
+ *   1) Expand synonyms => [syn1, syn2, ...]
+ *   2) OR them all together for that single word
+ * Then AND across multiple typed words.
+ */
 async function predictiveSearch({request, context, usePrefix}) {
   const {storefront} = context;
   const url = new URL(request.url);
@@ -976,15 +964,18 @@ async function predictiveSearch({request, context, usePrefix}) {
   const wordGroups = typedWords.map((baseWord) => {
     // Expand synonyms for THIS typed word
     const synonyms = expandSearchTerms([baseWord]);
-    // For each synonym, build the triple check (variants.sku / title / description / etc.)
+    // For each synonym, build the triple check (variants.sku / title / description)
+    // then OR them together
     const orSynonyms = synonyms.map((syn) => {
       const termWithWildcard = usePrefix ? `${syn}*` : `*${syn}*`;
       return `(title:${termWithWildcard} OR variants.sku:${termWithWildcard} OR description:${termWithWildcard} OR product_type:${termWithWildcard} OR tag:${termWithWildcard})`;
     });
+    // Wrap this single word's synonyms in parentheses and join with OR
     return `(${orSynonyms.join(' OR ')})`;
   });
 
   // Now AND across multiple typed words
+  // e.g. if user typed "horsepower car" => (all synonyms for "horsepower") AND (all synonyms for "car")
   const queryTerm = wordGroups.join(' AND ');
 
   // Query the Shopify predictiveSearch API
