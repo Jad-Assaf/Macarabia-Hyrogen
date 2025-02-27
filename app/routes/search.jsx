@@ -6,7 +6,7 @@ import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
 import customDictionary from '~/lib/customDictionary.json';
-import Fuse from 'fuse.js';
+import {matchSorter, rankings} from 'match-sorter';
 import wordsArray from '~/lib/words_array.json';
 
 /**
@@ -84,24 +84,17 @@ export async function loader({request, context}) {
   const rawTerm = searchParams.get('q') || '';
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
 
-  // NEW: Check for fuzzy search mode using Fuse.js
+  // NEW: Check for fuzzy search mode using match-sorter
   const isFuzzy = searchParams.has('fuzzy');
   if (isFuzzy) {
-    // Set a high threshold so that even if the query is a substring (e.g. "3510")
-    // it matches candidates like "L3510"
-    const fuseOptions = {
-      includeScore: true,
-      threshold: 1.0, // very lenient matching
-      isCaseSensitive: false,
-    };
-    const fuse = new Fuse(wordsArray, fuseOptions);
-    const fuseResults = fuse.search(normalizedTerm);
-    // Optionally, you can filter by score if needed.
-    const fuseMatches = fuseResults.map((result) => result.item);
+    // Use match-sorter with the CONTAINS ranking so that substring matches are returned
+    const fuzzyMatches = matchSorter(wordsArray, normalizedTerm, {
+      threshold: rankings.CONTAINS,
+    });
     return json({
       type: 'fuzzy',
       term: normalizedTerm,
-      result: fuseMatches.slice(0, 10),
+      result: fuzzyMatches.slice(0, 10),
     });
   }
 
