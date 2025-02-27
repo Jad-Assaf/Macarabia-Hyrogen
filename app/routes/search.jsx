@@ -87,12 +87,24 @@ export async function loader({request, context}) {
   // NEW: Check for fuzzy search mode
   const isFuzzy = searchParams.has('fuzzy');
   if (isFuzzy) {
-    // Use fuzzysort to perform a fuzzy search on the words array.
-    // Adjust the limit option as needed.
-    const fuzzyResults = fuzzysort.go(normalizedTerm, wordsArray, {
+    // Try using fuzzysort first (without wildcards)
+    let fuzzyResults = fuzzysort.go(normalizedTerm, wordsArray, {
       limit: 10,
       allowTypo: false,
     });
+
+    // If no results, fallback to a basic substring search (case-insensitive)
+    if (fuzzyResults.length === 0) {
+      const substringMatches = wordsArray.filter((word) =>
+        word.toLowerCase().includes(normalizedTerm.toLowerCase()),
+      );
+      return json({
+        type: 'fuzzy',
+        term: normalizedTerm,
+        result: substringMatches.slice(0, 10),
+      });
+    }
+
     const fuzzyMatches = fuzzyResults.map((result) => result.target);
     return json({type: 'fuzzy', term: normalizedTerm, result: fuzzyMatches});
   }
