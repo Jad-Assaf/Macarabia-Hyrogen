@@ -1,8 +1,8 @@
 import {json} from '@shopify/remix-oxygen';
 import {useLoaderData, useSearchParams, useNavigate} from '@remix-run/react';
 import {useState, useEffect} from 'react';
-import Fuse from 'fuse.js'; // <-- Added
-import wordArray from '~/lib/words_array.json'; // <-- Added
+import Fuse from 'fuse.js'; // <-- Import Fuse.js
+import wordArray from '~/lib/word_array.json'; // <-- Import the JSON array
 import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
@@ -47,7 +47,7 @@ function expandSearchTerms(terms) {
     }
   }
   // Remove duplicates
-  return [...new Set(expanded)]; 
+  return [...new Set(expanded)];
 }
 
 /* ------------------------------------------------------------------
@@ -115,13 +115,16 @@ export async function loader({request, context}) {
   // Price range & text search
   const rawTerm = searchParams.get('q') || '';
   const normalizedTerm = rawTerm.replace(/-/g, ' ');
-  const minPrice = searchParams.get('minPrice');
-  const maxPrice = searchParams.get('maxPrice');
 
   // 1) Fuzzy search in word_array.json using Fuse.js
-  const fuse = new Fuse(wordArray, {threshold: 0.3});
-  const fuzzySearchResults = rawTerm
-    ? fuse.search(rawTerm).map((r) => r.item)
+  // Use normalizedTerm so that the search input is clean and nonempty.
+  const fuseOptions = {
+    threshold: 0.3,
+    includeScore: true, // optional: includes score in result objects
+  };
+  const fuse = new Fuse(wordArray, fuseOptions);
+  const fuzzySearchResults = normalizedTerm.trim()
+    ? fuse.search(normalizedTerm).map((result) => result.item)
     : [];
 
   // Build the whole-term clause (using the full normalized term)
@@ -213,7 +216,7 @@ export default function SearchPage() {
     vendors = [],
     productTypes = [],
     error,
-    fuzzySearchResults = [], // <-- Fuzzy results from loader
+    fuzzySearchResults = [],
   } = useLoaderData();
 
   const [searchParams] = useSearchParams();
