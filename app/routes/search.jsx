@@ -2,7 +2,7 @@ import {json} from '@shopify/remix-oxygen';
 import {useLoaderData, useSearchParams, useNavigate} from '@remix-run/react';
 import {useState, useEffect} from 'react';
 import Fuse from 'fuse.js'; // <-- Added
-import wordArray from '~/lib/word_array.json'; // <-- Added
+import wordArray from '~/lib/words_array.json'; // <-- Added
 import {ProductItem} from '~/components/CollectionDisplay';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
