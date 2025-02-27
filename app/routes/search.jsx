@@ -7,7 +7,7 @@ import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
 
 /**
- * IMPORTANT: New imports for Fuse.js & words_array.json
+ * IMPORTANT: Import Fuse.js & words_array.json
  */
 import Fuse from 'fuse.js';
 import wordsArray from '~/lib/words_array.json'; // Make sure this path is correct for your project
@@ -24,10 +24,18 @@ export const meta = () => {
 /* ------------------------------------------------------------------
    FUSE SETUP
 ------------------------------------------------------------------- */
+/**
+ * KEY CHANGES HERE:
+ * - threshold: Higher threshold => more matches (even if the typed input is partially off)
+ * - ignoreLocation: true => "distance" from typed location in the string is not penalized
+ * - minMatchCharLength: 1 => even single-character input can match
+ * - findAllMatches: true => returns all matching results, not just the first few
+ */
 const fuseOptions = {
-  // Adjust threshold / options to your needs
-  threshold: 0.3,
+  threshold: 0.5,
   minMatchCharLength: 1,
+  ignoreLocation: true,
+  findAllMatches: true,
 };
 const fuse = new Fuse(wordsArray, fuseOptions);
 
