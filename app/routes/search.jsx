@@ -87,13 +87,16 @@ export async function loader({request, context}) {
   // NEW: Check for fuzzy search mode using Fuse.js
   const isFuzzy = searchParams.has('fuzzy');
   if (isFuzzy) {
+    // Set a high threshold so that even if the query is a substring (e.g. "3510")
+    // it matches candidates like "L3510"
     const fuseOptions = {
       includeScore: true,
-      threshold: 0.3, // adjust threshold as needed (lower = stricter matching)
+      threshold: 1.0, // very lenient matching
       isCaseSensitive: false,
     };
     const fuse = new Fuse(wordsArray, fuseOptions);
     const fuseResults = fuse.search(normalizedTerm);
+    // Optionally, you can filter by score if needed.
     const fuseMatches = fuseResults.map((result) => result.item);
     return json({
       type: 'fuzzy',
