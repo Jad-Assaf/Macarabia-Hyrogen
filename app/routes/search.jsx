@@ -91,6 +91,7 @@ export async function loader({request, context}) {
     // Adjust the limit option as needed.
     const fuzzyResults = fuzzysort.go(`*${normalizedTerm}*`, wordsArray, {
       limit: 10,
+      allowTypo: false,
     });
     const fuzzyMatches = fuzzyResults.map((result) => result.target);
     return json({type: 'fuzzy', term: normalizedTerm, result: fuzzyMatches});
