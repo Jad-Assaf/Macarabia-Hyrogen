@@ -62,6 +62,7 @@ export default async function handleRequest(
       'https://cdn.amplitude.com',
       'https://pe5t1m9ejs-dsn.algolia.net',
       'https://cdn.onesignal.com/',
+      'https://onesignal.com/',
     ],
     connectSrc: [
       "'self'", // Allow scripts from the same origin
@@ -90,6 +91,7 @@ export default async function handleRequest(
       'https://www.searchserverapi.com/',
       'https://pe5t1m9ejs-dsn.algolia.net',
       'https://cdn.onesignal.com/',
+      'https://onesignal.com/',
     ],
     frameSrc: [
       "'self'", // Allow frames from the same origin
