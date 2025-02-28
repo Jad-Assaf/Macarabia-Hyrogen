@@ -60,7 +60,7 @@ export function PageLayout({
         />
       )}
       <main>{children}</main>
-      {/* <Footer shopMenu={shopMenuData} policiesMenu={policiesMenuData} /> */}
+      <Footer shopMenu={shopMenuData} policiesMenu={policiesMenuData} />
     </Aside.Provider>
   );
 }
