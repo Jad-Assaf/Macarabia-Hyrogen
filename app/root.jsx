@@ -181,6 +181,20 @@ export function Layout({children}) {
     script.defer = true;
     document.body.appendChild(script);
 
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/OneSignalSDKWorker.js')
+        .then((registration) => {
+          console.log(
+            'Service Worker registered with scope:',
+            registration.scope,
+          );
+        })
+        .catch((error) => {
+          console.error('Service Worker registration failed:', error);
+        });
+    }
+
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal) => {
       await OneSignal.init({
