@@ -673,6 +673,11 @@ export default function Product() {
             </Await>
           </Suspense>
 
+          <ComplementaryProducts
+            productId={product.id}
+            complementaryProducts={complementaryProducts}
+          />
+
           <hr className="productPage-hr" />
           <div className="product-details">
             <ul>
@@ -694,10 +699,6 @@ export default function Product() {
             </ul>
           </div>
           <hr className="productPage-hr" />
-          <ComplementaryProducts
-            productId={product.id}
-            complementaryProducts={complementaryProducts}
-          />
           <ProductMetafields
             metafieldCondition={product.metafieldCondition}
             metafieldWarranty={product.metafieldWarranty}
