@@ -150,6 +150,7 @@ export default async function handleRequest(
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
       'https://pe5t1m9ejs-dsn.algolia.net',
+      'https://onesignal.com/',
     ],
     mediaSrc: [
       "'self'",
@@ -165,12 +166,14 @@ export default async function handleRequest(
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
       'https://pe5t1m9ejs-dsn.algolia.net',
+      'https://onesignal.com/',
       // Add other media sources as needed
     ],
     styleSrc: [
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
       'https://pe5t1m9ejs-dsn.algolia.net',
+      'https://onesignal.com/',
     ],
   });
 
