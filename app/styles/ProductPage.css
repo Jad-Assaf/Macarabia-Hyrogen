@@ -435,13 +435,13 @@ strong {
 }
 
 /* Container for complementary products */
-section .complementary-products {
-    padding: 1rem 0;
+.complementary-products {
+    padding: 1rem 0 !important;
 }
 .complementary-products-container {
     display: flex;
     flex-direction: row;
-    gap: 10px;
+    gap: 20px;
     overflow-x: auto;
     padding: 10px 0;
     scroll-behavior: smooth;
@@ -453,7 +453,6 @@ section .complementary-products {
     width: 100px;
     text-align: center;
     text-decoration: none;
-    margin-left: 5px;
     /* Animation initial state */
     opacity: 0;
     transform: translateX(-20px);
