@@ -23,7 +23,7 @@ import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
 import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
-import { ComplementaryProducts } from '~/components/ComplementaryProducts';
+import { COMPLEMENTARY_PRODUCTS_QUERY, ComplementaryProducts } from '~/components/ComplementaryProducts';
 
 // ---------------- SEO & Meta
 export const meta = ({data}) => {
