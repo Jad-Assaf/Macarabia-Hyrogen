@@ -23,6 +23,7 @@ import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
 import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
+import { ComplementaryProducts } from '~/components/ComplementaryProducts';
 
 // ---------------- SEO & Meta
 export const meta = ({data}) => {
@@ -200,6 +201,13 @@ async function loadCriticalData({context, params, request}) {
     throw new Response('Product not found', {status: 404});
   }
 
+  const {productRecommendations} = await storefront.query(
+    COMPLEMENTARY_PRODUCTS_QUERY,
+    {
+      variables: {productId: product.id},
+    },
+  );
+
   // Select the first variant as the default if applicable
   const firstVariant = product.variants.nodes[0];
   const firstVariantIsDefault = Boolean(
@@ -233,6 +241,7 @@ async function loadCriticalData({context, params, request}) {
       seoDescription: product.seo?.description || product.description,
       variantPrice: firstVariant?.price || product.priceRange?.minVariantPrice,
     },
+    complementaryProducts: productRecommendations,
     relatedProducts,
   };
 }
@@ -547,7 +556,7 @@ export function ProductForm({
 //                   Main Product
 // -----------------------------------------------------
 export default function Product() {
-  const {product, variants, relatedProducts} = useLoaderData();
+  const {product, variants, complementaryProducts, relatedProducts} = useLoaderData();
 
   // Safeguard: If `product` is unexpectedly undefined for any reason, bail out early.
   if (!product) {
@@ -685,6 +694,10 @@ export default function Product() {
             </ul>
           </div>
           <hr className="productPage-hr" />
+          <ComplementaryProducts
+            productId={product.id}
+            complementaryProducts={complementaryProducts}
+          />
           <ProductMetafields
             metafieldCondition={product.metafieldCondition}
             metafieldWarranty={product.metafieldWarranty}
