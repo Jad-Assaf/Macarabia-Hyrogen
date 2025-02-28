@@ -1,7 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {Link} from '@remix-run/react';
 import {Image, Money} from '@shopify/hydrogen';
-import './ComplementaryProducts.css'; // Import the new CSS file
 
 // Define your query to fetch complementary products
 export const COMPLEMENTARY_PRODUCTS_QUERY = `#graphql
@@ -78,8 +77,7 @@ export function ComplementaryProducts({complementaryProducts}) {
                   {product.title}
                 </div>
                 <div className="complementary-product-price">
-                  {product.priceRange?.minVariantPrice?.currencyCode}&nbsp;
-                  {product.priceRange?.minVariantPrice?.amount}
+                  ${product.priceRange?.minVariantPrice?.amount}
                 </div>
               </Link>
             </div>

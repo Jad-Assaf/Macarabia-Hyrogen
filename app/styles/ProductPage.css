@@ -446,8 +446,8 @@ strong {
 
 /* Styling for each complementary product item */
 .complementary-product-item {
-  min-width: 200px;
-  width: 300px;
+  min-width: 100px;
+  width: 100px;
   text-align: center;
   text-decoration: none;
   margin-left: 5px;
@@ -466,19 +466,17 @@ strong {
 /* Styling for each product card */
 .complementary-product-card {
   background-color: #f9f9f9;
-  border-radius: 10px;
+  border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s linear;
-  padding: 10px;
-  min-width: 200px;
-  max-width: 200px;
+  padding: 5px;
+  min-width: 100px;
+  max-width: 100px;
   margin-left: 5px;
   text-align: center;
   word-break: break-word;
   word-wrap: break-word;
-  /* Animation initial state */
-  filter: blur(10px);
-  transition: filter 0.5s ease, opacity 0.5s ease;
+  filter: blur(5px);
+  transition: box-shadow 0.3s linear, filter 0.5s ease, opacity 0.5s ease;
 }
 
 /* When visible, remove blur */
