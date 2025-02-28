@@ -28,10 +28,6 @@ export const COMPLEMENTARY_PRODUCTS_QUERY = `#graphql
 `;
 
 export function ComplementaryProducts({productId, complementaryProducts}) {
-  // If you’re loading via a loader, you might have already fetched complementaryProducts,
-  // or you could fetch them inside this component with a custom hook.
-  // Here we assume complementaryProducts is passed as a prop.
-
   if (!complementaryProducts || complementaryProducts.length === 0) return null;
 
   return (
@@ -45,11 +41,10 @@ export function ComplementaryProducts({productId, complementaryProducts}) {
                 <img
                   src={prod.images.edges[0].node.url}
                   alt={prod.images.edges[0].node.altText || prod.title}
-                  width="100"
-                  height="100"
+                  style={{width: '100%', height: 'auto'}}
                 />
               )}
-              <h3>{prod.title}</h3>
+              <p>{prod.title}</p>
               <p>
                 <Money data={prod.priceRange.minVariantPrice} />
               </p>

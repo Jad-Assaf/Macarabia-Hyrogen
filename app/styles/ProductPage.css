@@ -433,3 +433,32 @@ strong {
 .collection-products-row {
     gap: 5px !important;
 }
+
+.complementary-products {
+    margin: 20px 0;
+}
+
+.complementary-products-list {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px;
+    scroll-behavior: smooth;
+    /* Hide scrollbar in some browsers (optional) */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.complementary-products-list::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Opera */
+}
+
+.complementary-product {
+    flex: 0 0 100px;
+    /* Fixed width of 100px */
+    text-align: center;
+}
