@@ -23,6 +23,7 @@ import {ProductMetafields} from '~/components/Metafields';
 import RecentlyViewedProducts from '../components/RecentlyViewed';
 import {trackAddToCart, trackViewContent} from '~/lib/metaPixelEvents';
 import { trackAddToCartGA } from '~/lib/googleAnalyticsEvents';
+import { ComplementaryProducts } from '~/components/ComplementaryProducts';
 
 // ---------------- SEO & Meta
 export const meta = ({data}) => {
@@ -665,6 +666,7 @@ export default function Product() {
           </Suspense>
 
           <hr className="productPage-hr" />
+          <ComplementaryProducts product={product} />
           <div className="product-details">
             <ul>
               <li>
@@ -1005,6 +1007,25 @@ const PRODUCT_FRAGMENT = `#graphql
     }
     metafieldVat: metafield(namespace: "custom", key: "vat") {
       value
+    }
+    productRecommendations {
+      id
+      title
+      handle
+      images(first: 1) {
+        edges {
+          node {
+            url
+            altText
+          }
+        }
+      }
+      priceRange {
+        minVariantPrice {
+          amount
+          currencyCode
+        }
+      }
     }
   }
   ${PRODUCT_VARIANT_FRAGMENT}
