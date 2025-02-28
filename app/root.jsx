@@ -202,6 +202,8 @@ export function Layout({children}) {
     window.OneSignalDeferred.push(async (OneSignal) => {
       await OneSignal.init({
         appId: 'a8e58e0f-83d7-46ab-a6b8-f3939f3fde4c',
+        safari_web_id:
+          'web.onesignal.auto.40e8587d-66e6-4615-b716-6bb570edb005',
       });
     });
   }, []);
@@ -260,8 +262,6 @@ export function Layout({children}) {
     </html>
   );
 }
-
-
 
 /**
  * Main app component rendering the current route.
