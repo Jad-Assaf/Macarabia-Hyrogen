@@ -175,39 +175,6 @@ export function Layout({children}) {
     };
   }, [navigation.state, nprogress]);
 
-  useEffect(() => {
-    // Load the OneSignal SDK script
-    const script = document.createElement('script');
-    script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
-    script.defer = true;
-    document.body.appendChild(script);
-
-    // Register the OneSignal service worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/OneSignalSDKWorker.js')
-        .then((registration) => {
-          console.log(
-            'Service Worker registered with scope:',
-            registration.scope,
-          );
-        })
-        .catch((error) => {
-          console.error('Service Worker registration failed:', error);
-        });
-    }
-
-    // Initialize OneSignal once the SDK is loaded
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async (OneSignal) => {
-      await OneSignal.init({
-        appId: 'a8e58e0f-83d7-46ab-a6b8-f3939f3fde4c',
-        safari_web_id:
-          'web.onesignal.auto.40e8587d-66e6-4615-b716-6bb570edb005',
-      });
-    });
-  }, []);
-
   return (
     <html lang="en">
       <head>
@@ -262,6 +229,8 @@ export function Layout({children}) {
     </html>
   );
 }
+
+
 
 /**
  * Main app component rendering the current route.
