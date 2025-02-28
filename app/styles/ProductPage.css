@@ -436,61 +436,66 @@ strong {
 
 /* Container for complementary products */
 .complementary-products-container {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 10px;
-  scroll-behavior: smooth;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px;
+    scroll-behavior: smooth;
 }
 
 /* Styling for each complementary product item */
 .complementary-product-item {
-  min-width: 100px;
-  width: 100px;
-  text-align: center;
-  text-decoration: none;
-  margin-left: 5px;
-  /* Animation initial state */
-  opacity: 0;
-  transform: translateX(-20px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+    min-width: 100px;
+    width: 100px;
+    text-align: center;
+    text-decoration: none;
+    margin-left: 5px;
+    /* Animation initial state */
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 /* When visible, animate to full opacity/position */
 .complementary-product-item.visible {
-  opacity: 1;
-  transform: translateX(0);
+    opacity: 1;
+    transform: translateX(0);
 }
 
 /* Styling for each product card */
 .complementary-product-card {
-  background-color: #f9f9f9;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 5px;
-  min-width: 100px;
-  max-width: 100px;
-  margin-left: 5px;
-  text-align: center;
-  word-break: break-word;
-  word-wrap: break-word;
-  filter: blur(5px);
-  transition: box-shadow 0.3s linear, filter 0.5s ease, opacity 0.5s ease;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 5px;
+    min-width: 100px;
+    max-width: 100px;
+    margin-left: 5px;
+    text-align: center;
+    word-break: break-word;
+    word-wrap: break-word;
+    filter: blur(5px);
+    transition: box-shadow 0.3s linear, filter 0.5s ease, opacity 0.5s ease;
 }
 
 /* When visible, remove blur */
 .complementary-product-card.visible {
-  filter: blur(0px);
+    filter: blur(0px);
 }
 
 /* Styling for product title */
 .complementary-product-title {
-  font-size: 0.8rem;
-  margin-top: 5px;
+    font-size: 12px;
+    margin-top: 5px;
+    height: 75px;
+    overflow: auto;
 }
 
 /* Styling for product price */
 .complementary-product-price {
-  font-size: 0.8rem;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgb(255, 79, 79);
+    ;
 }
