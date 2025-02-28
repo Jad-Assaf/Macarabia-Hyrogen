@@ -175,6 +175,20 @@ export function Layout({children}) {
     };
   }, [navigation.state, nprogress]);
 
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+    script.defer = true;
+    document.body.appendChild(script);
+
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      await OneSignal.init({
+        appId: 'a8e58e0f-83d7-46ab-a6b8-f3939f3fde4c',
+      });
+    });
+  }, []);
+
   return (
     <html lang="en">
       <head>
