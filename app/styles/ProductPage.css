@@ -447,6 +447,11 @@ strong {
     scroll-behavior: smooth;
 }
 
+.complementary-products h2{
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
 /* Styling for each complementary product item */
 .complementary-product-item {
     min-width: 100px;

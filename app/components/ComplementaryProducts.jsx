@@ -39,7 +39,7 @@ export function ComplementaryProducts({complementaryProducts}) {
 
   return (
     <section className="complementary-products">
-      <h2>Complementary Products</h2>
+      <h2>Frequently Bought Together</h2>
       <div className="complementary-products-container">
         {complementaryProducts.map((product) => (
           <div
