@@ -1,11 +1,11 @@
-import React, {Suspense} from 'react';
-import {defer} from '@shopify/remix-oxygen';
-import {useLoaderData, Await} from '@remix-run/react';
-import {BannerSlideshow} from '../components/BannerSlideshow';
-import {CategorySlider} from '~/components/CollectionSlider';
-import {TopProductSections} from '~/components/TopProductSections';
+import React, { useState, useEffect } from 'react';
+import { defer } from '@shopify/remix-oxygen';
+import { useLoaderData } from '@remix-run/react';
+import { BannerSlideshow } from '../components/BannerSlideshow';
+import { CategorySlider } from '~/components/CollectionSlider';
+import { TopProductSections } from '~/components/TopProductSections';
 import BrandSection from '~/components/BrandsSection';
-import {getSeoMeta} from '@shopify/hydrogen';
+import { getSeoMeta } from '@shopify/hydrogen';
 import {
   CollectionCircles,
   accessoriesMenu,
@@ -23,7 +23,6 @@ import {
   tabletsMenu,
 } from '~/components/CollectionCircles';
 import MobileAppPopup from '~/components/MobileAppPopup';
-import Loader from '~/components/Loader';
 
 const cache = new Map();
 
@@ -47,14 +46,14 @@ const MANUAL_MENU_HANDLES = [
 /**
  * @type {MetaFunction}
  */
-export const meta = ({data}) => {
+export const meta = ({ data }) => {
   const truncate = (text, maxLength) =>
     text?.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
   return getSeoMeta({
     title: 'MacArabia',
     description: truncate(
       data?.description || 'Default description for this page.',
-      150,
+      150
     ),
     url: data?.url || 'https://macarabia.me',
     jsonLd: [
@@ -64,7 +63,7 @@ export const meta = ({data}) => {
         name: data?.title || 'Default Title',
         description: truncate(
           data?.description || 'Default description for this page.',
-          150,
+          150
         ),
         url: data?.url || 'https://macarabia.me',
       },
@@ -164,7 +163,6 @@ export async function loader(args) {
       },
     ];
 
-    // Load critical data (shop details and slider collections)
     const loadedCritical = await loadCriticalData(args);
 
     criticalData = {
@@ -175,17 +173,14 @@ export async function loader(args) {
       sliderCollections: loadedCritical.sliderCollections,
     };
 
-    // Cache the critical data
-    cache.set(cacheKey, {value: criticalData, expiry: now + cacheTTL});
+    cache.set(cacheKey, { value: criticalData, expiry: now + cacheTTL });
   }
 
-  // Immediately load new arrivals (critical)
   const newArrivals = await fetchCollectionByHandle(
     args.context,
-    'new-arrivals',
+    'new-arrivals'
   );
 
-  // Kick off deferred loading for top products
   const TOP_PRODUCT_HANDLES = [
     'apple-accessories',
     'apple-macbook',
@@ -231,8 +226,8 @@ export async function loader(args) {
 
   const topProductsPromise = Promise.all(
     TOP_PRODUCT_HANDLES.map((handle) =>
-      fetchCollectionByHandle(args.context, handle),
-    ),
+      fetchCollectionByHandle(args.context, handle)
+    )
   ).then((fetchedTopProducts) => {
     const topProductsByHandle = {};
     TOP_PRODUCT_HANDLES.forEach((handle, index) => {
@@ -251,21 +246,15 @@ export async function loader(args) {
       headers: {
         'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
       },
-    },
+    }
   );
 }
 
-/**
- * Loads critical data required for the homepage.
- * @param {LoaderFunctionArgs} param0
- */
-async function loadCriticalData({context}) {
-  const {storefront} = context;
-
+async function loadCriticalData({ context }) {
+  const { storefront } = context;
   const menuHandles = MANUAL_MENU_HANDLES;
 
-  // Query shop details
-  const {shop} = await storefront.query(
+  const { shop } = await storefront.query(
     `#graphql
       query ShopDetails {
         shop {
@@ -273,10 +262,9 @@ async function loadCriticalData({context}) {
           description
         }
       }
-    `,
+    `
   );
 
-  // Fetch slider collections based on menu handles
   const [sliderCollections] = await Promise.all([
     fetchCollectionsByHandles(context, menuHandles),
   ]);
@@ -289,33 +277,22 @@ async function loadCriticalData({context}) {
   };
 }
 
-/**
- * Fetch a single collection by handle.
- * @param {object} context
- * @param {string} handle
- */
 async function fetchCollectionByHandle(context, handle) {
-  const {collectionByHandle} = await context.storefront.query(
+  const { collectionByHandle } = await context.storefront.query(
     GET_COLLECTION_BY_HANDLE_QUERY,
-    {variables: {handle}},
+    { variables: { handle } }
   );
   return collectionByHandle || null;
 }
 
-/**
- * Fetch collections by handles for slider components.
- * @param {object} context
- * @param {Array<string>} handles
- */
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
-    const {collectionByHandle} = await context.storefront.query(
+    const { collectionByHandle } = await context.storefront.query(
       GET_SIMPLE_COLLECTION_QUERY,
-      {variables: {handle}},
+      { variables: { handle } }
     );
     return collectionByHandle || null;
   });
-
   const collections = await Promise.all(collectionPromises);
   return collections.filter(Boolean);
 }
@@ -450,8 +427,14 @@ const brandsData = [
 ];
 
 export default function Homepage() {
-  const {banners, sliderCollections, topProducts, newArrivals} =
-    useLoaderData();
+  const { banners, sliderCollections, topProducts, newArrivals } = useLoaderData();
+  const [resolvedTopProducts, setResolvedTopProducts] = useState(null);
+
+  useEffect(() => {
+    topProducts.then((data) => {
+      setResolvedTopProducts(data);
+    });
+  }, [topProducts]);
 
   return (
     <div className="home">
@@ -460,185 +443,134 @@ export default function Homepage() {
       <CategorySlider sliderCollections={sliderCollections} />
       {newArrivals && <TopProductSections collection={newArrivals} />}
 
-      {/* Deferred cotent */}
-      <Suspense>
-        <Await resolve={topProducts}>
-          {(deferredTopProducts) => (
-            <>
-              <CollectionCircles collections={appleMenu} />
-              {deferredTopProducts['apple-accessories'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['apple-accessories']}
-                />
-              )}
-              {deferredTopProducts['apple-macbook'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['apple-macbook']}
-                />
-              )}
-              {deferredTopProducts['apple-imac'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['apple-imac']}
-                />
-              )}
-
-              <CollectionCircles collections={gamingMenu} />
-              {deferredTopProducts['gaming-laptops'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['gaming-laptops']}
-                />
-              )}
-              {deferredTopProducts['gaming-desktops'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['gaming-desktops']}
-                />
-              )}
-              {deferredTopProducts['console-games'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['console-games']}
-                />
-              )}
-
-              <CollectionCircles collections={laptopsMenu} />
-              {deferredTopProducts['hp'] && (
-                <TopProductSections collection={deferredTopProducts['hp']} />
-              )}
-              {deferredTopProducts['lenovo'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['lenovo']}
-                />
-              )}
-              {deferredTopProducts['microsoft-surface-accessories'] && (
-                <TopProductSections
-                  collection={
-                    deferredTopProducts['microsoft-surface-accessories']
-                  }
-                />
-              )}
-
-              <CollectionCircles collections={monitorsMenu} />
-              {deferredTopProducts['msi-monitors'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['msi-monitors']}
-                />
-              )}
-              {deferredTopProducts['aoc-monitors'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['aoc-monitors']}
-                />
-              )}
-              {deferredTopProducts['asus-monitors'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['asus-monitors']}
-                />
-              )}
-
-              <CollectionCircles collections={mobilesMenu} />
-              {deferredTopProducts['mobile-accessories'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['mobile-accessories']}
-                />
-              )}
-              {deferredTopProducts['apple-iphone'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['apple-iphone']}
-                />
-              )}
-              {deferredTopProducts['samsung-mobile-phones'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['samsung-mobile-phones']}
-                />
-              )}
-
-              <CollectionCircles collections={tabletsMenu} />
-              {deferredTopProducts['tablet-accessories'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['tablet-accessories']}
-                />
-              )}
-              {deferredTopProducts['digital-text'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['digital-text']}
-                />
-              )}
-              {deferredTopProducts['samsung-tablets'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['samsung-tablets']}
-                />
-              )}
-
-              <CollectionCircles collections={audioMenu} />
-              {deferredTopProducts['earbuds'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['earbuds']}
-                />
-              )}
-              {deferredTopProducts['headphones'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['headphones']}
-                />
-              )}
-              {deferredTopProducts['speakers'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['speakers']}
-                />
-              )}
-
-              <CollectionCircles collections={fitnessMenu} />
-              {deferredTopProducts['fitness-bands'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['fitness-bands']}
-                />
-              )}
-              {deferredTopProducts['samsung-watches'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['samsung-watches']}
-                />
-              )}
-              {deferredTopProducts['amazfit-watches'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['amazfit-watches']}
-                />
-              )}
-
-              <CollectionCircles collections={camerasMenu} />
-              {deferredTopProducts['action-cameras'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['action-cameras']}
-                />
-              )}
-              {deferredTopProducts['action-cameras-accessories'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['action-cameras-accessories']}
-                />
-              )}
-              {deferredTopProducts['cameras'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['cameras']}
-                />
-              )}
-
-              <CollectionCircles collections={homeAppliancesMenu} />
-              {deferredTopProducts['kitchen-appliances'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['kitchen-appliances']}
-                />
-              )}
-              {deferredTopProducts['cleaning-devices'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['cleaning-devices']}
-                />
-              )}
-              {deferredTopProducts['lighting'] && (
-                <TopProductSections
-                  collection={deferredTopProducts['lighting']}
-                />
-              )}
-            </>
+      {/* Deferred cotent: rendered once the promise resolves */}
+      {resolvedTopProducts && (
+        <>
+          <CollectionCircles collections={appleMenu} />
+          {resolvedTopProducts['apple-accessories'] && (
+            <TopProductSections
+              collection={resolvedTopProducts['apple-accessories']}
+            />
           )}
-        </Await>
-      </Suspense>
+          {resolvedTopProducts['apple-macbook'] && (
+            <TopProductSections
+              collection={resolvedTopProducts['apple-macbook']}
+            />
+          )}
+          {resolvedTopProducts['apple-imac'] && (
+            <TopProductSections
+              collection={resolvedTopProducts['apple-imac']}
+            />
+          )}
 
+          <CollectionCircles collections={gamingMenu} />
+          {resolvedTopProducts['gaming-laptops'] && (
+            <TopProductSections
+              collection={resolvedTopProducts['gaming-laptops']}
+            />
+          )}
+          {resolvedTopProducts['gaming-desktops'] && (
+            <TopProductSections
+              collection={resolvedTopProducts['gaming-desktops']}
+            />
+          )}
+          {resolvedTopProducts['console-games'] && (
+            <TopProductSections
+              collection={resolvedTopProducts['console-games']}
+            />
+          )}
+
+          <CollectionCircles collections={laptopsMenu} />
+          {resolvedTopProducts['hp'] && (
+            <TopProductSections collection={resolvedTopProducts['hp']} />
+          )}
+          {resolvedTopProducts['lenovo'] && (
+            <TopProductSections collection={resolvedTopProducts['lenovo']} />
+          )}
+          {resolvedTopProducts['microsoft-surface-accessories'] && (
+            <TopProductSections
+              collection={resolvedTopProducts['microsoft-surface-accessories']}
+            />
+          )}
+
+          <CollectionCircles collections={monitorsMenu} />
+          {resolvedTopProducts['msi-monitors'] && (
+            <TopProductSections collection={resolvedTopProducts['msi-monitors']} />
+          )}
+          {resolvedTopProducts['aoc-monitors'] && (
+            <TopProductSections collection={resolvedTopProducts['aoc-monitors']} />
+          )}
+          {resolvedTopProducts['asus-monitors'] && (
+            <TopProductSections collection={resolvedTopProducts['asus-monitors']} />
+          )}
+
+          <CollectionCircles collections={mobilesMenu} />
+          {resolvedTopProducts['mobile-accessories'] && (
+            <TopProductSections collection={resolvedTopProducts['mobile-accessories']} />
+          )}
+          {resolvedTopProducts['apple-iphone'] && (
+            <TopProductSections collection={resolvedTopProducts['apple-iphone']} />
+          )}
+          {resolvedTopProducts['samsung-mobile-phones'] && (
+            <TopProductSections collection={resolvedTopProducts['samsung-mobile-phones']} />
+          )}
+
+          <CollectionCircles collections={tabletsMenu} />
+          {resolvedTopProducts['tablet-accessories'] && (
+            <TopProductSections collection={resolvedTopProducts['tablet-accessories']} />
+          )}
+          {resolvedTopProducts['digital-text'] && (
+            <TopProductSections collection={resolvedTopProducts['digital-text']} />
+          )}
+          {resolvedTopProducts['samsung-tablets'] && (
+            <TopProductSections collection={resolvedTopProducts['samsung-tablets']} />
+          )}
+
+          <CollectionCircles collections={audioMenu} />
+          {resolvedTopProducts['earbuds'] && (
+            <TopProductSections collection={resolvedTopProducts['earbuds']} />
+          )}
+          {resolvedTopProducts['headphones'] && (
+            <TopProductSections collection={resolvedTopProducts['headphones']} />
+          )}
+          {resolvedTopProducts['speakers'] && (
+            <TopProductSections collection={resolvedTopProducts['speakers']} />
+          )}
+
+          <CollectionCircles collections={fitnessMenu} />
+          {resolvedTopProducts['fitness-bands'] && (
+            <TopProductSections collection={resolvedTopProducts['fitness-bands']} />
+          )}
+          {resolvedTopProducts['samsung-watches'] && (
+            <TopProductSections collection={resolvedTopProducts['samsung-watches']} />
+          )}
+          {resolvedTopProducts['amazfit-watches'] && (
+            <TopProductSections collection={resolvedTopProducts['amazfit-watches']} />
+          )}
+
+          <CollectionCircles collections={camerasMenu} />
+          {resolvedTopProducts['action-cameras'] && (
+            <TopProductSections collection={resolvedTopProducts['action-cameras']} />
+          )}
+          {resolvedTopProducts['action-cameras-accessories'] && (
+            <TopProductSections collection={resolvedTopProducts['action-cameras-accessories']} />
+          )}
+          {resolvedTopProducts['cameras'] && (
+            <TopProductSections collection={resolvedTopProducts['cameras']} />
+          )}
+
+          <CollectionCircles collections={homeAppliancesMenu} />
+          {resolvedTopProducts['kitchen-appliances'] && (
+            <TopProductSections collection={resolvedTopProducts['kitchen-appliances']} />
+          )}
+          {resolvedTopProducts['cleaning-devices'] && (
+            <TopProductSections collection={resolvedTopProducts['cleaning-devices']} />
+          )}
+          {resolvedTopProducts['lighting'] && (
+            <TopProductSections collection={resolvedTopProducts['lighting']} />
+          )}
+        </>
+      )}
       <BrandSection brands={brandsData} />
     </div>
   );
