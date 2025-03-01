@@ -417,6 +417,7 @@ button {
   text-align: center;
   word-break: break-word;
   word-wrap: break-word;
+  flex-direction: column;
 }
 
 .grid-cols-2 .product-card,
