@@ -102,6 +102,7 @@ const RightArrowIcon = () => (
 
 export function ProductItem({product, index}) {
   const ref = useRef(null);
+  const {open} = useAside();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -249,7 +250,7 @@ export function ProductItem({product, index}) {
           if (product.variants?.nodes?.length > 1) {
             window.location.href = `/products/${product.handle}`;
           } else {
-            // Trigger cart logic
+            open('cart');
           }
         }}
         lines={
