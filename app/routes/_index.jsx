@@ -87,102 +87,106 @@ export const meta = ({data}) => {
  * @param {LoaderFunctionArgs} args
  */
 export async function loader(args) {
-  const cacheKey = 'homepage-data';
+  const cacheKey = 'homepage-critical-data';
   const cacheTTL = 86400 * 1000; // 24 hours in milliseconds
   const now = Date.now();
 
-  // Check if data is in cache
-  const cachedData = cache.get(cacheKey);
-  if (cachedData && cachedData.expiry > now) {
-    // Fetch new arrivals separately
-    const newArrivals = await fetchCollectionByHandle(
-      args.context,
-      'new-arrivals',
-    );
+  let criticalData;
+  // Check if critical data is in cache
+  const cached = cache.get(cacheKey);
+  if (cached && cached.expiry > now) {
+    criticalData = cached.value;
+  } else {
+    // Define banners (critical content)
+    const banners = [
+      {
+        desktopImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/jbl-banner_895451dd-e1a6-41ac-ae3d-0aad653a89d3.jpg?v=1740045077',
+        mobileImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/jbl-mobile-banner-2.jpg?v=1740045077',
+        link: '/collections/jbl-collection',
+      },
+      {
+        desktopImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/macbook-pro-m4-banner_756f37f6-cf6d-4484-80ed-8b510a64db28.jpg?v=1731332730',
+        mobileImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/macbook-pro-m4-mobilebanner.jpg?v=1731333133',
+        link: '/collections/apple-macbook',
+      },
+      {
+        desktopImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/google-pixel-banner.jpg?v=1728123476',
+        mobileImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/google-pixel-mobilebanner.jpg?v=1728123476',
+        link: '/collections/google-products',
+      },
+      {
+        desktopImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/remarkable-pro-banner_25c8cc9c-14de-4556-9e8f-5388ebc1eb1d.jpg?v=1729676718',
+        mobileImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/remarkable-pro-mobile-banner-1.jpg?v=1729678484',
+        link: '/collections/remarkable-tablets',
+      },
+      {
+        desktopImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/samsung-flip-fold-6.jpg?v=1727957859',
+        mobileImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/samsung-flip-fold6.jpg?v=1727957858',
+        link: '/collections/samsung-mobile-phones',
+      },
+      {
+        desktopImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/iphone-16-banner.jpg?v=1726322159',
+        mobileImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/iphone-16-Mobile.jpg?v=1726321600',
+        link: '/collections/apple-iphone',
+      },
+      {
+        desktopImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/iphone-16-Pro_655c6ee7-a66c-4ed9-9976-99be3122e7b6.jpg?v=1726321897',
+        mobileImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/iphone-16-Pro-mobile.jpg?v=1726321600',
+        link: '/collections/apple-iphone',
+      },
+      {
+        desktopImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/Garmin.jpg?v=1726321601',
+        mobileImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/Garmin-mobile-banner.jpg?v=1726321601',
+        link: '/products/garmin-fenix®-8-47-mm-amoled-sapphire-premium-multisport-gps-watch',
+      },
+      {
+        desktopImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/ipad-banner-2_a2c3f993-278f-48c1-82de-ac42ceb6f3fc.jpg?v=1716031887',
+        mobileImageUrl:
+          'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/ipad_3a178a79-4428-4aac-b5bd-41ad3f04e33a.jpg?v=1716031354',
+        link: '/collections/apple-ipad',
+      },
+    ];
 
-    return defer(
-      {
-        ...cachedData.value,
-        newArrivals,
-      },
-      {
-        headers: {
-          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
-        },
-      },
-    );
+    // Load critical data (shop details and slider collections)
+    const loadedCritical = await loadCriticalData(args);
+
+    criticalData = {
+      banners,
+      title: loadedCritical.title,
+      description: loadedCritical.description,
+      url: loadedCritical.url,
+      sliderCollections: loadedCritical.sliderCollections,
+    };
+
+    // Cache the critical data
+    cache.set(cacheKey, {value: criticalData, expiry: now + cacheTTL});
   }
-  const banners = [
-    {
-      desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/jbl-banner_895451dd-e1a6-41ac-ae3d-0aad653a89d3.jpg?v=1740045077',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/jbl-mobile-banner-2.jpg?v=1740045077',
-      link: '/collections/jbl-collection',
-    },
-    {
-      desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/macbook-pro-m4-banner_756f37f6-cf6d-4484-80ed-8b510a64db28.jpg?v=1731332730',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/macbook-pro-m4-mobilebanner.jpg?v=1731333133',
-      link: '/collections/apple-macbook',
-    },
-    {
-      desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/google-pixel-banner.jpg?v=1728123476',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/google-pixel-mobilebanner.jpg?v=1728123476',
-      link: '/collections/google-products',
-    },
-    {
-      desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/remarkable-pro-banner_25c8cc9c-14de-4556-9e8f-5388ebc1eb1d.jpg?v=1729676718',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/remarkable-pro-mobile-banner-1.jpg?v=1729678484',
-      link: '/collections/remarkable-tablets',
-    },
-    {
-      desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/samsung-flip-fold-6.jpg?v=1727957859',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/samsung-flip-fold6.jpg?v=1727957858',
-      link: '/collections/samsung-mobile-phones',
-    },
-    {
-      desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/iphone-16-banner.jpg?v=1726322159',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/iphone-16-Mobile.jpg?v=1726321600',
-      link: '/collections/apple-iphone',
-    },
-    {
-      desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/iphone-16-Pro_655c6ee7-a66c-4ed9-9976-99be3122e7b6.jpg?v=1726321897',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/iphone-16-Pro-mobile.jpg?v=1726321600',
-      link: '/collections/apple-iphone',
-    },
-    {
-      desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/Garmin.jpg?v=1726321601',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/Garmin-mobile-banner.jpg?v=1726321601',
-      link: '/products/garmin-fenix®-8-47-mm-amoled-sapphire-premium-multisport-gps-watch',
-    },
-    {
-      desktopImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/ipad-banner-2_a2c3f993-278f-48c1-82de-ac42ceb6f3fc.jpg?v=1716031887',
-      mobileImageUrl:
-        'https://cdn.shopify.com/s/files/1/0552/0883/7292/files/ipad_3a178a79-4428-4aac-b5bd-41ad3f04e33a.jpg?v=1716031354',
-      link: '/collections/apple-ipad',
-    },
-  ];
 
-  const criticalData = await loadCriticalData(args);
+  // Immediately load new arrivals (critical)
+  const newArrivals = await fetchCollectionByHandle(
+    args.context,
+    'new-arrivals',
+  );
 
-  // Define all collection handles you want to display using TopProductSections
+  // Kick off deferred loading for top products
   const TOP_PRODUCT_HANDLES = [
-    // 'new-arrivals',
     'apple-accessories',
     'apple-macbook',
     'apple-imac',
@@ -220,46 +224,28 @@ export async function loader(args) {
     'action-cameras',
     'action-cameras-accessories',
     'cameras',
-    // 'drones',
     'kitchen-appliances',
     'cleaning-devices',
     'lighting',
   ];
 
-  // Fetch all TopProductSections collections based on TOP_PRODUCT_HANDLES
-  const fetchedTopProducts = await Promise.all(
+  const topProductsPromise = Promise.all(
     TOP_PRODUCT_HANDLES.map((handle) =>
       fetchCollectionByHandle(args.context, handle),
     ),
-  );
-
-  const newArrivals = await fetchCollectionByHandle(
-    args.context,
-    'new-arrivals',
-  );
-
-  // Organize TopProductSections collections into an object with keys corresponding to their handles
-  const topProductsByHandle = {};
-  TOP_PRODUCT_HANDLES.forEach((handle, index) => {
-    topProductsByHandle[handle] = fetchedTopProducts[index];
+  ).then((fetchedTopProducts) => {
+    const topProductsByHandle = {};
+    TOP_PRODUCT_HANDLES.forEach((handle, index) => {
+      topProductsByHandle[handle] = fetchedTopProducts[index];
+    });
+    return topProductsByHandle;
   });
-
-  const newData = {
-    banners,
-    title: criticalData.title,
-    description: criticalData.description,
-    url: criticalData.url,
-    sliderCollections: criticalData.sliderCollections,
-    topProducts: topProductsByHandle, // Add fetched TopProductSections collections here
-  };
-
-  // Cache the new data
-  cache.set(cacheKey, {value: newData, expiry: now + cacheTTL});
 
   return defer(
     {
-      ...newData,
-      newArrivals, // This is always fresh
+      ...criticalData,
+      newArrivals,
+      topProducts: topProductsPromise, // deferred non-critical data
     },
     {
       headers: {
@@ -269,15 +255,16 @@ export async function loader(args) {
   );
 }
 
-export function shouldRevalidate({currentUrl, nextUrl}) {
-  return currentUrl.pathname !== nextUrl.pathname;
-}
-
+/**
+ * Loads critical data required for the homepage.
+ * @param {LoaderFunctionArgs} param0
+ */
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
   const menuHandles = MANUAL_MENU_HANDLES;
 
+  // Query shop details
   const {shop} = await storefront.query(
     `#graphql
       query ShopDetails {
@@ -289,6 +276,7 @@ async function loadCriticalData({context}) {
     `,
   );
 
+  // Fetch slider collections based on menu handles
   const [sliderCollections] = await Promise.all([
     fetchCollectionsByHandles(context, menuHandles),
   ]);
@@ -301,7 +289,11 @@ async function loadCriticalData({context}) {
   };
 }
 
-// Fetch a single collection by handle
+/**
+ * Fetch a single collection by handle.
+ * @param {object} context
+ * @param {string} handle
+ */
 async function fetchCollectionByHandle(context, handle) {
   const {collectionByHandle} = await context.storefront.query(
     GET_COLLECTION_BY_HANDLE_QUERY,
@@ -310,12 +302,11 @@ async function fetchCollectionByHandle(context, handle) {
   return collectionByHandle || null;
 }
 
-// REMOVED: The entire fetchMenuCollections function
-// async function fetchMenuCollections(context, menuHandles) {
-//   ...
-// }
-
-// Fetch collections by handles for sliders
+/**
+ * Fetch collections by handles for slider components.
+ * @param {object} context
+ * @param {Array<string>} handles
+ */
 async function fetchCollectionsByHandles(context, handles) {
   const collectionPromises = handles.map(async (handle) => {
     const {collectionByHandle} = await context.storefront.query(
