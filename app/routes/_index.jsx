@@ -1,6 +1,6 @@
-import React from 'react';
+import React, {Suspense} from 'react';
 import {defer} from '@shopify/remix-oxygen';
-import {useLoaderData} from '@remix-run/react';
+import {useLoaderData, Await} from '@remix-run/react';
 import {BannerSlideshow} from '../components/BannerSlideshow';
 import {CategorySlider} from '~/components/CollectionSlider';
 import {TopProductSections} from '~/components/TopProductSections';
@@ -71,7 +71,7 @@ export const meta = ({data}) => {
       {
         '@context': 'http://schema.org',
         '@type': 'WebSite',
-        name: 'Macarabia.me',
+        name: 'MacArabia.me',
         potentialAction: {
           '@type': 'SearchAction',
           target: 'https://macarabia.me/search?q={search_term_string}',
@@ -455,191 +455,184 @@ export default function Homepage() {
 
   return (
     <div className="home">
-      {/* <Loader/> */}
-      {/* <MobileAppPopup /> */}
+      {/* Critical components load immediately */}
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
       {newArrivals && <TopProductSections collection={newArrivals} />}
 
+      {/* Deferred cotent */}
       <Suspense fallback={<Loader />}>
         <Await resolve={topProducts}>
           {(deferredTopProducts) => (
             <>
               <CollectionCircles collections={appleMenu} />
-              {topProducts['apple-accessories'] && (
+              {deferredTopProducts['apple-accessories'] && (
                 <TopProductSections
-                  collection={topProducts['apple-accessories']}
+                  collection={deferredTopProducts['apple-accessories']}
                 />
               )}
-              {topProducts['apple-macbook'] && (
-                <TopProductSections collection={topProducts['apple-macbook']} />
+              {deferredTopProducts['apple-macbook'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['apple-macbook']}
+                />
               )}
-              {topProducts['apple-imac'] && (
-                <TopProductSections collection={topProducts['apple-imac']} />
+              {deferredTopProducts['apple-imac'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['apple-imac']}
+                />
               )}
 
               <CollectionCircles collections={gamingMenu} />
-              {topProducts['gaming-laptops'] && (
+              {deferredTopProducts['gaming-laptops'] && (
                 <TopProductSections
-                  collection={topProducts['gaming-laptops']}
+                  collection={deferredTopProducts['gaming-laptops']}
                 />
               )}
-              {topProducts['gaming-desktops'] && (
+              {deferredTopProducts['gaming-desktops'] && (
                 <TopProductSections
-                  collection={topProducts['gaming-desktops']}
+                  collection={deferredTopProducts['gaming-desktops']}
                 />
               )}
-              {topProducts['console-games'] && (
-                <TopProductSections collection={topProducts['console-games']} />
+              {deferredTopProducts['console-games'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['console-games']}
+                />
               )}
 
               <CollectionCircles collections={laptopsMenu} />
-              {topProducts['hp'] && (
-                <TopProductSections collection={topProducts['hp']} />
+              {deferredTopProducts['hp'] && (
+                <TopProductSections collection={deferredTopProducts['hp']} />
               )}
-              {topProducts['lenovo'] && (
-                <TopProductSections collection={topProducts['lenovo']} />
-              )}
-              {topProducts['microsoft-surface-accessories'] && (
+              {deferredTopProducts['lenovo'] && (
                 <TopProductSections
-                  collection={topProducts['microsoft-surface-accessories']}
+                  collection={deferredTopProducts['lenovo']}
+                />
+              )}
+              {deferredTopProducts['microsoft-surface-accessories'] && (
+                <TopProductSections
+                  collection={
+                    deferredTopProducts['microsoft-surface-accessories']
+                  }
                 />
               )}
 
-              {/* <CollectionCircles collections={partsMenu} />
-      {topProducts['motherboards'] && (
-        <TopProductSections collection={topProducts['motherboards']} />
-      )}
-      {topProducts['cpus'] && (
-        <TopProductSections collection={topProducts['cpus']} />
-      )}
-      {topProducts['cpu-coolers'] && (
-        <TopProductSections collection={topProducts['cpu-coolers']} />
-      )}
-      {topProducts['gpu'] && (
-        <TopProductSections collection={topProducts['gpu']} />
-      )} */}
-
-              {/* <CollectionCircles collections={networkingMenu} />
-      {topProducts['wifi-routers'] && (
-        <TopProductSections collection={topProducts['wifi-routers']} />
-      )}
-      {topProducts['wifi-range-extenders'] && (
-        <TopProductSections collection={topProducts['wifi-range-extenders']} />
-      )}
-      {topProducts['switches'] && (
-        <TopProductSections collection={topProducts['switches']} />
-      )} */}
-
               <CollectionCircles collections={monitorsMenu} />
-              {topProducts['msi-monitors'] && (
-                <TopProductSections collection={topProducts['msi-monitors']} />
+              {deferredTopProducts['msi-monitors'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['msi-monitors']}
+                />
               )}
-              {topProducts['aoc-monitors'] && (
-                <TopProductSections collection={topProducts['aoc-monitors']} />
+              {deferredTopProducts['aoc-monitors'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['aoc-monitors']}
+                />
               )}
-              {topProducts['asus-monitors'] && (
-                <TopProductSections collection={topProducts['asus-monitors']} />
+              {deferredTopProducts['asus-monitors'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['asus-monitors']}
+                />
               )}
 
               <CollectionCircles collections={mobilesMenu} />
-              {topProducts['mobile-accessories'] && (
+              {deferredTopProducts['mobile-accessories'] && (
                 <TopProductSections
-                  collection={topProducts['mobile-accessories']}
+                  collection={deferredTopProducts['mobile-accessories']}
                 />
               )}
-              {topProducts['apple-iphone'] && (
-                <TopProductSections collection={topProducts['apple-iphone']} />
-              )}
-              {topProducts['samsung-mobile-phones'] && (
+              {deferredTopProducts['apple-iphone'] && (
                 <TopProductSections
-                  collection={topProducts['samsung-mobile-phones']}
+                  collection={deferredTopProducts['apple-iphone']}
+                />
+              )}
+              {deferredTopProducts['samsung-mobile-phones'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['samsung-mobile-phones']}
                 />
               )}
 
               <CollectionCircles collections={tabletsMenu} />
-              {topProducts['tablet-accessories'] && (
+              {deferredTopProducts['tablet-accessories'] && (
                 <TopProductSections
-                  collection={topProducts['tablet-accessories']}
+                  collection={deferredTopProducts['tablet-accessories']}
                 />
               )}
-              {topProducts['digital-text'] && (
-                <TopProductSections collection={topProducts['digital-text']} />
-              )}
-              {topProducts['samsung-tablets'] && (
+              {deferredTopProducts['digital-text'] && (
                 <TopProductSections
-                  collection={topProducts['samsung-tablets']}
+                  collection={deferredTopProducts['digital-text']}
+                />
+              )}
+              {deferredTopProducts['samsung-tablets'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['samsung-tablets']}
                 />
               )}
 
               <CollectionCircles collections={audioMenu} />
-              {topProducts['earbuds'] && (
-                <TopProductSections collection={topProducts['earbuds']} />
-              )}
-              {topProducts['headphones'] && (
-                <TopProductSections collection={topProducts['headphones']} />
-              )}
-              {topProducts['speakers'] && (
-                <TopProductSections collection={topProducts['speakers']} />
-              )}
-
-              {/* <CollectionCircles collections={accessoriesMenu} />
-      {topProducts['computer-accessories'] && (
-        <TopProductSections collection={topProducts['computer-accessories']} />
-      )}
-      {topProducts['electric-screwdrivers'] && (
-        <TopProductSections collection={topProducts['electric-screwdrivers']} />
-      )}
-      {topProducts['car-accessories'] && (
-        <TopProductSections collection={topProducts['car-accessories']} />
-      )} */}
-
-              <CollectionCircles collections={fitnessMenu} />
-              {topProducts['fitness-bands'] && (
-                <TopProductSections collection={topProducts['fitness-bands']} />
-              )}
-              {topProducts['samsung-watches'] && (
+              {deferredTopProducts['earbuds'] && (
                 <TopProductSections
-                  collection={topProducts['samsung-watches']}
+                  collection={deferredTopProducts['earbuds']}
                 />
               )}
-              {topProducts['amazfit-watches'] && (
+              {deferredTopProducts['headphones'] && (
                 <TopProductSections
-                  collection={topProducts['amazfit-watches']}
+                  collection={deferredTopProducts['headphones']}
+                />
+              )}
+              {deferredTopProducts['speakers'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['speakers']}
+                />
+              )}
+
+              <CollectionCircles collections={fitnessMenu} />
+              {deferredTopProducts['fitness-bands'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['fitness-bands']}
+                />
+              )}
+              {deferredTopProducts['samsung-watches'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['samsung-watches']}
+                />
+              )}
+              {deferredTopProducts['amazfit-watches'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['amazfit-watches']}
                 />
               )}
 
               <CollectionCircles collections={camerasMenu} />
-              {topProducts['action-cameras'] && (
+              {deferredTopProducts['action-cameras'] && (
                 <TopProductSections
-                  collection={topProducts['action-cameras']}
+                  collection={deferredTopProducts['action-cameras']}
                 />
               )}
-              {topProducts['action-cameras-accessories'] && (
+              {deferredTopProducts['action-cameras-accessories'] && (
                 <TopProductSections
-                  collection={topProducts['action-cameras-accessories']}
+                  collection={deferredTopProducts['action-cameras-accessories']}
                 />
               )}
-              {topProducts['cameras'] && (
-                <TopProductSections collection={topProducts['cameras']} />
+              {deferredTopProducts['cameras'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['cameras']}
+                />
               )}
-              {/* {topProducts['drones'] && (
-        <TopProductSections collection={topProducts['drones']} />
-      )} */}
 
               <CollectionCircles collections={homeAppliancesMenu} />
-              {topProducts['kitchen-appliances'] && (
+              {deferredTopProducts['kitchen-appliances'] && (
                 <TopProductSections
-                  collection={topProducts['kitchen-appliances']}
+                  collection={deferredTopProducts['kitchen-appliances']}
                 />
               )}
-              {topProducts['cleaning-devices'] && (
+              {deferredTopProducts['cleaning-devices'] && (
                 <TopProductSections
-                  collection={topProducts['cleaning-devices']}
+                  collection={deferredTopProducts['cleaning-devices']}
                 />
               )}
-              {topProducts['lighting'] && (
-                <TopProductSections collection={topProducts['lighting']} />
+              {deferredTopProducts['lighting'] && (
+                <TopProductSections
+                  collection={deferredTopProducts['lighting']}
+                />
               )}
             </>
           )}
