@@ -464,7 +464,7 @@ export default function Homepage() {
 
   return (
     <div className="home">
-      <Loader/>
+      {/* <Loader/> */}
       {/* <MobileAppPopup /> */}
       <BannerSlideshow banners={banners} />
       <CategorySlider sliderCollections={sliderCollections} />
