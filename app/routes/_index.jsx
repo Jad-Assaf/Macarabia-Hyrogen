@@ -461,7 +461,7 @@ export default function Homepage() {
       {newArrivals && <TopProductSections collection={newArrivals} />}
 
       {/* Deferred cotent */}
-      <Suspense fallback={<Loader />}>
+      <Suspense>
         <Await resolve={topProducts}>
           {(deferredTopProducts) => (
             <>
