@@ -1873,7 +1873,7 @@ button#headlessui-menu-button-\:R3lab5\: {
   display: none;
 }
 
-.grid-cols-1 > .add-to-cart-button {
+.grid-cols-1 .add-to-cart-button {
   display: none;
 }
 
