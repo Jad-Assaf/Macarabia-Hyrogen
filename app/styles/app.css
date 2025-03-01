@@ -1862,28 +1862,10 @@ button#headlessui-menu-button-\:R3lab5\: {
   justify-content: space-between;
 }
 
-.product-info-container .add-to-cart-button {
-  display: none;
-}
-
-.add-to-cart-button {
-  display: none;
-}
-
-/* .grid-cols-2 .add-to-cart-button,
-.grid-cols-3 .add-to-cart-button,
-.grid-cols-4 .add-to-cart-button,
-.grid-cols-5 .add-to-cart-button {
-  display: block;
-} */
-
 .grid-cols-2 .product-description,
 .grid-cols-3 .product-description,
 .grid-cols-4 .product-description,
-.grid-cols-5 .product-description {
-  display: none;
-}
-
+.grid-cols-5 .product-description,
 .grid-cols-2 .product-info-container .add-to-cart-button,
 .grid-cols-3 .product-info-container .add-to-cart-button,
 .grid-cols-4 .product-info-container .add-to-cart-button,
@@ -1891,7 +1873,11 @@ button#headlessui-menu-button-\:R3lab5\: {
   display: none;
 }
 
-.grid-cols-1 .product-info-container .add-to-cart-button {
+.grid-cols-1 > .add-to-cart-button {
+  display: none;
+}
+
+.grid-cols-1 .product-info-container .add-to-cart-button{
   display: block;
 }
 
