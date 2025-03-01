@@ -49,7 +49,7 @@ export function PageLayout({
   return (
     <Aside.Provider>
       <CartAside cart={cart} />
-      {/* <SearchAside />
+      <SearchAside />
       <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
       {header && (
         <Header
@@ -58,7 +58,7 @@ export function PageLayout({
           isLoggedIn={isLoggedIn}
           publicStoreDomain={publicStoreDomain}
         />
-      )} */}
+      )}
       <main>{children}</main>
       <Footer shopMenu={shopMenuData} policiesMenu={policiesMenuData} />
     </Aside.Provider>
