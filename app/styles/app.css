@@ -418,6 +418,11 @@ button {
   word-break: break-word;
   word-wrap: break-word;
   flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-container {
+  margin-bottom: 10px;
 }
 
 .grid-cols-2 .product-card,
@@ -1878,7 +1883,7 @@ button#headlessui-menu-button-\:R3lab5\: {
   display: none;
 }
 
-.grid-cols-1 .product-info-container .add-to-cart-button{
+.grid-cols-1 .product-info-container .add-to-cart-button {
   display: block;
 }
 
