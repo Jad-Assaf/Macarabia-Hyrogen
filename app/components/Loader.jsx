@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import './Loader.css';
+import '../styles/Loader.css';
 
 const Loader = () => {
   const [isLoaded, setIsLoaded] = useState(false);
