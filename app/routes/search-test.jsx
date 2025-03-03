@@ -1,8 +1,8 @@
-import {json} from '@shopify/remix-oxygen';
+import {json} from '@shopify/remix-oxygen'; // Use the worker-friendly import for your environment.
 import {useLoaderData} from '@remix-run/react';
 import React, {useState, useEffect} from 'react';
 
-// Optional loader to supply initial data.
+// Optional loader for initial server data.
 export async function loader() {
   return json({initialMessage: 'Search Page'});
 }
@@ -67,7 +67,6 @@ export default function SearchTest() {
       setResults([]);
       setTotal(0);
     }
-    // When page or limit change, re-fetch results.
   }, [page, limit]);
 
   return (
