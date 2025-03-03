@@ -1,6 +1,8 @@
 import {json} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import React, {useState, useEffect} from 'react';
+import ProductItem from '~/components/ProductItem';
+import '../styles/SearchPage.css';
 
 // Optional server loader for initial data.
 export async function loader() {
@@ -11,7 +13,7 @@ export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState([]); // array of product objects
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
@@ -69,23 +71,35 @@ export default function SearchTest() {
     }
   }
 
+  // Transform the results to mimic an "edges" array with a node property:
+  const edges = results.map((product) => ({
+    node: {
+      ...product,
+      id: product.product_id, // map product_id to id
+    },
+  }));
+
   return (
-    <div style={{maxWidth: '600px', margin: '0 auto'}}>
+    <div className="search">
       <h1>{initialMessage}</h1>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="search-form">
         <input
           type="text"
           placeholder="Search..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          className="search-input"
         />
-        <button type="submit">Search</button>
+        <button type="submit" className="search-button">
+          Search
+        </button>
         <select
           value={limit}
           onChange={(e) => {
             setLimit(Number(e.target.value));
             setPage(0);
           }}
+          className="search-select"
         >
           <option value="10">10 per page</option>
           <option value="20">20 per page</option>
@@ -94,30 +108,19 @@ export default function SearchTest() {
       </form>
 
       {loading && <p>Loading...</p>}
-      {error && <p style={{color: 'red'}}>{error}</p>}
+      {error && <p className="error">{error}</p>}
 
-      {!loading && results.length > 0 && (
+      {edges.length > 0 && (
         <>
           <p>
-            Showing {results.length} results on page {page + 1} of{' '}
+            Showing {edges.length} results on page {page + 1} of{' '}
             {Math.ceil(total / limit)} (total {total})
           </p>
-          <ul>
-            {results.map((item) => (
-              <li key={item.product_id}>
-                <strong>{item.title}</strong>
-                <br />
-                Product Type: {item.product_type}
-                <br />
-                SKU: {item.sku}
-                <br />
-                <a href={item.url} target="_blank" rel="noopener noreferrer">
-                  View Product
-                </a>
-                <hr />
-              </li>
+          <div className="search-results-grid">
+            {edges.map(({node: product}, idx) => (
+              <ProductItem product={product} index={idx} key={product.id} />
             ))}
-          </ul>
+          </div>
           <button onClick={handlePrevPage} disabled={page <= 0}>
             Previous
           </button>
