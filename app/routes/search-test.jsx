@@ -1,6 +1,6 @@
 import {json} from '@shopify/remix-oxygen';
 import {useLoaderData, useSearchParams, useNavigate} from '@remix-run/react';
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import '../styles/SearchPage.css';
 import {ProductItem} from '~/components/CollectionDisplay';
 
@@ -9,25 +9,34 @@ export async function loader() {
   return json({initialMessage: 'Search Page'});
 }
 
-// Helper: transform DB product into shape expected by ProductItem
+// Helper: transform DB product into shape expected by ProductItem.
 function transformProduct(prod) {
   return {
     ...prod,
     id: prod.product_id, // ensure product.id exists
-    // Simulate images object with a single node if image_url exists.
+    // Build an images object with a nodes array containing the first image URL if present.
     images: {
       nodes: prod.image_url
-        ? [{url: prod.image_url, altText: prod.title || 'Product image'}]
+        ? [
+            {
+              url: prod.image_url,
+              altText: prod.title || 'Product image',
+            },
+          ]
         : [],
     },
-    // Simulate variants object with one variant. Adjust availableForSale as needed.
+    // Build a variants object with a nodes array that includes a simulated variant.
     variants: {
       nodes: [
         {
           id: prod.product_id + '-variant',
           sku: prod.sku,
-          availableForSale: true, // Assume available (change if needed)
-          price: {amount: prod.price, currencyCode: 'USD'}, // Adjust currency if needed
+          availableForSale: true, // Assume available; update if needed.
+          // Ensure we supply a valid Money data object.
+          price: {
+            amount: prod.price ? prod.price : '0',
+            currencyCode: 'USD',
+          },
           compareAtPrice: null,
         },
       ],
@@ -39,7 +48,7 @@ export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]); // array of product objects from DB
+  const [results, setResults] = useState([]); // array of product objects from DB.
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
@@ -98,7 +107,7 @@ export default function SearchTest() {
   }
 
   // Transform the results into an "edges" array with a node property,
-  // and convert each product record using transformProduct().
+  // mapping product_id to id and applying our transform.
   const edges = results.map((product) => ({
     node: transformProduct(product),
   }));
