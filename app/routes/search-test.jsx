@@ -2,7 +2,7 @@ import {json} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import React, {useState, useEffect} from 'react';
 
-// Optional server loader if you need SSR data:
+// Optional server loader for initial data.
 export async function loader() {
   return json({initialMessage: 'Search Page'});
 }
@@ -12,13 +12,12 @@ export default function SearchTest() {
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
-  const [page, setPage] = useState(0); // track current page
-  const [limit, setLimit] = useState(20); // results per page
+  const [page, setPage] = useState(0);
+  const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [total, setTotal] = useState(0); // total matches in DB
+  const [total, setTotal] = useState(0);
 
-  // Fetch results when page or limit change
   useEffect(() => {
     if (!query) {
       setResults([]);
@@ -54,7 +53,7 @@ export default function SearchTest() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setPage(0); // reset to page 0 on new search
+    setPage(0);
     fetchResults(query, 0, limit);
   }
 
@@ -85,7 +84,7 @@ export default function SearchTest() {
           value={limit}
           onChange={(e) => {
             setLimit(Number(e.target.value));
-            setPage(0); // reset page if changing limit
+            setPage(0);
           }}
         >
           <option value="10">10 per page</option>
