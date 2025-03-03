@@ -1,19 +1,45 @@
 import {json} from '@shopify/remix-oxygen';
-import {useLoaderData} from '@remix-run/react';
+import {useLoaderData, useSearchParams, useNavigate} from '@remix-run/react';
 import React, {useState, useEffect} from 'react';
 import '../styles/SearchPage.css';
-import { ProductItem } from '~/components/CollectionDisplay';
+import {ProductItem} from '~/components/CollectionDisplay';
 
 // Optional server loader for initial data.
 export async function loader() {
   return json({initialMessage: 'Search Page'});
 }
 
+// Helper: transform DB product into shape expected by ProductItem
+function transformProduct(prod) {
+  return {
+    ...prod,
+    id: prod.product_id, // ensure product.id exists
+    // Simulate images object with a single node if image_url exists.
+    images: {
+      nodes: prod.image_url
+        ? [{url: prod.image_url, altText: prod.title || 'Product image'}]
+        : [],
+    },
+    // Simulate variants object with one variant. Adjust availableForSale as needed.
+    variants: {
+      nodes: [
+        {
+          id: prod.product_id + '-variant',
+          sku: prod.sku,
+          availableForSale: true, // Assume available (change if needed)
+          price: {amount: prod.price, currencyCode: 'USD'}, // Adjust currency if needed
+          compareAtPrice: null,
+        },
+      ],
+    },
+  };
+}
+
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]); // array of product objects
+  const [results, setResults] = useState([]); // array of product objects from DB
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
@@ -71,12 +97,10 @@ export default function SearchTest() {
     }
   }
 
-  // Transform the results to mimic an "edges" array with a node property:
+  // Transform the results into an "edges" array with a node property,
+  // and convert each product record using transformProduct().
   const edges = results.map((product) => ({
-    node: {
-      ...product,
-      id: product.product_id, // map product_id to id
-    },
+    node: transformProduct(product),
   }));
 
   return (
