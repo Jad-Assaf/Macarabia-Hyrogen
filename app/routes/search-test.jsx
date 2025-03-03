@@ -1,8 +1,8 @@
-import {json} from '@shopify/remix-oxygen'; // Use the worker-friendly import for your environment.
+import {json} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import React, {useState, useEffect} from 'react';
 
-// Optional loader for initial server data.
+// Optional loader to supply initial data.
 export async function loader() {
   return json({initialMessage: 'Search Page'});
 }
@@ -143,7 +143,6 @@ export default function SearchTest() {
                   <li key={j}>
                     <button
                       onClick={() => {
-                        // Replace the token in the query with the suggestion.
                         const correctedQuery = query.replace(
                           sugObj.original,
                           suggest,
