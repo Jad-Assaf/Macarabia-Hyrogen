@@ -6,6 +6,7 @@ import {getEmptyPredictiveSearchResult} from '~/lib/search';
 import {trackSearch} from '~/lib/metaPixelEvents';
 import '../styles/SearchPage.css';
 import customDictionary from '~/lib/customDictionary.json';
+import { Search } from '~/components/Search.client';
 
 /**
  * @type {import('@remix-run/react').MetaFunction}
@@ -314,6 +315,7 @@ export default function SearchPage() {
 
   return (
     <div className="search">
+      <Search />
       <h1>Search Results</h1>
 
       <div className="search-filters-container" style={{display: 'flex'}}>
