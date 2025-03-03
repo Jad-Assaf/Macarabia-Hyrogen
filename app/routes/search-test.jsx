@@ -1,54 +1,19 @@
 import {json} from '@shopify/remix-oxygen';
-import {useLoaderData, useSearchParams, useNavigate} from '@remix-run/react';
-import React, {useState, useEffect, useRef} from 'react';
+import {useLoaderData, Link} from '@remix-run/react';
+import React, {useState, useEffect} from 'react';
+import {Money} from '@shopify/hydrogen';
 import '../styles/SearchPage.css';
-import {ProductItem} from '~/components/CollectionDisplay';
 
 // Optional server loader for initial data.
 export async function loader() {
   return json({initialMessage: 'Search Page'});
 }
 
-// Helper: transform DB product into shape expected by ProductItem.
-function transformProduct(prod) {
-  return {
-    ...prod,
-    id: prod.product_id, // ensure product.id exists
-    // Build an images object with a nodes array containing the first image URL if present.
-    images: {
-      nodes: prod.image_url
-        ? [
-            {
-              url: prod.image_url,
-              altText: prod.title || 'Product image',
-            },
-          ]
-        : [],
-    },
-    // Build a variants object with a nodes array that includes a simulated variant.
-    variants: {
-      nodes: [
-        {
-          id: prod.product_id + '-variant',
-          sku: prod.sku,
-          availableForSale: true, // Assume available; update if needed.
-          // Ensure we supply a valid Money data object.
-          price: {
-            amount: prod.price ? prod.price : '0',
-            currencyCode: 'USD',
-          },
-          compareAtPrice: null,
-        },
-      ],
-    },
-  };
-}
-
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]); // array of product objects from DB.
+  const [results, setResults] = useState([]); // array of product objects from DB
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(false);
@@ -106,10 +71,12 @@ export default function SearchTest() {
     }
   }
 
-  // Transform the results into an "edges" array with a node property,
-  // mapping product_id to id and applying our transform.
+  // Transform the results to mimic an "edges" array with a node property:
   const edges = results.map((product) => ({
-    node: transformProduct(product),
+    node: {
+      ...product,
+      id: product.product_id, // map product_id to id
+    },
   }));
 
   return (
@@ -151,7 +118,37 @@ export default function SearchTest() {
           </p>
           <div className="search-results-grid">
             {edges.map(({node: product}, idx) => (
-              <ProductItem product={product} index={idx} key={product.id} />
+              <div key={product.id} className="product-card">
+                <Link to={`/products/${encodeURIComponent(product.handle)}`}>
+                  {product.image_url && (
+                    <div
+                      className="product-slideshow"
+                      style={{position: 'relative', overflow: 'hidden'}}
+                    >
+                      <img
+                        src={product.image_url}
+                        alt={product.title}
+                        className="product-slideshow-image"
+                        style={{
+                          width: '180px',
+                          height: '180px',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    </div>
+                  )}
+                  <h4 className="product-title">{product.title}</h4>
+                  <div className="product-price">
+                    {product.price ? (
+                      <Money
+                        data={{amount: product.price, currencyCode: 'USD'}}
+                      />
+                    ) : (
+                      <span>No Price</span>
+                    )}
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
           <button onClick={handlePrevPage} disabled={page <= 0}>
