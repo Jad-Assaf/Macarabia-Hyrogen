@@ -1,8 +1,8 @@
 import {json} from '@shopify/remix-oxygen';
 import {useLoaderData} from '@remix-run/react';
 import React, {useState, useEffect} from 'react';
-import ProductItem from '~/components/ProductItem';
 import '../styles/SearchPage.css';
+import { ProductItem } from '~/components/CollectionDisplay';
 
 // Optional server loader for initial data.
 export async function loader() {
