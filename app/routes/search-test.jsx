@@ -6,7 +6,6 @@ import React, {useState} from 'react';
 export async function loader() {
   // If you need to fetch data here, you can do so.
   // Just ensure you don't import or use Node-specific modules (like fs).
-  return json({initialMessage: 'Hello from server (worker)!'});
 }
 
 // 2) Client + SSR logic: React component that runs in the browser & hydrates on the server
