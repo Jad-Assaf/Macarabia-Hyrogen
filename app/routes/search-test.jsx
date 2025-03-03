@@ -18,11 +18,9 @@ export default function SearchTest() {
   const [error, setError] = useState('');
   const [total, setTotal] = useState(0); // total matches in DB
 
-  // We'll fetch when user presses "Search" or changes page
-  // But only if query is not empty
+  // Fetch results when page or limit change
   useEffect(() => {
     if (!query) {
-      // Clear results if no query
       setResults([]);
       setTotal(0);
       return;
