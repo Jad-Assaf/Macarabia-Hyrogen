@@ -63,6 +63,7 @@ export default async function handleRequest(
       'https://pe5t1m9ejs-dsn.algolia.net',
       'https://cdn.onesignal.com/',
       'https://onesignal.com/',
+      'https://search-app-vert.vercel.app/',
     ],
     connectSrc: [
       "'self'", // Allow scripts from the same origin
@@ -92,6 +93,7 @@ export default async function handleRequest(
       'https://pe5t1m9ejs-dsn.algolia.net',
       'https://cdn.onesignal.com/',
       'https://onesignal.com/',
+      'https://search-app-vert.vercel.app/',
     ],
     frameSrc: [
       "'self'", // Allow frames from the same origin
@@ -121,6 +123,7 @@ export default async function handleRequest(
       'https://searchserverapi.com/',
       'https://www.searchserverapi.com/',
       'https://pe5t1m9ejs-dsn.algolia.net',
+      'https://search-app-vert.vercel.app/',
     ],
     imgSrc: [
       "'self'", // Allow images from the same origin
@@ -151,6 +154,7 @@ export default async function handleRequest(
       'https://www.searchserverapi.com/',
       'https://pe5t1m9ejs-dsn.algolia.net',
       'https://onesignal.com/',
+      'https://search-app-vert.vercel.app/',
     ],
     mediaSrc: [
       "'self'",
@@ -167,6 +171,7 @@ export default async function handleRequest(
       'https://www.searchserverapi.com/',
       'https://pe5t1m9ejs-dsn.algolia.net',
       'https://onesignal.com/',
+      'https://search-app-vert.vercel.app/',
       // Add other media sources as needed
     ],
     styleSrc: [
@@ -174,6 +179,7 @@ export default async function handleRequest(
       'https://www.searchserverapi.com/',
       'https://pe5t1m9ejs-dsn.algolia.net',
       'https://onesignal.com/',
+      'https://search-app-vert.vercel.app/',
     ],
   });
 
