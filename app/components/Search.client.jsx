@@ -1,3 +1,5 @@
+'use client'; // <--- Must be the first line
+
 import React, {useState} from 'react';
 
 export function Search() {
