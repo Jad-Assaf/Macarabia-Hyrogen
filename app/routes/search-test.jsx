@@ -12,11 +12,11 @@ export default function SearchTest() {
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
-  const [page, setPage] = useState(0);    // track current page
+  const [page, setPage] = useState(0); // track current page
   const [limit, setLimit] = useState(20); // results per page
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [total, setTotal] = useState(0);  // total matches in DB
+  const [total, setTotal] = useState(0); // total matches in DB
 
   // We'll fetch when user presses "Search" or changes page
   // But only if query is not empty
@@ -35,9 +35,7 @@ export default function SearchTest() {
     setError('');
 
     try {
-      const url = new URL(
-        'https://search-app-vert.vercel.app/api/search'
-      );
+      const url = new URL('https://search-app-vert.vercel.app/api/search');
       url.searchParams.set('q', searchTerm);
       url.searchParams.set('page', pageNum);
       url.searchParams.set('limit', limitNum);
