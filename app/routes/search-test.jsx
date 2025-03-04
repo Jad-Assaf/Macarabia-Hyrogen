@@ -1,8 +1,74 @@
 import {json} from '@shopify/remix-oxygen';
 import {useLoaderData, Link, useNavigate, useLocation} from '@remix-run/react';
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {Money} from '@shopify/hydrogen';
+import {debounce} from 'lodash'; // Ensure lodash is installed: npm install lodash
 import '../styles/SearchPage.css';
+
+// New SearchBar component with debounce and suggestions dropdown.
+function SearchBar({onSuggestionSelect}) {
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [error, setError] = useState(null);
+
+  const debouncedFetchSuggestions = useCallback(
+    debounce(async (q) => {
+      if (!q) {
+        setSuggestions([]);
+        return;
+      }
+      try {
+        const response = await fetch(
+          `/api/search-suggestions?q=${encodeURIComponent(q)}`,
+        );
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        const data = await response.json();
+        setSuggestions(data.results || []);
+      } catch (err) {
+        setError(err.message);
+      }
+    }, 300),
+    [],
+  );
+
+  useEffect(() => {
+    debouncedFetchSuggestions(query);
+    return () => debouncedFetchSuggestions.cancel();
+  }, [query, debouncedFetchSuggestions]);
+
+  return (
+    <div className="search-bar">
+      <input
+        type="text"
+        placeholder="Type to search..."
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setError(null);
+        }}
+      />
+      {error && <p className="error">{error}</p>}
+      {suggestions.length > 0 && (
+        <ul className="suggestions-dropdown">
+          {suggestions.map((item) => (
+            <li
+              key={item.id}
+              onClick={() => {
+                onSuggestionSelect(item);
+                setQuery(item.title);
+                setSuggestions([]);
+              }}
+            >
+              {item.title}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // Optional server loader for initial data.
 export async function loader({request}) {
@@ -26,10 +92,8 @@ export async function loader({request}) {
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
-  // We use `inputQuery` for the text input, and `searchQuery` for the
-  // term we actually fetch with. That way we only fetch on submit.
+  // We use `inputQuery` for the text input, and `searchQuery` for the term we actually fetch with.
   const [inputQuery, setInputQuery] = useState('');
-
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(20);
@@ -46,7 +110,6 @@ export default function SearchTest() {
 
   const location = useLocation();
   const navigate = useNavigate();
-
   const [hasMounted, setHasMounted] = useState(false);
 
   // -----------------------------
@@ -176,9 +239,14 @@ export default function SearchTest() {
     setResults([]);
     setTotal(0);
     setError('');
-
     // Move the typed input into searchQuery, which triggers the effect.
     setSearchQuery(inputQuery.trim());
+  }
+
+  // Callback for suggestion selection from the SearchBar component.
+  function handleSuggestionSelect(item) {
+    setInputQuery(item.title);
+    setSearchQuery(item.title);
   }
 
   function handleNextPage() {
@@ -204,6 +272,10 @@ export default function SearchTest() {
   return (
     <div className="search">
       <h1>{initialMessage}</h1>
+
+      {/* Render the new SearchBar component above the main search form */}
+      <SearchBar onSuggestionSelect={handleSuggestionSelect} />
+
       <form onSubmit={handleSubmit} className="search-form">
         <input
           type="text"
@@ -220,7 +292,7 @@ export default function SearchTest() {
           onChange={(e) => {
             setLimit(Number(e.target.value));
             setPage(0);
-            // If desired, we can also reset results or leave them
+            // Optionally reset results
             setResults([]);
             setTotal(0);
           }}
