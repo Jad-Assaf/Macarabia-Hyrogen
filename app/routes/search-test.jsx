@@ -187,8 +187,6 @@ export default function SearchTest() {
     },
   }));
 
-  const priceInDollars = (product.price / 100).toFixed(2);
-
   return (
     <div className="search">
       <h1>{initialMessage}</h1>
@@ -230,39 +228,47 @@ export default function SearchTest() {
             {Math.ceil(total / limit)} (total {total})
           </p>
           <div className="search-results-grid">
-            {edges.map(({node: product}) => (
-              <div key={product.id} className="product-card">
-                <Link to={`/products/${encodeURIComponent(product.handle)}`}>
-                  {product.image_url && (
-                    <div
-                      className="product-slideshow"
-                      style={{position: 'relative', overflow: 'hidden'}}
-                    >
-                      <img
-                        src={product.image_url}
-                        alt={product.title}
-                        className="product-slideshow-image"
-                        style={{
-                          width: '180px',
-                          height: '180px',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    </div>
-                  )}
-                  <h4 className="product-title">{product.title}</h4>
-                  <div className="product-price">
-                    {priceInDollars ? (
-                      <Money
-                        data={{amount: priceInDollars, currencyCode: 'USD'}}
-                      />
-                    ) : (
-                      <span>No Price</span>
+            {edges.map(({node: product}) => {
+              // Ensure product.price is defined and is a number
+              const priceInDollars =
+                typeof product.price === 'number'
+                  ? (product.price / 100).toFixed(2)
+                  : null;
+
+              return (
+                <div key={product.id} className="product-card">
+                  <Link to={`/products/${encodeURIComponent(product.handle)}`}>
+                    {product.image_url && (
+                      <div
+                        className="product-slideshow"
+                        style={{position: 'relative', overflow: 'hidden'}}
+                      >
+                        <img
+                          src={product.image_url}
+                          alt={product.title}
+                          className="product-slideshow-image"
+                          style={{
+                            width: '180px',
+                            height: '180px',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      </div>
                     )}
-                  </div>
-                </Link>
-              </div>
-            ))}
+                    <h4 className="product-title">{product.title}</h4>
+                    <div className="product-price">
+                      {priceInDollars ? (
+                        <Money
+                          data={{amount: priceInDollars, currencyCode: 'USD'}}
+                        />
+                      ) : (
+                        <span>No Price</span>
+                      )}
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
           </div>
           <button onClick={handlePrevPage} disabled={page <= 0}>
             Previous
