@@ -175,7 +175,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                     <div className="search-container">
                       <input
                         ref={inputRef}
-                        type="text"
+                        type="search"
                         placeholder="Search products"
                         onChange={(e) => {
                           fetchResults(e);
