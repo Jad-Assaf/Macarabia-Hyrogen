@@ -187,6 +187,8 @@ export default function SearchTest() {
     },
   }));
 
+  const priceInDollars = (product.price / 100).toFixed(2);
+
   return (
     <div className="search">
       <h1>{initialMessage}</h1>
@@ -252,7 +254,7 @@ export default function SearchTest() {
                   <div className="product-price">
                     {product.price ? (
                       <Money
-                        data={{amount: product.price, currencyCode: 'USD'}}
+                        data={{amount: priceInDollars, currencyCode: 'USD'}}
                       />
                     ) : (
                       <span>No Price</span>
