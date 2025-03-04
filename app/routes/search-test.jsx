@@ -11,10 +11,9 @@ export async function loader() {
 
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
-  const location = useLocation(); // for reading ?q=... from the URL
-  const navigate = useNavigate(); // to programmatically update the URL
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Local state
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [page, setPage] = useState(0);
@@ -23,90 +22,99 @@ export default function SearchTest() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Local cache object where each key is like "q=samsung&page=0&limit=20"
+  // This lives in React state, but is also synced to localStorage so it persists.
+  const [cache, setCache] = useState({});
+
   // Track if we've done our "on mount" logic
   const [hasMounted, setHasMounted] = useState(false);
 
-  // 1) Parse URL search params on mount
+  // -----------------------------
+  // 1) On mount, parse URL & load cache from localStorage
+  // -----------------------------
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     let urlQuery = searchParams.get('q') || '';
     let urlPage = parseInt(searchParams.get('page') || '0', 10);
     let urlLimit = parseInt(searchParams.get('limit') || '20', 10);
 
-    // Validate them
+    // Validate
     if (isNaN(urlPage) || urlPage < 0) urlPage = 0;
     if (isNaN(urlLimit) || urlLimit < 1) urlLimit = 20;
 
-    // 2) Check localStorage for a matching state
-    const saved = localStorage.getItem('searchState');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-
-      // If localStorage matches what’s in the URL, restore the saved results
-      // so we don't have to fetch again immediately.
-      if (
-        parsed.query === urlQuery &&
-        parsed.page === urlPage &&
-        parsed.limit === urlLimit
-      ) {
-        setQuery(parsed.query);
-        setResults(parsed.results || []);
-        setPage(parsed.page);
-        setLimit(parsed.limit);
-        setTotal(parsed.total || 0);
-        setError('');
-        setLoading(false);
-        setHasMounted(true);
-        return; // skip immediate fetch
+    // Attempt to load an existing localStorage cache
+    const storedCache = localStorage.getItem('searchCache');
+    if (storedCache) {
+      try {
+        const parsed = JSON.parse(storedCache);
+        setCache(parsed);
+      } catch {
+        // If parse fails, ignore and use empty object
       }
     }
 
-    // Otherwise, set initial states from URL, but we will fetch fresh data
+    // Initialize states from URL
     setQuery(urlQuery);
     setPage(urlPage);
     setLimit(urlLimit);
+
     setHasMounted(true);
   }, [location.search]);
 
-  // 3) Whenever query/page/limit change, update the URL & possibly fetch
+  // -----------------------------
+  // 2) Whenever query/page/limit changes, update the URL
+  //    Then see if we have a cached result for that combination.
+  // -----------------------------
   useEffect(() => {
     if (!hasMounted) return;
-    // Update URL to reflect the new state
+
+    // Update the URL to reflect the new state
     const params = new URLSearchParams();
     if (query) params.set('q', query);
     if (page > 0) params.set('page', String(page));
     if (limit !== 20) params.set('limit', String(limit));
 
-    // If your route is just /search, we might do:
     navigate(`?${params.toString()}`, {replace: true});
 
-    // If there's a query, we fetch new results
-    if (query) {
-      fetchResults(query, page, limit);
-    } else {
-      // If no query, clear results
+    // If there's no query, clear results
+    if (!query) {
       setResults([]);
       setTotal(0);
+      return;
+    }
+
+    // Build a cache key like "q=samsung&page=0&limit=20"
+    const key = params.toString(); // i.e. "q=samsung&page=0&limit=20"
+
+    // Check if we have cached data for this key
+    if (cache[key]) {
+      // If found, use it immediately to avoid re-fetch
+      const {results: cachedResults, total: cachedTotal} = cache[key];
+      setResults(cachedResults);
+      setTotal(cachedTotal);
+      setLoading(false);
+      setError('');
+    } else {
+      // If not in cache, fetch from server
+      fetchResults(query, page, limit).catch(() => {});
     }
   }, [query, page, limit, hasMounted]);
 
-  // 4) Each time we get new data, store it in localStorage
+  // -----------------------------
+  // 3) Sync the cache object to localStorage whenever it changes
+  // -----------------------------
   useEffect(() => {
     if (!hasMounted) return;
-    const dataToStore = {
-      query,
-      results,
-      page,
-      limit,
-      total,
-    };
-    localStorage.setItem('searchState', JSON.stringify(dataToStore));
-  }, [query, page, limit, total, results, hasMounted]);
+    localStorage.setItem('searchCache', JSON.stringify(cache));
+  }, [cache, hasMounted]);
 
-  // The actual fetch function
+  // -----------------------------
+  // 4) The fetch function: store result in both React state and local cache
+  // -----------------------------
   async function fetchResults(searchTerm, pageNum, limitNum) {
     setLoading(true);
     setError('');
+
     try {
       const url = new URL('https://search-app-vert.vercel.app/api/search');
       url.searchParams.set('q', searchTerm);
@@ -120,6 +128,16 @@ export default function SearchTest() {
       const data = await response.json();
       setResults(data.results || []);
       setTotal(data.total || 0);
+
+      // Save to cache
+      const key = `q=${searchTerm}&page=${pageNum}&limit=${limitNum}`;
+      setCache((prev) => ({
+        ...prev,
+        [key]: {
+          results: data.results || [],
+          total: data.total || 0,
+        },
+      }));
     } catch (err) {
       setError(err.message || 'Unknown error');
     } finally {
@@ -127,15 +145,16 @@ export default function SearchTest() {
     }
   }
 
-  // The user-initiated search
+  // -----------------------------
+  // 5) Handlers for user input
+  // -----------------------------
   function handleSubmit(e) {
     e.preventDefault();
-    // Reset to page 0 whenever the user explicitly searches
     setPage(0);
     setResults([]);
     setTotal(0);
-    // setQuery triggers the effect which in turn calls fetchResults.
-    // The new query/page/limit will cause a new fetch in useEffect.
+    setError('');
+    // Setting query triggers the effect which updates URL & fetch if needed
     setQuery(query.trim());
   }
 
@@ -151,11 +170,10 @@ export default function SearchTest() {
     }
   }
 
-  // Transform the results to mimic an "edges" array with a node property:
   const edges = results.map((product) => ({
     node: {
       ...product,
-      id: product.product_id, // map product_id to id
+      id: product.product_id,
     },
   }));
 
@@ -178,6 +196,8 @@ export default function SearchTest() {
           onChange={(e) => {
             setLimit(Number(e.target.value));
             setPage(0);
+            setResults([]);
+            setTotal(0);
           }}
           className="search-select"
         >
