@@ -2,9 +2,13 @@ import {Suspense, useEffect, useState, useRef} from 'react';
 import {Await, Link, NavLink} from '@remix-run/react';
 import {useAside} from '~/components/Aside';
 import {Image} from '@shopify/hydrogen-react';
-import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
-import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
-import {trackSearch} from '~/lib/metaPixelEvents'; // Added: Import the trackSearch function
+import {trackSearch} from '~/lib/metaPixelEvents';
+// NEW: Import the new search components and endpoint
+import {
+  SearchFormOptimized,
+  SEARCH_ENDPOINT,
+  SearchResultsOptimized,
+} from '~/components/SearchFormOptimized';
 
 export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   const {shop, menu} = header;
@@ -15,12 +19,12 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen((prev) => !prev);
-    if (!isMobileMenuOpen) setActiveSubmenu(null); // Reset submenu when closing
+    if (!isMobileMenuOpen) setActiveSubmenu(null);
   };
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
-    setActiveSubmenu(null); // Close all submenus when menu is closed
+    setActiveSubmenu(null);
   };
 
   const openSubmenu = (itemId) => {
@@ -39,7 +43,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
     );
     if (activeDrawer) {
       activeDrawer.classList.remove('active');
-      setTimeout(() => setActiveSubmenu(null), 300); // Wait for animation
+      setTimeout(() => setActiveSubmenu(null), 300);
     }
   };
 
@@ -84,13 +88,12 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                 strokeLinejoin="round"
               ></g>
               <g id="SVGRepo_iconCarrier">
-                {' '}
                 <path
                   d="M5 6H12H19M5 12H19M5 18H19"
                   stroke="#fff"
                   strokeWidth="2"
                   strokeLinecap="round"
-                ></path>{' '}
+                ></path>
               </g>
             </svg>
           </button>
@@ -105,12 +108,14 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
             />
           </NavLink>
 
-          <SearchFormPredictive className="header-search">
+          {/* NEW SEARCH COMPONENT using SearchFormOptimized */}
+          <SearchFormOptimized className="header-search">
             {({inputRef, fetchResults, goToSearch, fetcher}) => {
+              // Focus the search input when cmd+k is pressed
               useFocusOnCmdK(inputRef);
 
               const [isOverlayVisible, setOverlayVisible] = useState(false);
-              const [isSearchResultsVisible, setSearchResultsVisible] =
+              const [localSearchResultsVisible, setLocalSearchResultsVisible] =
                 useState(false);
 
               const handleFocus = () => {
@@ -118,7 +123,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                   searchContainerRef.current?.classList.add('fixed-search');
                   setOverlayVisible(true);
                 }
-                setSearchResultsVisible(true);
+                setLocalSearchResultsVisible(true);
               };
 
               const handleBlur = () => {
@@ -136,24 +141,13 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
               const handleCloseSearch = () => {
                 searchContainerRef.current?.classList.remove('fixed-search');
                 setOverlayVisible(false);
-                setSearchResultsVisible(false);
+                setLocalSearchResultsVisible(false);
               };
 
               const handleKeyDown = (e) => {
                 if (e.key === 'Enter') {
-                  e.preventDefault(); // Prevent default form submission
-                  handleSearch();
-                }
-              };
-
-              const handleSearch = () => {
-                if (inputRef.current) {
-                  const rawTerm = inputRef.current.value.trim(); // Added: Get the raw search term
-                  const term = rawTerm.replace(/\s+/g, '-'); // Existing
-                  if (rawTerm) {
-                    trackSearch(rawTerm); // Added: Track the search event
-                    window.location.href = `${SEARCH_ENDPOINT}?q=${term}`; // Existing
-                  }
+                  e.preventDefault();
+                  goToSearch();
                 }
               };
 
@@ -164,23 +158,19 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                 } else {
                   document.body.style.overflow = '';
                 }
-
                 return () => {
-                  document.body.style.overflow = ''; // Ensure cleanup
+                  document.body.style.overflow = '';
                 };
               }, [isOverlayVisible]);
 
               return (
                 <>
-                  {/* Fullscreen Overlay */}
                   <div
                     className={`search-overlay ${
                       isOverlayVisible ? 'active' : ''
                     }`}
                     onClick={handleCloseSearch}
                   ></div>
-
-                  {/* Main Search Form */}
                   <div ref={searchContainerRef} className="main-search">
                     <div className="search-container">
                       <input
@@ -189,7 +179,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                         placeholder="Search products"
                         onChange={(e) => {
                           fetchResults(e);
-                          setSearchResultsVisible(true);
+                          setLocalSearchResultsVisible(true);
                         }}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
@@ -201,10 +191,10 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                           className="clear-search-button"
                           onClick={() => {
                             inputRef.current.value = '';
-                            setSearchResultsVisible(false);
-                            fetchResults({target: {value: ''}}); // Reset search results
+                            setLocalSearchResultsVisible(false);
+                            fetchResults({target: {value: ''}});
                           }}
-                          aria-label="Clear search" // Optional: Added aria-label for accessibility
+                          aria-label="Clear search"
                         >
                           <svg
                             fill="#000"
@@ -219,28 +209,26 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                         </button>
                       )}
                       <button
-                        onClick={handleSearch}
+                        onClick={goToSearch}
                         className="search-bar-submit"
-                        aria-label="Search" // Optional: Added aria-label for accessibility
+                        aria-label="Search"
                       >
                         <SearchIcon />
                       </button>
                     </div>
-                    {isSearchResultsVisible && (
+                    {localSearchResultsVisible && (
                       <div className="search-results-container">
-                        <SearchResultsPredictive>
+                        <SearchResultsOptimized>
                           {({items, total, term, state, closeSearch}) => {
                             const {products} = items;
-
                             if (!total) {
                               return (
-                                <SearchResultsPredictive.Empty term={term} />
+                                <SearchResultsOptimized.Empty term={term} />
                               );
                             }
-
                             return (
                               <>
-                                <SearchResultsPredictive.Products
+                                <SearchResultsOptimized.Products
                                   products={products}
                                   closeSearch={() => {
                                     closeSearch();
@@ -254,9 +242,8 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                                       closeSearch();
                                       handleCloseSearch();
                                     }}
-                                    to={`${SEARCH_ENDPOINT}?q=${term.current.replace(
-                                      /\s+/g,
-                                      '-',
+                                    to={`${SEARCH_ENDPOINT}?q=${encodeURIComponent(
+                                      term.current,
                                     )}`}
                                     className="view-all-results"
                                   >
@@ -269,21 +256,21 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                               </>
                             );
                           }}
-                        </SearchResultsPredictive>
+                        </SearchResultsOptimized>
                       </div>
                     )}
                   </div>
                 </>
               );
             }}
-          </SearchFormPredictive>
+          </SearchFormOptimized>
 
           <div className="header-ctas">
             <NavLink
               prefetch="intent"
               to="/account"
               className="sign-in-link mobile-user-icon"
-              aria-label="Account" // Optional: Added aria-label for accessibility
+              aria-label="Account"
             >
               <Suspense fallback={<UserIcon />}>
                 <Await resolve={isLoggedIn} errorElement={<UserIcon />}>
@@ -291,7 +278,6 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                 </Await>
               </Suspense>
             </NavLink>
-            {/* <SearchToggle /> */}
             <CartToggle cart={cart} />
           </div>
         </div>
@@ -307,15 +293,10 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
       </header>
 
       <>
-        {/* Background overlay */}
         {isMobileMenuOpen && (
-          <div
-            className="mobile-menu-backdrop"
-            onClick={closeMobileMenu} // Close menu when backdrop is clicked
-          ></div>
+          <div className="mobile-menu-backdrop" onClick={closeMobileMenu}></div>
         )}
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="mobile-menu-overlay">
             <button className="mobile-menu-close" onClick={closeMobileMenu}>
@@ -327,7 +308,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 460.775 460.775"
               >
-                <path d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55 c-4.127,0-8.08,1.639-10.993,4.55l-171.138,171.14L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55 c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128L4.575,401.505 c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55c4.127,0,8.08-1.639,10.994-4.55 l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"></path>
+                <path d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55 c-4.127,0-8.08,1.639-10.993,4.55l-171.138,171.14L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55 c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128L4.575,401.505 c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55c4.127,0,8.08-1.639,10.994-4.55l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"></path>
               </svg>
             </button>
             <h3>Menu</h3>
@@ -337,14 +318,11 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
               {menu.items.map((item) => (
                 <div key={item.id} className="mobile-menu-item">
                   <button onClick={() => openSubmenu(item.id)}>
-                    {/* Display the image */}
                     {item.imageUrl && (
                       <div
-                        // replaced motion.div with plain div
                         style={{
                           width: '50px',
                           height: '50px',
-                          // inline fade/blur effect (optional)
                           filter: 'blur(0px)',
                           opacity: 1,
                           transition: 'filter 1s, opacity 1s',
@@ -361,7 +339,6 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                         />
                       </div>
                     )}
-                    {/* Title */}
                     {item.title}
                     <span className="mobile-menu-arrow">
                       <svg
@@ -369,13 +346,9 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                         height="14px"
                         width="14px"
                         version="1.1"
-                        id="XMLID_287_"
                         xmlns="http://www.w3.org/2000/svg"
-                        xmlnsXlink="http://www.w3.org/1999/xlink"
                         viewBox="0 0 24.00 24.00"
                         xmlSpace="preserve"
-                        stroke="#000"
-                        strokeWidth="0.00024000000000000003"
                       >
                         <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
                         <g
@@ -441,7 +414,6 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                       >
                         {subItem.imageUrl && (
                           <div
-                            // replaced motion.div with plain div
                             style={{
                               width: '50px',
                               height: '50px',
@@ -453,8 +425,8 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                             <Image
                               sizes="(min-width: 45em) 20vw, 40vw"
                               srcSet={`${subItem.imageUrl}?width=300&quality=10 300w,
-                                 ${subItem.imageUrl}?width=600&quality=10 600w,
-                                 ${subItem.imageUrl}?width=1200&quality=10 1200w`}
+                                     ${subItem.imageUrl}?width=600&quality=10 600w,
+                                     ${subItem.imageUrl}?width=1200&quality=10 1200w`}
                               alt={subItem.altText || subItem.title}
                               className="submenu-item-image"
                               width="50px"
@@ -636,7 +608,6 @@ function activeLinkStyle({isActive, isPending}) {
 }
 
 export function useFocusOnCmdK(inputRef) {
-  // focus the input when cmd+k is pressed
   useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === 'k' && event.metaKey) {
@@ -647,9 +618,7 @@ export function useFocusOnCmdK(inputRef) {
         inputRef.current?.blur();
       }
     }
-
     document.addEventListener('keydown', handleKeyDown);
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
