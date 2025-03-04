@@ -205,9 +205,6 @@ select#sort-select {
 }
 
 .search-results-grid .product-card {
-    width: 42%;
-    min-width: unset !important;
-    max-width: 210px !important;
 }
 
 @keyframes slideDown {
