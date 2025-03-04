@@ -252,7 +252,7 @@ export default function SearchTest() {
                   )}
                   <h4 className="product-title">{product.title}</h4>
                   <div className="product-price">
-                    {product.price ? (
+                    {priceInDollars ? (
                       <Money
                         data={{amount: priceInDollars, currencyCode: 'USD'}}
                       />
