@@ -1,19 +1,25 @@
 import {json} from '@shopify/remix-oxygen';
 import {useLoaderData, Link, useNavigate, useLocation} from '@remix-run/react';
 import React, {useState, useEffect, useCallback} from 'react';
-import {Money} from '@shopify/hydrogen';
-import {debounce} from 'lodash'; // Ensure lodash is installed: npm install lodash
+import {Money, Image} from '@shopify/hydrogen';
+import {debounce} from 'lodash';
 import '../styles/SearchPage.css';
 
+// Helper: truncate text to a given length.
+function truncateText(text, maxLength) {
+  if (!text) return '';
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+
 // ----------------------
-// New Instant Search Bar Component
+// New SearchBar Component with Predictive Product Results
 // ----------------------
-function SearchBar({onResultSelect}) {
+function SearchBar({onResultSelect, closeSearch}) {
   const [query, setQuery] = useState('');
   const [instantResults, setInstantResults] = useState([]);
   const [error, setError] = useState(null);
 
-  // Debounced fetch from your search endpoint
+  // Debounced fetch from the search endpoint.
   const debouncedFetch = useCallback(
     debounce(async (q) => {
       if (!q) {
@@ -56,27 +62,74 @@ function SearchBar({onResultSelect}) {
       />
       {error && <p className="error">{error}</p>}
       {instantResults.length > 0 && (
-        <ul className="instant-results-dropdown">
-          {instantResults.map((item) => (
-            <li
-              key={item.product_id}
-              onClick={() => {
-                onResultSelect(item);
-                setQuery(item.title); // Optionally update the input with the selected result
-                setInstantResults([]);
-              }}
-            >
-              {item.title}
-            </li>
-          ))}
-        </ul>
+        <div className="predictive-search-result" key="products">
+          <h5>Products</h5>
+          <ul>
+            {instantResults.map((product) => {
+              const productUrl = `/products/${encodeURIComponent(
+                product.handle,
+              )}`;
+              const variant = product?.variants?.nodes?.[0] || {};
+              const image = variant.image;
+              const price = variant.price ?? '0';
+              const parsedPrice = parseFloat(price);
+              return (
+                <li className="predictive-search-result-item" key={product.id}>
+                  <Link
+                    to={productUrl}
+                    onClick={() => {
+                      if (closeSearch) closeSearch();
+                      onResultSelect(product);
+                    }}
+                  >
+                    {image && (
+                      <Image
+                        alt={image.altText ?? ''}
+                        src={image.url}
+                        width={50}
+                        height={50}
+                      />
+                    )}
+                    <div className="search-result-txt">
+                      <div className="search-result-titDesc">
+                        <p className="search-result-title">
+                          {truncateText(product.title, 75)}
+                        </p>
+                        <p className="search-result-description">
+                          {truncateText(product.description, 100)}
+                        </p>
+                        <p className="search-result-description">
+                          SKU: {variant.sku}
+                        </p>
+                      </div>
+                      <small className="search-result-price">
+                        {parsedPrice === 0 ? (
+                          'Call for Price!'
+                        ) : (
+                          <>
+                            <Money data={price} />
+                            {variant.compareAtPrice && (
+                              <span className="search-result-compare-price">
+                                <Money data={variant.compareAtPrice} />
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </small>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );
 }
 
 // ----------------------
-// Existing Main Search Page Component
+// Main SearchTest Component
 // ----------------------
 export async function loader({request}) {
   const url = new URL(request.url);
@@ -99,8 +152,7 @@ export async function loader({request}) {
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
-  // We use `inputQuery` for the text input, and `searchQuery` for the
-  // term we actually fetch with. That way we only fetch on submit.
+  // We use `inputQuery` for the text input, and `searchQuery` for the term we actually fetch with.
   const [inputQuery, setInputQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -113,7 +165,6 @@ export default function SearchTest() {
   const [error, setError] = useState('');
 
   // Local cache object where each key is like "q=watch&page=0&limit=20"
-  // This lives in React state, but is also synced to localStorage so it persists.
   const [cache, setCache] = useState({});
 
   const location = useLocation();
@@ -127,54 +178,43 @@ export default function SearchTest() {
     let urlPage = parseInt(searchParams.get('page') || '0', 10);
     let urlLimit = parseInt(searchParams.get('limit') || '20', 10);
 
-    // Validate
     if (isNaN(urlPage) || urlPage < 0) urlPage = 0;
     if (isNaN(urlLimit) || urlLimit < 1) urlLimit = 20;
 
-    // Attempt to load an existing localStorage cache
     const storedCache = localStorage.getItem('searchCache');
     if (storedCache) {
       try {
         const parsed = JSON.parse(storedCache);
         setCache(parsed);
       } catch {
-        // If parse fails, ignore and use empty object
+        // ignore parse errors
       }
     }
 
-    // Initialize states from URL
-    setInputQuery(urlQuery); // so the input field matches the URL on first load
-    setSearchQuery(urlQuery); // so we can do a fetch if there's a query
+    setInputQuery(urlQuery);
+    setSearchQuery(urlQuery);
     setPage(urlPage);
     setLimit(urlLimit);
-
     setHasMounted(true);
   }, [location.search]);
 
-  // 2) Whenever searchQuery/page/limit change, update the URL + possibly fetch (only if searchQuery is non-empty)
+  // 2) Update URL & fetch when searchQuery/page/limit change
   useEffect(() => {
     if (!hasMounted) return;
 
-    // Build updated URL
     const params = new URLSearchParams();
     if (searchQuery) params.set('q', searchQuery);
     if (page > 0) params.set('page', String(page));
     if (limit !== 20) params.set('limit', String(limit));
-
-    // Update the browser URL (no fetch on each letter, only on submit)
     navigate(`?${params.toString()}`, {replace: true});
 
-    // If searchQuery is empty, clear results
     if (!searchQuery) {
       setResults([]);
       setTotal(0);
       return;
     }
 
-    // Build a cache key like "q=watch&page=0&limit=20"
     const key = params.toString();
-
-    // Check if we have cached data for this exact combination
     if (cache[key]) {
       const {results: cachedResults, total: cachedTotal} = cache[key];
       setResults(cachedResults);
@@ -182,18 +222,17 @@ export default function SearchTest() {
       setLoading(false);
       setError('');
     } else {
-      // Not in cache, fetch from server
       fetchResults(searchQuery, page, limit).catch(() => {});
     }
   }, [searchQuery, page, limit, hasMounted]);
 
-  // 3) Sync the cache object to localStorage whenever it changes
+  // 3) Sync cache to localStorage
   useEffect(() => {
     if (!hasMounted) return;
     localStorage.setItem('searchCache', JSON.stringify(cache));
   }, [cache, hasMounted]);
 
-  // 4) The fetch function: store the result in both React state and local cache
+  // 4) Fetch function to update state and cache
   async function fetchResults(term, pageNum, limitNum) {
     setLoading(true);
     setError('');
@@ -211,7 +250,6 @@ export default function SearchTest() {
       setResults(data.results || []);
       setTotal(data.total || 0);
 
-      // Save into cache
       const key = `q=${term}&page=${pageNum}&limit=${limitNum}`;
       setCache((prev) => ({
         ...prev,
@@ -227,7 +265,7 @@ export default function SearchTest() {
     }
   }
 
-  // 5) Only on submit do we set `searchQuery` from `inputQuery` -> triggers the effect to do a fetch (or load from cache)
+  // 5) On submit, update searchQuery to trigger fetch
   function handleSubmit(e) {
     e.preventDefault();
     setPage(0);
@@ -249,7 +287,7 @@ export default function SearchTest() {
     }
   }
 
-  // Callback for the instant search bar to handle selection.
+  // Callback when an instant search result is selected.
   function handleInstantResultSelect(item) {
     setInputQuery(item.title);
     setSearchQuery(item.title);
@@ -268,7 +306,10 @@ export default function SearchTest() {
       <h1>{initialMessage}</h1>
 
       {/* Render the new instant search bar component */}
-      <SearchBar onResultSelect={handleInstantResultSelect} />
+      <SearchBar
+        onResultSelect={handleInstantResultSelect}
+        closeSearch={() => {}}
+      />
 
       <form onSubmit={handleSubmit} className="search-form">
         <input
