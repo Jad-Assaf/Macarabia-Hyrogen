@@ -102,8 +102,8 @@ export function useOptimizedPredictiveSearch() {
     }
   }, []);
 
-  const {items, total} =
-    fetcher?.data?.result ?? getEmptyPredictiveSearchResult();
+  const {results: items, total} =
+    fetcher?.data ?? getEmptyPredictiveSearchResult();
 
   return {items, total, inputRef, term, fetcher};
 }
