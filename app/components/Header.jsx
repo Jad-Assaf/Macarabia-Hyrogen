@@ -5,7 +5,7 @@ import {Image} from '@shopify/hydrogen-react';
 // Commented out the old SearchFormPredictive import:
 // import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
 // New optimized search component import:
-import {SearchFormOptimized, SEARCH_ENDPOINT} from './SearchFormOptimized';
+import {SearchFormOptimized, SEARCH_ENDPOINT, SearchResultsOptimized} from './SearchFormOptimized';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
 import { trackSearch } from '~/lib/metaPixelEvents'; // Track search events
 
@@ -371,17 +371,17 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                     </div>
                     {isSearchResultsVisible && (
                       <div className="search-results-container">
-                        <SearchResultsPredictive>
+                        <SearchResultsOptimized>
                           {({items, total, term, state, closeSearch}) => {
                             const {products} = items;
                             if (!total) {
                               return (
-                                <SearchResultsPredictive.Empty term={term} />
+                                <SearchResultsOptimized.Empty term={term} />
                               );
                             }
                             return (
                               <>
-                                <SearchResultsPredictive.Products
+                                <SearchResultsOptimized.Products
                                   products={products}
                                   closeSearch={() => {
                                     closeSearch();
@@ -410,7 +410,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                               </>
                             );
                           }}
-                        </SearchResultsPredictive>
+                        </SearchResultsOptimized>
                       </div>
                     )}
                   </div>
