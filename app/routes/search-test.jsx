@@ -251,12 +251,7 @@ export default function SearchTest() {
                   <h4 className="product-title">{product.title}</h4>
                   <div className="product-price">
                     {product.price != null ? (
-                      <Money
-                        data={{
-                          amount: Number(product.price) / 100,
-                          currencyCode: 'USD',
-                        }}
-                      />
+                      <p>${(Number(product.price) / 100).toFixed(2)}</p>
                     ) : (
                       <span>No Price</span>
                     )}
