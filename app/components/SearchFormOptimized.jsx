@@ -47,7 +47,7 @@ export function SearchFormOptimized({children, className}) {
         {method: 'get', action: SEARCH_ENDPOINT},
       );
     }
-  }, [debouncedQuery, fetcher]);
+  }, [debouncedQuery]);
 
   // When the input changes, update local state (do not call fetch immediately)
   function fetchResults(e) {
