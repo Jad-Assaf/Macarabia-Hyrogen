@@ -8,7 +8,7 @@ import {useAside} from './Aside';
 import {trackSearch} from '~/lib/metaPixelEvents';
 
 // NEW: Use your optimized search endpoint
-export const SEARCH_ENDPOINT = '/search-test';
+export const SEARCH_ENDPOINT = 'https://search-app-vert.vercel.app/api/search';
 
 // A custom debounce hook
 function useDebounce(value, delay = 300) {

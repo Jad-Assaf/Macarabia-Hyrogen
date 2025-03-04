@@ -5,8 +5,22 @@ import {Money} from '@shopify/hydrogen';
 import '../styles/SearchPage.css';
 
 // Optional server loader for initial data.
-export async function loader() {
-  return json({initialMessage: 'Search Page'});
+export async function loader({request}) {
+  const url = new URL(request.url);
+  const q = url.searchParams.get('q') || '';
+
+  // Call your external API
+  const externalResponse = await fetch(
+    `https://search-app-vert.vercel.app/api/search?q=${encodeURIComponent(q)}`,
+  );
+  const data = await externalResponse.json();
+
+  return json({
+    result: {
+      items: data.results || [],
+      total: data.total || 0,
+    },
+  });
 }
 
 export default function SearchTest() {
