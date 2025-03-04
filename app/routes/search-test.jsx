@@ -11,22 +11,28 @@ export async function loader() {
 
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
-  const location = useLocation();
-  const navigate = useNavigate();
 
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  // We use `inputQuery` for the text input, and `searchQuery` for the
+  // term we actually fetch with. That way we only fetch on submit.
+  const [inputQuery, setInputQuery] = useState('');
+
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(20);
+
+  // For data/results
+  const [results, setResults] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Local cache object where each key is like "q=samsung&page=0&limit=20"
+  // Local cache object where each key is like "q=watch&page=0&limit=20"
   // This lives in React state, but is also synced to localStorage so it persists.
   const [cache, setCache] = useState({});
 
-  // Track if we've done our "on mount" logic
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [hasMounted, setHasMounted] = useState(false);
 
   // -----------------------------
@@ -54,7 +60,8 @@ export default function SearchTest() {
     }
 
     // Initialize states from URL
-    setQuery(urlQuery);
+    setInputQuery(urlQuery); // so the input field matches the URL on first load
+    setSearchQuery(urlQuery); // so we can do a fetch if there's a query
     setPage(urlPage);
     setLimit(urlLimit);
 
@@ -62,43 +69,44 @@ export default function SearchTest() {
   }, [location.search]);
 
   // -----------------------------
-  // 2) Whenever query/page/limit changes, update the URL
-  //    Then see if we have a cached result for that combination.
+  // 2) Whenever searchQuery/page/limit change, update the URL + possibly fetch
+  //    (But only if we have a non-empty searchQuery)
   // -----------------------------
   useEffect(() => {
     if (!hasMounted) return;
 
-    // Update the URL to reflect the new state
+    // Build updated URL
     const params = new URLSearchParams();
-    if (query) params.set('q', query);
+    if (searchQuery) params.set('q', searchQuery);
     if (page > 0) params.set('page', String(page));
     if (limit !== 20) params.set('limit', String(limit));
 
+    // Update the browser URL (no fetch on each letter, only on submit)
     navigate(`?${params.toString()}`, {replace: true});
 
-    // If there's no query, clear results
-    if (!query) {
+    // If searchQuery is empty, clear results
+    if (!searchQuery) {
       setResults([]);
       setTotal(0);
       return;
     }
 
-    // Build a cache key like "q=samsung&page=0&limit=20"
-    const key = params.toString(); // i.e. "q=samsung&page=0&limit=20"
+    // Build a cache key like "q=watch&page=0&limit=20"
+    const key = params.toString();
 
-    // Check if we have cached data for this key
+    // Check if we have cached data for this exact combination
     if (cache[key]) {
-      // If found, use it immediately to avoid re-fetch
+      // Use the cache immediately, skip network
       const {results: cachedResults, total: cachedTotal} = cache[key];
       setResults(cachedResults);
       setTotal(cachedTotal);
       setLoading(false);
       setError('');
     } else {
-      // If not in cache, fetch from server
-      fetchResults(query, page, limit).catch(() => {});
+      // Not in cache, fetch from server
+      fetchResults(searchQuery, page, limit).catch(() => {});
     }
-  }, [query, page, limit, hasMounted]);
+  }, [searchQuery, page, limit, hasMounted]);
 
   // -----------------------------
   // 3) Sync the cache object to localStorage whenever it changes
@@ -109,15 +117,14 @@ export default function SearchTest() {
   }, [cache, hasMounted]);
 
   // -----------------------------
-  // 4) The fetch function: store result in both React state and local cache
+  // 4) The fetch function: store the result in both React state and local cache
   // -----------------------------
-  async function fetchResults(searchTerm, pageNum, limitNum) {
+  async function fetchResults(term, pageNum, limitNum) {
     setLoading(true);
     setError('');
-
     try {
       const url = new URL('https://search-app-vert.vercel.app/api/search');
-      url.searchParams.set('q', searchTerm);
+      url.searchParams.set('q', term);
       url.searchParams.set('page', pageNum);
       url.searchParams.set('limit', limitNum);
 
@@ -129,8 +136,8 @@ export default function SearchTest() {
       setResults(data.results || []);
       setTotal(data.total || 0);
 
-      // Save to cache
-      const key = `q=${searchTerm}&page=${pageNum}&limit=${limitNum}`;
+      // Save into cache
+      const key = `q=${term}&page=${pageNum}&limit=${limitNum}`;
       setCache((prev) => ({
         ...prev,
         [key]: {
@@ -146,7 +153,8 @@ export default function SearchTest() {
   }
 
   // -----------------------------
-  // 5) Handlers for user input
+  // 5) Only on submit do we set `searchQuery` from `inputQuery`
+  //    -> triggers the effect to do a fetch (or load from cache)
   // -----------------------------
   function handleSubmit(e) {
     e.preventDefault();
@@ -154,8 +162,9 @@ export default function SearchTest() {
     setResults([]);
     setTotal(0);
     setError('');
-    // Setting query triggers the effect which updates URL & fetch if needed
-    setQuery(query.trim());
+
+    // Move the typed input into searchQuery, which triggers the effect.
+    setSearchQuery(inputQuery.trim());
   }
 
   function handleNextPage() {
@@ -170,6 +179,7 @@ export default function SearchTest() {
     }
   }
 
+  // Transform results for rendering
   const edges = results.map((product) => ({
     node: {
       ...product,
@@ -184,8 +194,8 @@ export default function SearchTest() {
         <input
           type="text"
           placeholder="Search..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={inputQuery}
+          onChange={(e) => setInputQuery(e.target.value)}
           className="search-input"
         />
         <button type="submit" className="search-button">
@@ -196,6 +206,7 @@ export default function SearchTest() {
           onChange={(e) => {
             setLimit(Number(e.target.value));
             setPage(0);
+            // If desired, we can also reset results or leave them
             setResults([]);
             setTotal(0);
           }}
