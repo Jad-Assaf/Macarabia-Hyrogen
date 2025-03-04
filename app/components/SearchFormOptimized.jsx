@@ -1,14 +1,24 @@
-import {Link, useFetcher} from '@remix-run/react';
-import {Image, Money} from '@shopify/hydrogen';
-import React, {useRef, useEffect} from 'react';
+import {useFetcher} from '@remix-run/react';
+import React, {useRef, useEffect, useState} from 'react';
 import {
   getEmptyPredictiveSearchResult,
   urlWithTrackingParams,
 } from '~/lib/search';
 import {useAside} from './Aside';
+import {trackSearch} from '~/lib/metaPixelEvents';
 
 // NEW: Use your optimized search endpoint
 export const SEARCH_ENDPOINT = '/search-test';
+
+// A custom debounce hook
+function useDebounce(value, delay = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 /**
  * Component that renders predictive search results using the optimized search.
@@ -16,7 +26,7 @@ export const SEARCH_ENDPOINT = '/search-test';
  *
  * Usage:
  *  <SearchFormOptimized className="header-search">
- *    {({inputRef, fetchResults, goToSearch, fetcher}) => { ...same HTML... }}
+ *    {({inputRef, fetchResults, goToSearch, fetcher}) => { ...same HTML structure... }}
  *  </SearchFormOptimized>
  */
 export function SearchFormOptimized({children, className}) {
@@ -24,13 +34,24 @@ export function SearchFormOptimized({children, className}) {
   const fetcher = useFetcher({key: 'optimizedSearch'});
   const term = useRef('');
   const inputRef = useRef(null);
+  const [query, setQuery] = useState('');
+  // Use a debounced version of the query so that API calls are delayed
+  const debouncedQuery = useDebounce(query, 300);
 
-  // When the input changes, submit to the optimized search endpoint
+  // When debouncedQuery changes (and is not empty), submit it to the optimized search endpoint.
+  useEffect(() => {
+    if (debouncedQuery.trim().length > 0) {
+      term.current = debouncedQuery;
+      fetcher.submit(
+        {q: debouncedQuery},
+        {method: 'get', action: SEARCH_ENDPOINT},
+      );
+    }
+  }, [debouncedQuery, fetcher]);
+
+  // When the input changes, update local state (do not call fetch immediately)
   function fetchResults(e) {
-    const value = e.target.value;
-    term.current = value;
-    // Submit query using your optimized endpoint
-    fetcher.submit({q: value}, {method: 'get', action: SEARCH_ENDPOINT});
+    setQuery(e.target.value);
   }
 
   // Called when the user presses Enter or clicks Search.
@@ -38,15 +59,16 @@ export function SearchFormOptimized({children, className}) {
     if (inputRef.current) {
       const rawTerm = inputRef.current.value.trim();
       if (rawTerm) {
-        // (Optional) Track the search event
-        // trackSearch(rawTerm);  // Uncomment if tracking is desired
-        const queryParam = rawTerm.replace(/\s+/g, '-');
-        window.location.href = `${SEARCH_ENDPOINT}?q=${queryParam}`;
+        trackSearch(rawTerm);
+        // Do NOT replace spaces with hyphens; preserve the original query.
+        window.location.href = `${SEARCH_ENDPOINT}?q=${encodeURIComponent(
+          rawTerm,
+        )}`;
       }
     }
   }
 
-  // Update term when the fetcher is loading
+  // Update term when the fetcher is loading (for instant results display)
   useEffect(() => {
     if (fetcher.state === 'loading') {
       term.current = String(fetcher.formData?.get('q') || '');
@@ -62,8 +84,8 @@ export function SearchFormOptimized({children, className}) {
 }
 
 /**
- * The hook below is nearly identical to the original usePredictiveSearch hook.
- * It returns the optimized search results from the fetcher as well as inputRef and term.
+ * The hook below is similar to the original usePredictiveSearch hook,
+ * but uses our optimized fetcher.
  */
 export function useOptimizedPredictiveSearch() {
   const fetcher = useFetcher({key: 'optimizedSearch'});
@@ -97,7 +119,6 @@ function truncateText(text, maxLength) {
 
 export function SearchResultsOptimized({children}) {
   const aside = useAside();
-  // Use the optimized hook instead of usePredictiveSearch
   const {term, inputRef, fetcher, total, items} =
     useOptimizedPredictiveSearch();
 
@@ -130,12 +151,8 @@ SearchResultsOptimized.Products = SearchResultsOptimizedProducts;
 SearchResultsOptimized.Queries = SearchResultsOptimizedQueries;
 SearchResultsOptimized.Empty = SearchResultsOptimizedEmpty;
 
-/**
- * @param {PartialPredictiveSearchResult<'articles'>}
- */
 function SearchResultsOptimizedArticles({term, articles, closeSearch}) {
   if (!articles.length) return null;
-
   return (
     <div className="predictive-search-result" key="articles">
       <h5>Articles</h5>
@@ -169,12 +186,8 @@ function SearchResultsOptimizedArticles({term, articles, closeSearch}) {
   );
 }
 
-/**
- * @param {PartialPredictiveSearchResult<'collections'>}
- */
 function SearchResultsOptimizedCollections({term, collections, closeSearch}) {
   if (!collections.length) return null;
-
   return (
     <div className="predictive-search-result" key="collections">
       <h5>Collections</h5>
@@ -185,7 +198,6 @@ function SearchResultsOptimizedCollections({term, collections, closeSearch}) {
             trackingParams: collection.trackingParameters,
             term: term.current,
           });
-
           return (
             <li className="predictive-search-result-item" key={collection.id}>
               <Link onClick={closeSearch} to={colllectionUrl}>
@@ -209,12 +221,8 @@ function SearchResultsOptimizedCollections({term, collections, closeSearch}) {
   );
 }
 
-/**
- * @param {PartialPredictiveSearchResult<'pages'>}
- */
 function SearchResultsOptimizedPages({term, pages, closeSearch}) {
   if (!pages.length) return null;
-
   return (
     <div className="predictive-search-result" key="pages">
       <h5>Pages</h5>
@@ -225,7 +233,6 @@ function SearchResultsOptimizedPages({term, pages, closeSearch}) {
             trackingParams: page.trackingParameters,
             term: term.current,
           });
-
           return (
             <li className="predictive-search-result-item" key={page.id}>
               <Link onClick={closeSearch} to={pageUrl}>
@@ -241,12 +248,8 @@ function SearchResultsOptimizedPages({term, pages, closeSearch}) {
   );
 }
 
-/**
- * @param {PartialPredictiveSearchResult<'products'>}
- */
 function SearchResultsOptimizedProducts({term, products, closeSearch}) {
   if (!products.length) return null;
-
   return (
     <div className="predictive-search-result" key="products">
       <h5>Products</h5>
@@ -257,7 +260,6 @@ function SearchResultsOptimizedProducts({term, products, closeSearch}) {
           const image = variant.image;
           const price = variant.price ?? '0';
           const parsedPrice = parseFloat(price);
-
           return (
             <li className="predictive-search-result-item" key={product.id}>
               <Link to={productUrl} onClick={closeSearch}>
@@ -305,14 +307,8 @@ function SearchResultsOptimizedProducts({term, products, closeSearch}) {
   );
 }
 
-/**
- * @param {PartialPredictiveSearchResult<'queries', never> & {
- *   queriesDatalistId: string;
- * }}
- */
 function SearchResultsOptimizedQueries({queries, queriesDatalistId}) {
   if (!queries.length) return null;
-
   return (
     <datalist id={queriesDatalistId}>
       {queries.map((suggestion) => {
@@ -323,16 +319,10 @@ function SearchResultsOptimizedQueries({queries, queriesDatalistId}) {
   );
 }
 
-/**
- * @param {{
- *   term: React.MutableRefObject<string>;
- * }}
- */
 function SearchResultsOptimizedEmpty({term}) {
   if (!term.current) {
     return null;
   }
-
   return (
     <p className="no-results">
       No results found for <q>{term.current}</q>
