@@ -5,27 +5,32 @@ import {Money} from '@shopify/hydrogen';
 import {debounce} from 'lodash'; // Ensure lodash is installed: npm install lodash
 import '../styles/SearchPage.css';
 
-// New SearchBar component with debounce and suggestions dropdown.
-function SearchBar({onSuggestionSelect}) {
+// ----------------------
+// New Instant Search Bar Component
+// ----------------------
+function SearchBar({onResultSelect}) {
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
+  const [instantResults, setInstantResults] = useState([]);
   const [error, setError] = useState(null);
 
-  const debouncedFetchSuggestions = useCallback(
+  // Debounced fetch from your search endpoint
+  const debouncedFetch = useCallback(
     debounce(async (q) => {
       if (!q) {
-        setSuggestions([]);
+        setInstantResults([]);
         return;
       }
       try {
         const response = await fetch(
-          `/api/search-suggestions?q=${encodeURIComponent(q)}`,
+          `https://search-app-vert.vercel.app/api/search?q=${encodeURIComponent(
+            q,
+          )}`,
         );
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
         }
         const data = await response.json();
-        setSuggestions(data.results || []);
+        setInstantResults(data.results || []);
       } catch (err) {
         setError(err.message);
       }
@@ -34,15 +39,15 @@ function SearchBar({onSuggestionSelect}) {
   );
 
   useEffect(() => {
-    debouncedFetchSuggestions(query);
-    return () => debouncedFetchSuggestions.cancel();
-  }, [query, debouncedFetchSuggestions]);
+    debouncedFetch(query);
+    return () => debouncedFetch.cancel();
+  }, [query, debouncedFetch]);
 
   return (
-    <div className="search-bar">
+    <div className="instant-search-bar">
       <input
         type="text"
-        placeholder="Type to search..."
+        placeholder="Type to search instantly..."
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -50,15 +55,15 @@ function SearchBar({onSuggestionSelect}) {
         }}
       />
       {error && <p className="error">{error}</p>}
-      {suggestions.length > 0 && (
-        <ul className="suggestions-dropdown">
-          {suggestions.map((item) => (
+      {instantResults.length > 0 && (
+        <ul className="instant-results-dropdown">
+          {instantResults.map((item) => (
             <li
-              key={item.id}
+              key={item.product_id}
               onClick={() => {
-                onSuggestionSelect(item);
-                setQuery(item.title);
-                setSuggestions([]);
+                onResultSelect(item);
+                setQuery(item.title); // Optionally update the input with the selected result
+                setInstantResults([]);
               }}
             >
               {item.title}
@@ -70,7 +75,9 @@ function SearchBar({onSuggestionSelect}) {
   );
 }
 
-// Optional server loader for initial data.
+// ----------------------
+// Existing Main Search Page Component
+// ----------------------
 export async function loader({request}) {
   const url = new URL(request.url);
   const q = url.searchParams.get('q') || '';
@@ -92,7 +99,8 @@ export async function loader({request}) {
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
-  // We use `inputQuery` for the text input, and `searchQuery` for the term we actually fetch with.
+  // We use `inputQuery` for the text input, and `searchQuery` for the
+  // term we actually fetch with. That way we only fetch on submit.
   const [inputQuery, setInputQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -112,9 +120,7 @@ export default function SearchTest() {
   const navigate = useNavigate();
   const [hasMounted, setHasMounted] = useState(false);
 
-  // -----------------------------
   // 1) On mount, parse URL & load cache from localStorage
-  // -----------------------------
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     let urlQuery = searchParams.get('q') || '';
@@ -145,10 +151,7 @@ export default function SearchTest() {
     setHasMounted(true);
   }, [location.search]);
 
-  // -----------------------------
-  // 2) Whenever searchQuery/page/limit change, update the URL + possibly fetch
-  //    (But only if we have a non-empty searchQuery)
-  // -----------------------------
+  // 2) Whenever searchQuery/page/limit change, update the URL + possibly fetch (only if searchQuery is non-empty)
   useEffect(() => {
     if (!hasMounted) return;
 
@@ -173,7 +176,6 @@ export default function SearchTest() {
 
     // Check if we have cached data for this exact combination
     if (cache[key]) {
-      // Use the cache immediately, skip network
       const {results: cachedResults, total: cachedTotal} = cache[key];
       setResults(cachedResults);
       setTotal(cachedTotal);
@@ -185,17 +187,13 @@ export default function SearchTest() {
     }
   }, [searchQuery, page, limit, hasMounted]);
 
-  // -----------------------------
   // 3) Sync the cache object to localStorage whenever it changes
-  // -----------------------------
   useEffect(() => {
     if (!hasMounted) return;
     localStorage.setItem('searchCache', JSON.stringify(cache));
   }, [cache, hasMounted]);
 
-  // -----------------------------
   // 4) The fetch function: store the result in both React state and local cache
-  // -----------------------------
   async function fetchResults(term, pageNum, limitNum) {
     setLoading(true);
     setError('');
@@ -229,24 +227,14 @@ export default function SearchTest() {
     }
   }
 
-  // -----------------------------
-  // 5) Only on submit do we set `searchQuery` from `inputQuery`
-  //    -> triggers the effect to do a fetch (or load from cache)
-  // -----------------------------
+  // 5) Only on submit do we set `searchQuery` from `inputQuery` -> triggers the effect to do a fetch (or load from cache)
   function handleSubmit(e) {
     e.preventDefault();
     setPage(0);
     setResults([]);
     setTotal(0);
     setError('');
-    // Move the typed input into searchQuery, which triggers the effect.
     setSearchQuery(inputQuery.trim());
-  }
-
-  // Callback for suggestion selection from the SearchBar component.
-  function handleSuggestionSelect(item) {
-    setInputQuery(item.title);
-    setSearchQuery(item.title);
   }
 
   function handleNextPage() {
@@ -261,6 +249,12 @@ export default function SearchTest() {
     }
   }
 
+  // Callback for the instant search bar to handle selection.
+  function handleInstantResultSelect(item) {
+    setInputQuery(item.title);
+    setSearchQuery(item.title);
+  }
+
   // Transform results for rendering
   const edges = results.map((product) => ({
     node: {
@@ -273,8 +267,8 @@ export default function SearchTest() {
     <div className="search">
       <h1>{initialMessage}</h1>
 
-      {/* Render the new SearchBar component above the main search form */}
-      <SearchBar onSuggestionSelect={handleSuggestionSelect} />
+      {/* Render the new instant search bar component */}
+      <SearchBar onResultSelect={handleInstantResultSelect} />
 
       <form onSubmit={handleSubmit} className="search-form">
         <input
@@ -292,7 +286,6 @@ export default function SearchTest() {
           onChange={(e) => {
             setLimit(Number(e.target.value));
             setPage(0);
-            // Optionally reset results
             setResults([]);
             setTotal(0);
           }}

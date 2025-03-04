@@ -1,27 +1,30 @@
+// SearchBar.jsx
 import React, {useState, useEffect, useCallback} from 'react';
-import {debounce} from 'lodash'; // Make sure to install lodash: npm install lodash
+import {debounce} from 'lodash'; // Ensure lodash is installed: npm install lodash
 
-const SearchBar = ({onSuggestionSelect}) => {
+const SearchBar = ({onResultSelect}) => {
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
+  const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
 
-  // Debounced search function
-  const debouncedFetchSuggestions = useCallback(
+  // Debounced function to fetch results from the search endpoint
+  const debouncedFetchResults = useCallback(
     debounce(async (q) => {
       if (!q) {
-        setSuggestions([]);
+        setResults([]);
         return;
       }
       try {
         const response = await fetch(
-          `/api/search-suggestions?q=${encodeURIComponent(q)}`,
+          `https://search-app-vert.vercel.app/api/search?q=${encodeURIComponent(
+            q,
+          )}`,
         );
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
         }
         const data = await response.json();
-        setSuggestions(data.results || []);
+        setResults(data.results || []);
       } catch (err) {
         setError(err.message);
       }
@@ -30,14 +33,12 @@ const SearchBar = ({onSuggestionSelect}) => {
   );
 
   useEffect(() => {
-    debouncedFetchSuggestions(query);
-
-    // Cleanup to cancel any pending debounced calls when the component unmounts or query changes
-    return () => debouncedFetchSuggestions.cancel();
-  }, [query, debouncedFetchSuggestions]);
+    debouncedFetchResults(query);
+    return () => debouncedFetchResults.cancel();
+  }, [query, debouncedFetchResults]);
 
   return (
-    <div className="search-bar">
+    <div className="instant-search-bar">
       <input
         type="text"
         placeholder="Type to search..."
@@ -48,15 +49,15 @@ const SearchBar = ({onSuggestionSelect}) => {
         }}
       />
       {error && <p className="error">{error}</p>}
-      {suggestions.length > 0 && (
-        <ul className="suggestions-dropdown">
-          {suggestions.map((item) => (
+      {results.length > 0 && (
+        <ul className="results-dropdown">
+          {results.map((item) => (
             <li
-              key={item.id}
+              key={item.product_id}
               onClick={() => {
-                onSuggestionSelect(item);
-                setQuery(item.title); // Optionally set input value on select
-                setSuggestions([]);
+                onResultSelect(item);
+                setQuery(item.title); // Optionally update input with the selected result title
+                setResults([]);
               }}
             >
               {item.title}
