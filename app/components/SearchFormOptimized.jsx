@@ -8,7 +8,7 @@ import {
 import {useAside} from './Aside';
 
 // NEW: Use your optimized search endpoint
-export const SEARCH_ENDPOINT = '/api/optimized-search';
+export const SEARCH_ENDPOINT = '/search-test';
 
 /**
  * Component that renders predictive search results using the optimized search.
