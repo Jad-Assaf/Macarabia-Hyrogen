@@ -19,7 +19,7 @@ function SearchBar({onResultSelect, closeSearch}) {
   const [instantResults, setInstantResults] = useState([]);
   const [error, setError] = useState(null);
 
-  // Debounced fetch from the search endpoint.
+  // Debounced fetch from the search endpoint with a limit of 10 products.
   const debouncedFetch = useCallback(
     debounce(async (q) => {
       if (!q) {
@@ -30,7 +30,7 @@ function SearchBar({onResultSelect, closeSearch}) {
         const response = await fetch(
           `https://search-app-vert.vercel.app/api/search?q=${encodeURIComponent(
             q,
-          )}`,
+          )}&limit=10`,
         );
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
@@ -65,16 +65,15 @@ function SearchBar({onResultSelect, closeSearch}) {
         <div className="predictive-search-result" key="products">
           <h5>Products</h5>
           <ul>
-            {instantResults.map((product) => {
+            {instantResults.slice(0, 10).map((product) => {
               const productUrl = `/products/${encodeURIComponent(
                 product.handle,
               )}`;
-              const variant = product?.variants?.nodes?.[0] || {};
-              const image = variant.image;
-              const price = variant.price ?? '0';
-              const parsedPrice = parseFloat(price);
               return (
-                <li className="predictive-search-result-item" key={product.id}>
+                <li
+                  className="predictive-search-result-item"
+                  key={product.product_id}
+                >
                   <Link
                     to={productUrl}
                     onClick={() => {
@@ -82,10 +81,10 @@ function SearchBar({onResultSelect, closeSearch}) {
                       onResultSelect(product);
                     }}
                   >
-                    {image && (
+                    {product.image_url && (
                       <Image
-                        alt={image.altText ?? ''}
-                        src={image.url}
+                        alt={product.title}
+                        src={product.image_url}
                         width={50}
                         height={50}
                       />
@@ -98,22 +97,17 @@ function SearchBar({onResultSelect, closeSearch}) {
                         <p className="search-result-description">
                           {truncateText(product.description, 100)}
                         </p>
-                        <p className="search-result-description">
-                          SKU: {variant.sku}
-                        </p>
+                        {product.sku && (
+                          <p className="search-result-description">
+                            SKU: {product.sku}
+                          </p>
+                        )}
                       </div>
                       <small className="search-result-price">
-                        {parsedPrice === 0 ? (
+                        {Number(product.price) === 0 ? (
                           'Call for Price!'
                         ) : (
-                          <>
-                            <Money data={price} />
-                            {variant.compareAtPrice && (
-                              <span className="search-result-compare-price">
-                                <Money data={variant.compareAtPrice} />
-                              </span>
-                            )}
-                          </>
+                          <Money data={product.price} />
                         )}
                       </small>
                     </div>
@@ -152,7 +146,8 @@ export async function loader({request}) {
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
-  // We use `inputQuery` for the text input, and `searchQuery` for the term we actually fetch with.
+  // We use `inputQuery` for the text input, and `searchQuery` for the
+  // term we actually fetch with.
   const [inputQuery, setInputQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
