@@ -107,7 +107,7 @@ function SearchBar({onResultSelect, closeSearch}) {
                         {Number(product.price) === 0 ? (
                           'Call for Price!'
                         ) : (
-                          <Money data={product.price} />
+                          <p>${(Number(product.price) / 100).toFixed(2)}</p>
                         )}
                       </small>
                     </div>
