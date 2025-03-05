@@ -29,8 +29,7 @@ export async function loader({request}) {
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
-  // We use `inputQuery` for the text input, and `searchQuery` for the
-  // term we actually fetch with.
+  // We use `inputQuery` for the text input, and `searchQuery` for the term we actually fetch with.
   const [inputQuery, setInputQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -210,57 +209,83 @@ export default function SearchTest() {
         </select>
       </form>
 
-      {loading && <p>Loading...</p>}
-      {error && <p className="error">{error}</p>}
-
-      {edges.length > 0 && (
+      {loading ? (
+        <div className="search-results-grid">
+          {Array.from({length: 10}).map((_, i) => (
+            <div key={i} className="product-card skeleton">
+              <div
+                className="product-slideshow skeleton"
+                style={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  width: '180px',
+                  height: '180px',
+                }}
+              ></div>
+              <h4
+                className="product-title skeleton"
+                style={{width: '70%', height: '20px', margin: '10px 0'}}
+              ></h4>
+              <div
+                className="product-price skeleton"
+                style={{width: '30%', height: '20px'}}
+              ></div>
+            </div>
+          ))}
+        </div>
+      ) : (
         <>
-          <p>
-            Showing {edges.length} results on page {page + 1} of{' '}
-            {Math.ceil(total / limit)} (total {total})
-          </p>
-          <div className="search-results-grid">
-            {edges.map(({node: product}) => (
-              <div key={product.id} className="product-card">
-                <Link to={`/products/${encodeURIComponent(product.handle)}`}>
-                  {product.image_url && (
-                    <div
-                      className="product-slideshow"
-                      style={{position: 'relative', overflow: 'hidden'}}
-                    >
-                      <img
-                        src={product.image_url}
-                        alt={product.title}
-                        className="product-slideshow-image"
-                        style={{
-                          width: '180px',
-                          height: '180px',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    </div>
-                  )}
-                  <h4 className="product-title">{product.title}</h4>
-                  <div className="product-price">
-                    {product.price != null ? (
-                      <p>${(Number(product.price) / 100).toFixed(2)}</p>
-                    ) : (
-                      <span>No Price</span>
-                    )}
+          {error && <p className="error">{error}</p>}
+          {edges.length > 0 && (
+            <>
+              <p>
+                Showing {edges.length} results on page {page + 1} of{' '}
+                {Math.ceil(total / limit)} (total {total})
+              </p>
+              <div className="search-results-grid">
+                {edges.map(({node: product}) => (
+                  <div key={product.id} className="product-card">
+                    <Link to={`/products/${encodeURIComponent(product.handle)}`}>
+                      {product.image_url && (
+                        <div
+                          className="product-slideshow"
+                          style={{position: 'relative', overflow: 'hidden'}}
+                        >
+                          <img
+                            src={product.image_url}
+                            alt={product.title}
+                            className="product-slideshow-image"
+                            style={{
+                              width: '180px',
+                              height: '180px',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        </div>
+                      )}
+                      <h4 className="product-title">{product.title}</h4>
+                      <div className="product-price">
+                        {product.price != null ? (
+                          <p>${(Number(product.price) / 100).toFixed(2)}</p>
+                        ) : (
+                          <span>No Price</span>
+                        )}
+                      </div>
+                    </Link>
                   </div>
-                </Link>
+                ))}
               </div>
-            ))}
-          </div>
-          <button onClick={handlePrevPage} disabled={page <= 0}>
-            Previous
-          </button>
-          <button
-            onClick={handleNextPage}
-            disabled={(page + 1) * limit >= total}
-          >
-            Next
-          </button>
+              <button onClick={handlePrevPage} disabled={page <= 0}>
+                Previous
+              </button>
+              <button
+                onClick={handleNextPage}
+                disabled={(page + 1) * limit >= total}
+              >
+                Next
+              </button>
+            </>
+          )}
         </>
       )}
     </div>
