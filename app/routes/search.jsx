@@ -211,7 +211,7 @@ export default function SearchTest() {
 
       {loading ? (
         <div className="search-results-grid">
-          {Array.from({length: 10}).map((_, i) => (
+          {Array.from({length: 20}).map((_, i) => (
             <div key={i} className="product-card skeleton">
               <div
                 className="product-slideshow skeleton"
@@ -238,14 +238,16 @@ export default function SearchTest() {
           {error && <p className="error">{error}</p>}
           {edges.length > 0 && (
             <>
-              <p>
+              <p className="results-count">
                 Showing {edges.length} results on page {page + 1} of{' '}
                 {Math.ceil(total / limit)} (total {total})
               </p>
               <div className="search-results-grid">
                 {edges.map(({node: product}) => (
                   <div key={product.id} className="product-card">
-                    <Link to={`/products/${encodeURIComponent(product.handle)}`}>
+                    <Link
+                      to={`/products/${encodeURIComponent(product.handle)}`}
+                    >
                       {product.image_url && (
                         <div
                           className="product-slideshow"
@@ -275,15 +277,20 @@ export default function SearchTest() {
                   </div>
                 ))}
               </div>
-              <button onClick={handlePrevPage} disabled={page <= 0}>
-                Previous
-              </button>
-              <button
-                onClick={handleNextPage}
-                disabled={(page + 1) * limit >= total}
-              >
-                Next
-              </button>
+              <div className="results-pages">
+                <button onClick={handlePrevPage} disabled={page <= 0}>
+                  Previous
+                </button>
+                <span>
+                  Page {page + 1} of {Math.ceil(total / limit)}
+                </span>
+                <button
+                  onClick={handleNextPage}
+                  disabled={(page + 1) * limit >= total}
+                >
+                  Next
+                </button>
+              </div>
             </>
           )}
         </>

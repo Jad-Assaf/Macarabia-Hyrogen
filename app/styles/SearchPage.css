@@ -5,6 +5,44 @@
     align-items: center;
     max-width: 1500px;
     margin: 50px auto 100px;
+    gap: 15px;
+}
+
+.search-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.search-form {
+    border-radius: 30px;
+    border: 1px solid #232323;
+    font-size: 1rem;
+    margin-bottom: .5rem;
+    margin-top: .25rem;
+    padding: .5rem;
+    width: 300px;
+}
+
+.results-count {
+    color: grey;
+    font-style: italic;
+    font-size: 14px;
+    font-weight: 300;
+}
+
+.results-pages{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+}
+
+.search-select {
+    height: 35px;
+    border-radius: 30px;
+    padding: 5px;
 }
 
 .filter-sort-container {
@@ -204,8 +242,7 @@ select#sort-select {
     margin-bottom: 10px;
 }
 
-.search-results-grid .product-card {
-}
+.search-results-grid .product-card {}
 
 @keyframes slideDown {
     from {
