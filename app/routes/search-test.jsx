@@ -12,7 +12,8 @@ function truncateText(text, maxLength) {
 }
 
 // ----------------------
-// SearchBar Component with Predictive Product Results
+// New SearchBar Component with Predictive Product Results
+// (HTML structure & class names match the predictive search in your Header component)
 // ----------------------
 function SearchBar({onResultSelect, closeSearch}) {
   const [query, setQuery] = useState('');
@@ -81,9 +82,33 @@ function SearchBar({onResultSelect, closeSearch}) {
     setSearchResultsVisible(false);
   };
 
-  // Clears the search input and results.
-  const clearSearch = () => {
+  // Handle Enter key to trigger search.
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent default form submission
+      handleSearch();
+    }
+  };
+
+  // Trigger search (here you can also add tracking or redirection logic)
+  const handleSearch = () => {
+    if (inputRef.current) {
+      const rawTerm = inputRef.current.value.trim();
+      const term = rawTerm.replace(/\s+/g, '-');
+      if (rawTerm) {
+        // Optionally: trackSearch(rawTerm);
+        window.location.href = `/search?q=${term}`;
+      }
+    }
+  };
+
+  // Clear the search input and reset results.
+  const handleClearSearch = () => {
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
     setQuery('');
+    setSearchResultsVisible(false);
     setInstantResults([]);
   };
 
@@ -107,87 +132,107 @@ function SearchBar({onResultSelect, closeSearch}) {
         onClick={handleCloseSearch}
       ></div>
 
-      {/* Main Search Bar */}
-      <div ref={searchContainerRef} className="instant-search-bar">
+      {/* Main Search Form */}
+      <div ref={searchContainerRef} className="main-search">
         <div className="search-container">
           <input
             ref={inputRef}
             type="text"
-            placeholder="Type to search instantly..."
+            placeholder="Search products"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setError(null);
+              setSearchResultsVisible(true);
             }}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="search-bar"
           />
-          {query && (
+          {inputRef.current?.value && (
             <button
               className="clear-search-button"
-              onClick={clearSearch}
+              onClick={handleClearSearch}
               aria-label="Clear search"
             >
-              Clear
+              <svg
+                fill="#000"
+                height="12px"
+                width="12px"
+                version="1.1"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 460.775 460.775"
+              >
+                <path d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55 c-4.127,0-8.08,1.639-10.993,4.55l-171.138,171.14L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55 c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128L4.575,401.505 c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55c4.127,0,8.08-1.639,10.994-4.55l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"></path>
+              </svg>
             </button>
           )}
+          <button
+            onClick={handleSearch}
+            className="search-bar-submit"
+            aria-label="Search"
+          >
+            <SearchIcon />
+          </button>
         </div>
-        {error && <p className="error">{error}</p>}
         {isSearchResultsVisible && instantResults.length > 0 && (
-          <div className="predictive-search-result" key="products">
-            <h5>Products</h5>
-            <ul>
-              {instantResults.slice(0, 10).map((product) => {
-                const productUrl = `/products/${encodeURIComponent(
-                  product.handle,
-                )}`;
-                return (
-                  <li
-                    className="predictive-search-result-item"
-                    key={product.product_id}
-                  >
-                    <Link
-                      to={productUrl}
-                      onClick={() => {
-                        if (closeSearch) closeSearch();
-                        onResultSelect(product);
-                      }}
+          <div className="search-results-container">
+            <div className="predictive-search-result" key="products">
+              <h5>Products</h5>
+              <ul>
+                {instantResults.slice(0, 10).map((product) => {
+                  const productUrl = `/products/${encodeURIComponent(
+                    product.handle,
+                  )}`;
+                  return (
+                    <li
+                      className="predictive-search-result-item"
+                      key={product.product_id}
                     >
-                      {product.image_url && (
-                        <Image
-                          alt={product.title}
-                          src={product.image_url}
-                          width={50}
-                          height={50}
-                        />
-                      )}
-                      <div className="search-result-txt">
-                        <div className="search-result-titDesc">
-                          <p className="search-result-title">
-                            {truncateText(product.title, 75)}
-                          </p>
-                          <p className="search-result-description">
-                            {truncateText(product.description, 100)}
-                          </p>
-                          {product.sku && (
-                            <p className="search-result-description">
-                              SKU: {product.sku}
+                      <Link
+                        to={productUrl}
+                        onClick={() => {
+                          if (closeSearch) closeSearch();
+                          onResultSelect(product);
+                        }}
+                      >
+                        {product.image_url && (
+                          <Image
+                            alt={product.title}
+                            src={product.image_url}
+                            width={50}
+                            height={50}
+                          />
+                        )}
+                        <div className="search-result-txt">
+                          <div className="search-result-titDesc">
+                            <p className="search-result-title">
+                              {truncateText(product.title, 75)}
                             </p>
-                          )}
+                            <p className="search-result-description">
+                              {truncateText(product.description, 100)}
+                            </p>
+                            {product.sku && (
+                              <p className="search-result-description">
+                                SKU: {product.sku}
+                              </p>
+                            )}
+                          </div>
+                          <small className="search-result-price">
+                            {Number(product.price) === 0 ? (
+                              'Call for Price!'
+                            ) : (
+                              <p>${(Number(product.price) / 100).toFixed(2)}</p>
+                            )}
+                          </small>
                         </div>
-                        <small className="search-result-price">
-                          {Number(product.price) === 0 ? (
-                            'Call for Price!'
-                          ) : (
-                            <p>${(Number(product.price) / 100).toFixed(2)}</p>
-                          )}
-                        </small>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
         )}
       </div>
@@ -219,7 +264,8 @@ export async function loader({request}) {
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
-  // We use `inputQuery` for the text input, and `searchQuery` for the term we actually fetch with.
+  // We use `inputQuery` for the text input, and `searchQuery` for the
+  // term we actually fetch with.
   const [inputQuery, setInputQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -372,7 +418,7 @@ export default function SearchTest() {
     <div className="search">
       <h1>{initialMessage}</h1>
 
-      {/* Render the instant search bar component */}
+      {/* Render the new instant search bar component */}
       <SearchBar
         onResultSelect={handleInstantResultSelect}
         closeSearch={() => {}}
@@ -459,5 +505,29 @@ export default function SearchTest() {
         </>
       )}
     </div>
+  );
+}
+
+// ----------------------
+// Search Icon Component (used in SearchBar)
+// ----------------------
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="#000"
+      width="30px"
+      height="30px"
+    >
+      <path
+        d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z"
+        stroke="#000"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
