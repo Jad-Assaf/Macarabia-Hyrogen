@@ -178,6 +178,44 @@ export default function SearchTest() {
     },
   }));
 
+  // Helper function to get page numbers with ellipsis
+  function getPageNumbers(currentPage, totalPages, maxPages = 5) {
+    let pages = [];
+    if (totalPages <= maxPages) {
+      // If total pages is less than max, show all pages
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // If current page is near the start
+      if (currentPage <= Math.floor(maxPages / 2) + 1) {
+        for (let i = 1; i <= maxPages; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+      } else if (currentPage >= totalPages - Math.floor(maxPages / 2)) {
+        // If current page is near the end
+        pages.push('...');
+        for (let i = totalPages - maxPages + 1; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        // Otherwise, show ellipsis on both sides
+        pages.push('...');
+        const start = currentPage - Math.floor(maxPages / 2);
+        const end = currentPage + Math.floor(maxPages / 2);
+        for (let i = start; i <= end; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+      }
+    }
+    return pages;
+  }
+
+  const totalPages = Math.ceil(total / limit);
+  const pageNumbers = getPageNumbers(page + 1, totalPages);
+
   return (
     <div className="search">
       <h1>Search Results</h1>
@@ -281,15 +319,24 @@ export default function SearchTest() {
                 <button onClick={handlePrevPage} disabled={page <= 0}>
                   Previous
                 </button>
-                {Array.from({length: Math.ceil(total / limit)}, (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPage(i)}
-                    className={page === i ? 'active' : ''}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
+                <div className="pages-btns">
+                  {pageNumbers.map((p, index) =>
+                    p === '...' ? (
+                      <span key={index} style={{margin: '0 5px'}}>
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={index}
+                        onClick={() => setPage(p - 1)}
+                        className={page + 1 === p ? 'active' : ''}
+                        style={{margin: '0 2px'}}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
+                </div>
                 <button
                   onClick={handleNextPage}
                   disabled={(page + 1) * limit >= total}
