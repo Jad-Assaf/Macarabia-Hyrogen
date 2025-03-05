@@ -15,7 +15,7 @@
     align-items: center;
 }
 
-.search-form input{
+.search-form input {
     border-radius: 30px;
     border: 1px solid #232323;
     font-size: 1rem;
@@ -32,18 +32,26 @@
     font-weight: 300;
 }
 
-.results-pages{
+.results-pages {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 50px;
+    gap: 20px;
 }
 
-.results-pages button {
+.results-pages>button {
     border: 1px solid #232323;
     padding: 5px;
     border-radius: 30px;
     width: 100px;
+}
+
+.pages-btns button {
+    padding: 5px;
+    border: 1px solid #232323;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
 }
 
 .search-select {
