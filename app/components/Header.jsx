@@ -2,9 +2,11 @@ import {Suspense, useEffect, useState, useRef} from 'react';
 import {Await, Link, NavLink} from '@remix-run/react';
 import {useAside} from '~/components/Aside';
 import {Image} from '@shopify/hydrogen-react';
-import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
+// import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
 import {trackSearch} from '~/lib/metaPixelEvents'; // Added: Import the trackSearch function
+import SearchBar from './SearchFormTest';
+import '../styles/SearchPage.css';
 
 export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   const {shop, menu} = header;
@@ -34,9 +36,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   };
 
   const closeSubmenu = () => {
-    const activeDrawer = document.querySelector(
-      '.mobile-submenu-drawer.active',
-    );
+    const activeDrawer = document.querySelector('.mobile-submenu-drawer.active');
     if (activeDrawer) {
       activeDrawer.classList.remove('active');
       setTimeout(() => setActiveSubmenu(null), 300); // Wait for animation
@@ -105,6 +105,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
             />
           </NavLink>
 
+          {/* 
           <SearchFormPredictive className="header-search">
             {({inputRef, fetchResults, goToSearch, fetcher}) => {
               useFocusOnCmdK(inputRef);
@@ -125,9 +126,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                 if (window.innerWidth < 1024) {
                   const inputValue = inputRef.current?.value.trim();
                   if (!inputValue) {
-                    searchContainerRef.current?.classList.remove(
-                      'fixed-search',
-                    );
+                    searchContainerRef.current?.classList.remove('fixed-search');
                     setOverlayVisible(false);
                   }
                 }
@@ -172,7 +171,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
 
               return (
                 <>
-                  {/* Fullscreen Overlay */}
+
                   <div
                     className={`search-overlay ${
                       isOverlayVisible ? 'active' : ''
@@ -180,7 +179,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                     onClick={handleCloseSearch}
                   ></div>
 
-                  {/* Main Search Form */}
+
                   <div ref={searchContainerRef} className="main-search">
                     <div className="search-container">
                       <input
@@ -277,6 +276,19 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
               );
             }}
           </SearchFormPredictive>
+          */}
+
+          {/* New SearchBar Component Implementation */}
+          <SearchBar
+            className="header-search"
+            onResultSelect={(product) => {
+              // Add any logic needed when a product is selected
+              console.log('Product selected:', product);
+            }}
+            closeSearch={() => {
+              // Add any logic needed when closing the search
+            }}
+          />
 
           <div className="header-ctas">
             <NavLink
@@ -327,7 +339,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 460.775 460.775"
               >
-                <path d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55 c-4.127,0-8.08,1.639-10.993,4.55l-171.138,171.14L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55 c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128L4.575,401.505 c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55c4.127,0,8.08-1.639,10.994-4.55 l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"></path>
+                <path d="M285.08,230.397L456.218,59.27c6.076-6.077,6.076-15.911,0-21.986L423.511,4.565c-2.913-2.911-6.866-4.55-10.992-4.55 c-4.127,0-8.08,1.639-10.993,4.55l-171.138,171.14L59.25,4.565c-2.913-2.911-6.866-4.55-10.993-4.55 c-4.126,0-8.08,1.639-10.992,4.55L4.558,37.284c-6.077,6.075-6.077,15.909,0,21.986l171.138,171.128L4.575,401.505 c-6.074,6.077-6.074,15.911,0,21.986l32.709,32.719c2.911,2.911,6.865,4.55,10.992,4.55c4.127,0,8.08-1.639,10.994-4.55l171.117-171.12l171.118,171.12c2.913,2.911,6.866,4.55,10.993,4.55c4.128,0,8.081-1.639,10.992-4.55l32.709-32.719c6.074-6.075,6.074-15.909,0-21.986L285.08,230.397z"></path>
               </svg>
             </button>
             <h3>Menu</h3>
