@@ -180,21 +180,27 @@ export function SearchBar({onResultSelect, closeSearch}) {
         {isSearchResultsVisible && (
           <div className="search-results-container">
             {isLoading ? (
-              // Render 5 skeleton items while loading
               <div className="predictive-search-result" key="skeleton">
                 <h5>Products</h5>
                 <ul>
                   {[...Array(5)].map((_, i) => (
-                    <li
-                      key={i}
-                      className="predictive-search-result-item skeleton"
-                    >
+                    <li key={i} className="predictive-search-result-item">
+                      {/* You can wrap each part with its skeleton class */}
                       <div className="search-result-txt">
                         <div className="search-result-titDesc">
-                          <p className="search-result-title"></p>
-                          <p className="search-result-description"></p>
+                          {/* Skeleton for image */}
+                          <div className="skeleton skeleton-image"></div>
+                          <div>
+                            {/* Skeleton for title */}
+                            <p className="skeleton skeleton-title"></p>
+                            {/* Skeleton for description */}
+                            <p className="skeleton skeleton-description"></p>
+                            {/* Skeleton for SKU */}
+                            <p className="skeleton skeleton-sku"></p>
+                          </div>
                         </div>
-                        <small className="search-result-price"></small>
+                        {/* Skeleton for price */}
+                        <small className="skeleton skeleton-price"></small>
                       </div>
                     </li>
                   ))}
@@ -292,7 +298,6 @@ function SearchIcon() {
     </svg>
   );
 }
-
 
 // ----------------------
 // Main SearchTest Component
