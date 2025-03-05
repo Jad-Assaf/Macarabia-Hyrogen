@@ -185,7 +185,7 @@ export function SearchBar({onResultSelect, closeSearch}) {
                       <div className="search-result-txt">
                         <div className="search-result-titDesc skeleton-div">
                           <div className="skeleton skeleton-image"></div>
-                          <div>
+                          <div className='skeleten-tds'>
                             <p className="skeleton skeleton-title"></p>
                             <p className="skeleton skeleton-description"></p>
                             <p className="skeleton skeleton-sku"></p>

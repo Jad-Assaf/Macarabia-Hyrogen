@@ -94,6 +94,11 @@ body {
   display: flex;
 }
 
+.skeleten-tds{
+  width: 100%;
+  height: 30px;
+}
+
 /* Specific skeleton elements styling */
 .skeleton-image {
   width: 50px;
