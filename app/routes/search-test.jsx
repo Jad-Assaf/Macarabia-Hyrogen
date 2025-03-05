@@ -1,6 +1,6 @@
 import {json} from '@shopify/remix-oxygen';
 import {useLoaderData, Link, useNavigate, useLocation} from '@remix-run/react';
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {Money, Image} from '@shopify/hydrogen';
 import {debounce} from 'lodash';
 import '../styles/SearchPage.css';
@@ -12,12 +12,17 @@ function truncateText(text, maxLength) {
 }
 
 // ----------------------
-// New SearchBar Component with Predictive Product Results
+// SearchBar Component with Predictive Product Results
 // ----------------------
 function SearchBar({onResultSelect, closeSearch}) {
   const [query, setQuery] = useState('');
   const [instantResults, setInstantResults] = useState([]);
   const [error, setError] = useState(null);
+  const [isOverlayVisible, setOverlayVisible] = useState(false);
+  const [isSearchResultsVisible, setSearchResultsVisible] = useState(false);
+
+  const inputRef = useRef(null);
+  const searchContainerRef = useRef(null);
 
   // Debounced fetch from the search endpoint with a limit of 10 products.
   const debouncedFetch = useCallback(
@@ -49,76 +54,144 @@ function SearchBar({onResultSelect, closeSearch}) {
     return () => debouncedFetch.cancel();
   }, [query, debouncedFetch]);
 
+  // Handle focus: on small screens, add fixed positioning and show overlay.
+  const handleFocus = () => {
+    if (window.innerWidth < 1024) {
+      searchContainerRef.current?.classList.add('fixed-search');
+      setOverlayVisible(true);
+    }
+    setSearchResultsVisible(true);
+  };
+
+  // Handle blur: on small screens, if input is empty, remove fixed positioning and hide overlay.
+  const handleBlur = () => {
+    if (window.innerWidth < 1024) {
+      const inputValue = inputRef.current?.value.trim();
+      if (!inputValue) {
+        searchContainerRef.current?.classList.remove('fixed-search');
+        setOverlayVisible(false);
+      }
+    }
+  };
+
+  // Closes the search overlay and results.
+  const handleCloseSearch = () => {
+    searchContainerRef.current?.classList.remove('fixed-search');
+    setOverlayVisible(false);
+    setSearchResultsVisible(false);
+  };
+
+  // Clears the search input and results.
+  const clearSearch = () => {
+    setQuery('');
+    setInstantResults([]);
+  };
+
+  // Manage scroll-lock when overlay is visible.
+  useEffect(() => {
+    if (isOverlayVisible) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOverlayVisible]);
+
   return (
-    <div className="instant-search-bar">
-      <input
-        type="text"
-        placeholder="Type to search instantly..."
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setError(null);
-        }}
-      />
-      {error && <p className="error">{error}</p>}
-      {instantResults.length > 0 && (
-        <div className="predictive-search-result" key="products">
-          <h5>Products</h5>
-          <ul>
-            {instantResults.slice(0, 10).map((product) => {
-              const productUrl = `/products/${encodeURIComponent(
-                product.handle,
-              )}`;
-              return (
-                <li
-                  className="predictive-search-result-item"
-                  key={product.product_id}
-                >
-                  <Link
-                    to={productUrl}
-                    onClick={() => {
-                      if (closeSearch) closeSearch();
-                      onResultSelect(product);
-                    }}
-                  >
-                    {product.image_url && (
-                      <Image
-                        alt={product.title}
-                        src={product.image_url}
-                        width={50}
-                        height={50}
-                      />
-                    )}
-                    <div className="search-result-txt">
-                      <div className="search-result-titDesc">
-                        <p className="search-result-title">
-                          {truncateText(product.title, 75)}
-                        </p>
-                        <p className="search-result-description">
-                          {truncateText(product.description, 100)}
-                        </p>
-                        {product.sku && (
-                          <p className="search-result-description">
-                            SKU: {product.sku}
-                          </p>
-                        )}
-                      </div>
-                      <small className="search-result-price">
-                        {Number(product.price) === 0 ? (
-                          'Call for Price!'
-                        ) : (
-                          <p>${(Number(product.price) / 100).toFixed(2)}</p>
-                        )}
-                      </small>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+    <>
+      {/* Fullscreen Overlay */}
+      <div
+        className={`search-overlay ${isOverlayVisible ? 'active' : ''}`}
+        onClick={handleCloseSearch}
+      ></div>
+
+      {/* Main Search Bar */}
+      <div ref={searchContainerRef} className="instant-search-bar">
+        <div className="search-container">
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Type to search instantly..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setError(null);
+            }}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          />
+          {query && (
+            <button
+              className="clear-search-button"
+              onClick={clearSearch}
+              aria-label="Clear search"
+            >
+              Clear
+            </button>
+          )}
         </div>
-      )}
-    </div>
+        {error && <p className="error">{error}</p>}
+        {isSearchResultsVisible && instantResults.length > 0 && (
+          <div className="predictive-search-result" key="products">
+            <h5>Products</h5>
+            <ul>
+              {instantResults.slice(0, 10).map((product) => {
+                const productUrl = `/products/${encodeURIComponent(
+                  product.handle,
+                )}`;
+                return (
+                  <li
+                    className="predictive-search-result-item"
+                    key={product.product_id}
+                  >
+                    <Link
+                      to={productUrl}
+                      onClick={() => {
+                        if (closeSearch) closeSearch();
+                        onResultSelect(product);
+                      }}
+                    >
+                      {product.image_url && (
+                        <Image
+                          alt={product.title}
+                          src={product.image_url}
+                          width={50}
+                          height={50}
+                        />
+                      )}
+                      <div className="search-result-txt">
+                        <div className="search-result-titDesc">
+                          <p className="search-result-title">
+                            {truncateText(product.title, 75)}
+                          </p>
+                          <p className="search-result-description">
+                            {truncateText(product.description, 100)}
+                          </p>
+                          {product.sku && (
+                            <p className="search-result-description">
+                              SKU: {product.sku}
+                            </p>
+                          )}
+                        </div>
+                        <small className="search-result-price">
+                          {Number(product.price) === 0 ? (
+                            'Call for Price!'
+                          ) : (
+                            <p>${(Number(product.price) / 100).toFixed(2)}</p>
+                          )}
+                        </small>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -146,8 +219,7 @@ export async function loader({request}) {
 export default function SearchTest() {
   const {initialMessage} = useLoaderData();
 
-  // We use `inputQuery` for the text input, and `searchQuery` for the
-  // term we actually fetch with.
+  // We use `inputQuery` for the text input, and `searchQuery` for the term we actually fetch with.
   const [inputQuery, setInputQuery] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -300,7 +372,7 @@ export default function SearchTest() {
     <div className="search">
       <h1>{initialMessage}</h1>
 
-      {/* Render the new instant search bar component */}
+      {/* Render the instant search bar component */}
       <SearchBar
         onResultSelect={handleInstantResultSelect}
         closeSearch={() => {}}
