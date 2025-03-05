@@ -15,7 +15,7 @@ function truncateText(text, maxLength) {
 // New SearchBar Component with Predictive Product Results
 // (HTML structure & class names match the predictive search in your Header component)
 // ----------------------
-function SearchBar({onResultSelect, closeSearch}) {
+export function SearchBar({onResultSelect, closeSearch}) {
   const [query, setQuery] = useState('');
   const [instantResults, setInstantResults] = useState([]);
   const [error, setError] = useState(null);
