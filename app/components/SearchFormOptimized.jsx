@@ -1,3 +1,8 @@
+import {useLoaderData, Link, useNavigate, useLocation} from '@remix-run/react';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
+import {Money, Image} from '@shopify/hydrogen';
+import {debounce} from 'lodash';
+
 function truncateText(text, maxLength) {
   if (!text) return '';
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
