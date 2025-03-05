@@ -2,7 +2,7 @@ import {Suspense, useEffect, useState, useRef} from 'react';
 import {Await, Link, NavLink} from '@remix-run/react';
 import {useAside} from '~/components/Aside';
 import {Image} from '@shopify/hydrogen-react';
-// import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
+import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
 import {trackSearch} from '~/lib/metaPixelEvents'; // Added: Import the trackSearch function
 import { SearchBar } from './SearchFormOptimized';
@@ -12,7 +12,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [isSearchResultsVisible, setSearchResultsVisible] = useState(false);
-  // const searchContainerRef = useRef(null);
+  const searchContainerRef = useRef(null);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen((prev) => !prev);
@@ -42,18 +42,18 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
     }
   };
 
-  // useEffect(() => {
-  //   const handleClickOutside = (event) => {
-  //     if (
-  //       searchContainerRef.current &&
-  //       !searchContainerRef.current.contains(event.target)
-  //     ) {
-  //       setSearchResultsVisible(false);
-  //     }
-  //   };
-  //   document.addEventListener('mousedown', handleClickOutside);
-  //   return () => document.removeEventListener('mousedown', handleClickOutside);
-  // }, []);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target)
+      ) {
+        setSearchResultsVisible(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -104,7 +104,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
             />
           </NavLink>
 
-          {/* 
+          
           <SearchFormPredictive className="header-search">
             {({inputRef, fetchResults, goToSearch, fetcher}) => {
               useFocusOnCmdK(inputRef);
@@ -275,10 +275,10 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
               );
             }}
           </SearchFormPredictive>
-          */}
+         
 
           {/* New SearchBar Component Implementation */}
-          <SearchBar
+          {/* <SearchBar
             className="header-search"
             onResultSelect={(product) => {
               // Add any logic needed when a product is selected
@@ -287,7 +287,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
             closeSearch={() => {
               // Add any logic needed when closing the search
             }}
-          />
+          /> */}
 
           <div className="header-ctas">
             <NavLink
