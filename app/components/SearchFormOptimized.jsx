@@ -228,7 +228,7 @@ export function SearchBar({onResultSelect, closeSearch}) {
                             {product.image_url && (
                               <Image
                                 alt={product.title}
-                                src={product.image_url}
+                                src={`${product.image_url}&quality=5`}
                                 width={50}
                                 height={50}
                               />

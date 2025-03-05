@@ -292,7 +292,7 @@ export default function SearchTest() {
                           style={{position: 'relative', overflow: 'hidden'}}
                         >
                           <img
-                            src={`${product.image_url}?quality=10`}
+                            src={`${product.image_url}&quality=10`}
                             alt={product.title}
                             className="product-slideshow-image"
                             style={{
