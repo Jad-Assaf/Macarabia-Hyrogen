@@ -181,13 +181,7 @@ export default function SearchTest() {
 
   return (
     <div className="search">
-      <h1>{initialMessage}</h1>
-
-      {/* Render the new instant search bar component */}
-      <SearchBar
-        onResultSelect={handleInstantResultSelect}
-        closeSearch={() => {}}
-      />
+      <h1>Search Results</h1>
 
       <form onSubmit={handleSubmit} className="search-form">
         <input

@@ -2,7 +2,9 @@ import {useLoaderData, Link, useNavigate, useLocation} from '@remix-run/react';
 import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {Money, Image} from '@shopify/hydrogen';
 import {debounce} from 'lodash';
+import '../styles/SearchPage.css';
 
+// Helper: truncate text to a given length.
 function truncateText(text, maxLength) {
   if (!text) return '';
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
@@ -18,6 +20,7 @@ export function SearchBar({onResultSelect, closeSearch}) {
 
   const inputRef = useRef(null);
   const searchContainerRef = useRef(null);
+  const navigate = useNavigate(); // Use Remix's navigation hook
 
   // Debounced fetch from the search endpoint with a limit of 10 products.
   const debouncedFetch = useCallback(
@@ -88,14 +91,14 @@ export function SearchBar({onResultSelect, closeSearch}) {
     }
   };
 
-  // Trigger search (here you can also add tracking or redirection logic)
+  // Trigger search – navigate to the search page with the query as a parameter.
   const handleSearch = () => {
     if (inputRef.current) {
       const rawTerm = inputRef.current.value.trim();
       const term = rawTerm.replace(/\s+/g, '-');
       if (rawTerm) {
         // Optionally: trackSearch(rawTerm);
-        window.location.href = `/search?q=${term}`;
+        navigate(`/search?q=${term}`);
       }
     }
   };
@@ -181,17 +184,20 @@ export function SearchBar({onResultSelect, closeSearch}) {
                 <h5>Products</h5>
                 <ul>
                   {[...Array(5)].map((_, i) => (
-                    <li key={i} className="predictive-search-result-item">
+                    <li
+                      key={i}
+                      className="predictive-search-result-item skeleton"
+                    >
+                      {/* Skeleton markup (use the improved skeleton structure with shimmer for each element) */}
                       <div className="search-result-txt">
                         <div className="search-result-titDesc skeleton-div">
                           <div className="skeleton skeleton-image"></div>
-                          <div className='skeleten-tds'>
+                          <div className="skeleten-tds">
                             <p className="skeleton skeleton-title"></p>
-                            {/* <p className="skeleton skeleton-description"></p> */}
+{/* <p className="skeleton skeleton-description"></p> */}
                             <p className="skeleton skeleton-sku"></p>
                           </div>
                         </div>
-                        {/* Skeleton for price */}
                         <small className="skeleton skeleton-price"></small>
                       </div>
                     </li>
@@ -199,7 +205,6 @@ export function SearchBar({onResultSelect, closeSearch}) {
                 </ul>
               </div>
             ) : (
-              // Render actual results if available
               instantResults.length > 0 && (
                 <div className="predictive-search-result" key="products">
                   <h5>Products</h5>
