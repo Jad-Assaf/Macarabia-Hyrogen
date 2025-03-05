@@ -99,21 +99,21 @@ body {
 }
 
 .skeleton-title {
-  width: 70%;
+  width: 100%;
   height: 16px;
   margin-bottom: 8px;
   border-radius: 4px;
 }
 
 .skeleton-description {
-  width: 90%;
+  width: 100%;
   height: 14px;
   margin-bottom: 4px;
   border-radius: 4px;
 }
 
 .skeleton-sku {
-  width: 40%;
+  width: 100%;
   height: 14px;
   margin-bottom: 4px;
   border-radius: 4px;

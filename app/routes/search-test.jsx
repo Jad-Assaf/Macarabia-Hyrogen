@@ -187,9 +187,9 @@ export function SearchBar({onResultSelect, closeSearch}) {
                     <li key={i} className="predictive-search-result-item">
                       {/* You can wrap each part with its skeleton class */}
                       <div className="search-result-txt">
+                        {/* Skeleton for image */}
+                        <div className="skeleton skeleton-image"></div>
                         <div className="search-result-titDesc">
-                          {/* Skeleton for image */}
-                          <div className="skeleton skeleton-image"></div>
                           <div>
                             {/* Skeleton for title */}
                             <p className="skeleton skeleton-title"></p>
