@@ -57,14 +57,12 @@ export function SearchBar({onResultSelect, closeSearch}) {
 
   // Handle focus: on small screens, add fixed positioning and show overlay.
   const handleFocus = () => {
-    console.log('Window width:', window.innerWidth);
     if (window.innerWidth < 1024) {
       searchContainerRef.current?.classList.add('fixed-search');
       setOverlayVisible(true);
     }
     setSearchResultsVisible(true);
   };
-
 
   // Handle blur: on small screens, if input is empty, remove fixed positioning and hide overlay.
   const handleBlur = () => {

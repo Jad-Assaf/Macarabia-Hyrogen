@@ -12,7 +12,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [isSearchResultsVisible, setSearchResultsVisible] = useState(false);
-  const searchContainerRef = useRef(null);
+  // const searchContainerRef = useRef(null);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen((prev) => !prev);
@@ -42,18 +42,18 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target)
-      ) {
-        setSearchResultsVisible(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // useEffect(() => {
+  //   const handleClickOutside = (event) => {
+  //     if (
+  //       searchContainerRef.current &&
+  //       !searchContainerRef.current.contains(event.target)
+  //     ) {
+  //       setSearchResultsVisible(false);
+  //     }
+  //   };
+  //   document.addEventListener('mousedown', handleClickOutside);
+  //   return () => document.removeEventListener('mousedown', handleClickOutside);
+  // }, []);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
