@@ -56,6 +56,41 @@ body {
   }
 }
 
+/* Base styles for skeleton items */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: #e0e0e0;
+  /* Light gray background */
+}
+
+/* The shimmer overlay */
+.skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150px;
+  /* Start offscreen */
+  width: 150px;
+  height: 100%;
+  background: linear-gradient(90deg,
+      rgba(224, 224, 224, 0) 0%,
+      rgba(255, 255, 255, 0.6) 50%,
+      rgba(224, 224, 224, 0) 100%);
+  animation: shimmer 1.5s infinite;
+}
+
+/* Keyframes for the shimmer animation */
+@keyframes shimmer {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(150%);
+  }
+}
+
 /* .animated-menu-item {
   opacity: 1;
   transform: translateY(0), translate3d(0, 0, 0);

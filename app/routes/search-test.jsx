@@ -11,16 +11,13 @@ function truncateText(text, maxLength) {
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
-// ----------------------
-// New SearchBar Component with Predictive Product Results
-// (HTML structure & class names match the predictive search in your Header component)
-// ----------------------
 export function SearchBar({onResultSelect, closeSearch}) {
   const [query, setQuery] = useState('');
   const [instantResults, setInstantResults] = useState([]);
   const [error, setError] = useState(null);
   const [isOverlayVisible, setOverlayVisible] = useState(false);
   const [isSearchResultsVisible, setSearchResultsVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // new state for loading
 
   const inputRef = useRef(null);
   const searchContainerRef = useRef(null);
@@ -30,8 +27,10 @@ export function SearchBar({onResultSelect, closeSearch}) {
     debounce(async (q) => {
       if (!q) {
         setInstantResults([]);
+        setIsLoading(false);
         return;
       }
+      setIsLoading(true);
       try {
         const response = await fetch(
           `https://search-app-vert.vercel.app/api/search?q=${encodeURIComponent(
@@ -43,8 +42,10 @@ export function SearchBar({onResultSelect, closeSearch}) {
         }
         const data = await response.json();
         setInstantResults(data.results || []);
+        setIsLoading(false);
       } catch (err) {
         setError(err.message);
+        setIsLoading(false);
       }
     }, 300),
     [],
@@ -176,69 +177,122 @@ export function SearchBar({onResultSelect, closeSearch}) {
             <SearchIcon />
           </button>
         </div>
-        {isSearchResultsVisible && instantResults.length > 0 && (
+        {isSearchResultsVisible && (
           <div className="search-results-container">
-            <div className="predictive-search-result" key="products">
-              <h5>Products</h5>
-              <ul>
-                {instantResults.slice(0, 10).map((product) => {
-                  const productUrl = `/products/${encodeURIComponent(
-                    product.handle,
-                  )}`;
-                  return (
+            {isLoading ? (
+              // Render 5 skeleton items while loading
+              <div className="predictive-search-result" key="skeleton">
+                <h5>Products</h5>
+                <ul>
+                  {[...Array(5)].map((_, i) => (
                     <li
-                      className="predictive-search-result-item"
-                      key={product.product_id}
+                      key={i}
+                      className="predictive-search-result-item skeleton"
                     >
-                      <Link
-                        to={productUrl}
-                        onClick={() => {
-                          if (closeSearch) closeSearch();
-                          onResultSelect(product);
-                        }}
-                      >
-                        {product.image_url && (
-                          <Image
-                            alt={product.title}
-                            src={product.image_url}
-                            width={50}
-                            height={50}
-                          />
-                        )}
-                        <div className="search-result-txt">
-                          <div className="search-result-titDesc">
-                            <p className="search-result-title">
-                              {truncateText(product.title, 75)}
-                            </p>
-                            <p className="search-result-description">
-                              {truncateText(product.description, 100)}
-                            </p>
-                            {product.sku && (
-                              <p className="search-result-description">
-                                SKU: {product.sku}
-                              </p>
-                            )}
-                          </div>
-                          <small className="search-result-price">
-                            {Number(product.price) === 0 ? (
-                              'Call for Price!'
-                            ) : (
-                              <p>${(Number(product.price) / 100).toFixed(2)}</p>
-                            )}
-                          </small>
+                      <div className="search-result-txt">
+                        <div className="search-result-titDesc">
+                          <p className="search-result-title"></p>
+                          <p className="search-result-description"></p>
                         </div>
-                      </Link>
+                        <small className="search-result-price"></small>
+                      </div>
                     </li>
-                  );
-                })}
-              </ul>
-            </div>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              // Render actual results if available
+              instantResults.length > 0 && (
+                <div className="predictive-search-result" key="products">
+                  <h5>Products</h5>
+                  <ul>
+                    {instantResults.slice(0, 10).map((product) => {
+                      const productUrl = `/products/${encodeURIComponent(
+                        product.handle,
+                      )}`;
+                      return (
+                        <li
+                          className="predictive-search-result-item"
+                          key={product.product_id}
+                        >
+                          <Link
+                            to={productUrl}
+                            onClick={() => {
+                              if (closeSearch) closeSearch();
+                              onResultSelect(product);
+                            }}
+                          >
+                            {product.image_url && (
+                              <Image
+                                alt={product.title}
+                                src={product.image_url}
+                                width={50}
+                                height={50}
+                              />
+                            )}
+                            <div className="search-result-txt">
+                              <div className="search-result-titDesc">
+                                <p className="search-result-title">
+                                  {truncateText(product.title, 75)}
+                                </p>
+                                <p className="search-result-description">
+                                  {truncateText(product.description, 100)}
+                                </p>
+                                {product.sku && (
+                                  <p className="search-result-description">
+                                    SKU: {product.sku}
+                                  </p>
+                                )}
+                              </div>
+                              <small className="search-result-price">
+                                {Number(product.price) === 0 ? (
+                                  'Call for Price!'
+                                ) : (
+                                  <p>
+                                    ${(Number(product.price) / 100).toFixed(2)}
+                                  </p>
+                                )}
+                              </small>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )
+            )}
           </div>
         )}
       </div>
     </>
   );
 }
+
+// ----------------------
+// Search Icon Component (used in SearchBar)
+// ----------------------
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="#000"
+      width="30px"
+      height="30px"
+    >
+      <path
+        d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z"
+        stroke="#000"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 
 // ----------------------
 // Main SearchTest Component
@@ -505,29 +559,5 @@ export default function SearchTest() {
         </>
       )}
     </div>
-  );
-}
-
-// ----------------------
-// Search Icon Component (used in SearchBar)
-// ----------------------
-function SearchIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      stroke="#000"
-      width="30px"
-      height="30px"
-    >
-      <path
-        d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z"
-        stroke="#000"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
