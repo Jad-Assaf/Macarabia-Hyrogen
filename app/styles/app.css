@@ -90,6 +90,10 @@ body {
   }
 }
 
+.skeleton-div{
+  display: flex;
+}
+
 /* Specific skeleton elements styling */
 .skeleton-image {
   width: 50px;

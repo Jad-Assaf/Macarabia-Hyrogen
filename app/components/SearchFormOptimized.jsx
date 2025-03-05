@@ -182,17 +182,12 @@ export function SearchBar({onResultSelect, closeSearch}) {
                 <ul>
                   {[...Array(5)].map((_, i) => (
                     <li key={i} className="predictive-search-result-item">
-                      {/* Skeleton for image */}
-                      <div className="skeleton skeleton-image"></div>
-                      {/* You can wrap each part with its skeleton class */}
                       <div className="search-result-txt">
-                        <div className="search-result-titDesc">
+                        <div className="search-result-titDesc skeleton-div">
+                          <div className="skeleton skeleton-image"></div>
                           <div>
-                            {/* Skeleton for title */}
                             <p className="skeleton skeleton-title"></p>
-                            {/* Skeleton for description */}
                             <p className="skeleton skeleton-description"></p>
-                            {/* Skeleton for SKU */}
                             <p className="skeleton skeleton-sku"></p>
                           </div>
                         </div>
