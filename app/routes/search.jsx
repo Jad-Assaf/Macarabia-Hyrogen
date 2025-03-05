@@ -224,11 +224,11 @@ export default function SearchTest() {
               ></div>
               <h4
                 className="product-title skeleton"
-                style={{width: '70%', height: '20px', margin: '10px 0'}}
+                style={{width: '70%', height: '20px', margin: '10px auto'}}
               ></h4>
               <div
                 className="product-price skeleton"
-                style={{width: '30%', height: '20px'}}
+                style={{width: '30%', height: '20px', margin: 'auto'}}
               ></div>
             </div>
           ))}
