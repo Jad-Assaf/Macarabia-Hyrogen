@@ -187,7 +187,7 @@ export function SearchBar({onResultSelect, closeSearch}) {
                           <div className="skeleton skeleton-image"></div>
                           <div className='skeleten-tds'>
                             <p className="skeleton skeleton-title"></p>
-                            <p className="skeleton skeleton-description"></p>
+                            {/* <p className="skeleton skeleton-description"></p> */}
                             <p className="skeleton skeleton-sku"></p>
                           </div>
                         </div>
