@@ -5,7 +5,6 @@ import {Image} from '@shopify/hydrogen-react';
 import {SearchFormPredictive, SEARCH_ENDPOINT} from './SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
 import {trackSearch} from '~/lib/metaPixelEvents'; // Added: Import the trackSearch function
-import SearchBar from './SearchFormTest';
 
 export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
   const {shop, menu} = header;
@@ -106,7 +105,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
             />
           </NavLink>
 
-          {/* <SearchFormPredictive className="header-search">
+          <SearchFormPredictive className="header-search">
             {({inputRef, fetchResults, goToSearch, fetcher}) => {
               useFocusOnCmdK(inputRef);
 
@@ -173,6 +172,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
 
               return (
                 <>
+                  {/* Fullscreen Overlay */}
                   <div
                     className={`search-overlay ${
                       isOverlayVisible ? 'active' : ''
@@ -180,6 +180,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                     onClick={handleCloseSearch}
                   ></div>
 
+                  {/* Main Search Form */}
                   <div ref={searchContainerRef} className="main-search">
                     <div className="search-container">
                       <input
@@ -275,12 +276,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
                 </>
               );
             }}
-          </SearchFormPredictive> */}
-
-          <SearchBar
-            onResultSelect={handleInstantResultSelect}
-            closeSearch={() => {}}
-          />
+          </SearchFormPredictive>
 
           <div className="header-ctas">
             <NavLink
