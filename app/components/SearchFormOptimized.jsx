@@ -2,7 +2,6 @@ import {useLoaderData, Link, useNavigate, useLocation} from '@remix-run/react';
 import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {Money, Image} from '@shopify/hydrogen';
 import {debounce} from 'lodash';
-import '../styles/SearchPage.css';
 
 // Helper: truncate text to a given length.
 function truncateText(text, maxLength) {
@@ -95,10 +94,9 @@ export function SearchBar({onResultSelect, closeSearch}) {
   const handleSearch = () => {
     if (inputRef.current) {
       const rawTerm = inputRef.current.value.trim();
-      const term = rawTerm.replace(/\s+/g, '-');
       if (rawTerm) {
         // Optionally: trackSearch(rawTerm);
-        navigate(`/search?q=${term}`);
+        navigate(`/search?q=${rawTerm}`);
       }
     }
   };
