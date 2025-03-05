@@ -281,9 +281,15 @@ export default function SearchTest() {
                 <button onClick={handlePrevPage} disabled={page <= 0}>
                   Previous
                 </button>
-                <span>
-                  Page {page + 1} of {Math.ceil(total / limit)}
-                </span>
+                {Array.from({length: Math.ceil(total / limit)}, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPage(i)}
+                    className={page === i ? 'active' : ''}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
                 <button
                   onClick={handleNextPage}
                   disabled={(page + 1) * limit >= total}
