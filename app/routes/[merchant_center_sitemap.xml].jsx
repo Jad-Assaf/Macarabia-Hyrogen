@@ -117,7 +117,6 @@ function renderProductVariantItem(product, variant, baseUrl) {
     })
     .join('');
 
-  // Remove <img> tags from the product description if they exist
   const cleanDescription = stripImgTags(product.description || '');
 
   // COMBINED TITLE MODIFICATION: If the variant has a distinct title, append it.
