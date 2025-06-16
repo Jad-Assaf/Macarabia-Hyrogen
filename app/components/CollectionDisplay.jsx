@@ -234,7 +234,13 @@ export function ProductItem({product, index}) {
         )}
         <h4 className="product-title">{product.title}</h4>
         <div className="product-price">
-          {selectedVariant?.price && <Money data={selectedVariant.price} />}
+          {selectedVariant?.price?.amount === '0.0' ||
+          selectedVariant?.price?.amount === '0' ? (
+            <span>Call for price</span>
+          ) : (
+            selectedVariant?.price && <Money data={selectedVariant.price} />
+          )}
+
           {hasDiscount && (
             <small className="discountedPrice">
               <Money data={selectedVariant.compareAtPrice} />
@@ -245,7 +251,12 @@ export function ProductItem({product, index}) {
 
       {/* Add to Cart Button */}
       <AddToCartButton
-        disabled={!selectedVariant || !selectedVariant.availableForSale}
+        disabled={
+          !selectedVariant ||
+          !selectedVariant.availableForSale ||
+          selectedVariant.price?.amount === '0' ||
+          selectedVariant.price?.amount === '0.0'
+        }
         onClick={() => {
           if (product.variants?.nodes?.length > 1) {
             window.location.href = `/products/${product.handle}`;
@@ -271,6 +282,9 @@ export function ProductItem({product, index}) {
       >
         {!selectedVariant?.availableForSale
           ? 'Sold out'
+          : selectedVariant?.price?.amount === '0' ||
+            selectedVariant?.price?.amount === '0.0'
+          ? 'Call for price'
           : product.variants?.nodes?.length > 1
           ? 'Select Options'
           : 'Add to cart'}

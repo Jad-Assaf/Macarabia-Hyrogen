@@ -306,7 +306,11 @@ export default function SearchTest() {
                       <h4 className="product-title">{product.title}</h4>
                       <div className="product-price">
                         {product.price != null ? (
-                          <p>${(Number(product.price) / 100).toFixed(2)}</p>
+                          Number(product.price) === 0 ? (
+                            <span>Call for price</span>
+                          ) : (
+                            <p>${(Number(product.price) / 100).toFixed(2)}</p>
+                          )
                         ) : (
                           <span>No Price</span>
                         )}
