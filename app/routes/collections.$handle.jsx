@@ -1080,16 +1080,32 @@ const ProductItem = React.memo(({product, index, numberInRow}) => {
               </p>
               <div className="price-container">
                 <small
-                  className={`product-price ${hasDiscount ? 'discounted' : ''}`}
+                  className={`product-price ${
+                    Number(selectedVariant.price.amount) > 0 &&
+                    selectedVariant.compareAtPrice &&
+                    parseFloat(selectedVariant.compareAtPrice.amount) >
+                      parseFloat(selectedVariant.price.amount)
+                      ? 'discounted'
+                      : ''
+                  }`}
                 >
-                  <Money data={selectedVariant.price} />
+                  {selectedVariant?.price &&
+                  Number(selectedVariant.price.amount) === 0 ? (
+                    <span>Call For Price</span>
+                  ) : (
+                    <Money data={selectedVariant.price} />
+                  )}
                 </small>
-                {hasDiscount && selectedVariant.compareAtPrice && (
-                  <small className="discountedPrice">
-                    <Money data={selectedVariant.compareAtPrice} />
-                  </small>
-                )}
-              </div>
+
+                {Number(selectedVariant.price.amount) > 0 &&
+                  selectedVariant.compareAtPrice &&
+                  parseFloat(selectedVariant.compareAtPrice.amount) >
+                    parseFloat(selectedVariant.price.amount) && (
+                    <small className="discountedPrice">
+                      <Money data={selectedVariant.compareAtPrice} />
+                    </small>
+                  )}
+              </div>{' '}
             </Link>
             <ProductForm
               product={product}
