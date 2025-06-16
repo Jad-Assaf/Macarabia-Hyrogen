@@ -234,33 +234,35 @@ export function ProductItem({product, index}) {
         )}
         <h4 className="product-title">{product.title}</h4>
         <div className="product-price">
-          {selectedVariant?.price?.amount === '0.0' ||
-          selectedVariant?.price?.amount === '0' ? (
-            <span>Call for price</span>
+          {selectedVariant?.price &&
+          parseFloat(selectedVariant.price.amount) === 0 ? (
+            'Call for Price!'
           ) : (
-            selectedVariant?.price && <Money data={selectedVariant.price} />
+            <Money data={selectedVariant.price} />
           )}
-
-          {hasDiscount && (
-            <small className="discountedPrice">
-              <Money data={selectedVariant.compareAtPrice} />
-            </small>
-          )}
+          {selectedVariant?.compareAtPrice &&
+            parseFloat(selectedVariant.price.amount) > 0 &&
+            parseFloat(selectedVariant.compareAtPrice.amount) >
+              parseFloat(selectedVariant.price.amount) && (
+              <small className="discountedPrice">
+                <Money data={selectedVariant.compareAtPrice} />
+              </small>
+            )}
         </div>
       </Link>
 
       {/* Add to Cart Button */}
-      <AddToCartButton
+     <AddToCartButton
         disabled={
           !selectedVariant ||
           !selectedVariant.availableForSale ||
-          selectedVariant.price?.amount === '0' ||
-          selectedVariant.price?.amount === '0.0'
+          parseFloat(selectedVariant.price.amount) === 0
         }
-        onClick={() => {
+        onClick={async () => {
           if (product.variants?.nodes?.length > 1) {
             window.location.href = `/products/${product.handle}`;
           } else {
+            await revalidator.revalidate();
             open('cart');
           }
         }}
@@ -279,13 +281,13 @@ export function ProductItem({product, index}) {
               ]
             : []
         }
+        contentId={product.id}
       >
-        {!selectedVariant?.availableForSale
+        {!selectedVariant.availableForSale
           ? 'Sold out'
-          : selectedVariant?.price?.amount === '0' ||
-            selectedVariant?.price?.amount === '0.0'
-          ? 'Call for price'
-          : product.variants?.nodes?.length > 1
+          : parseFloat(selectedVariant.price.amount) === 0
+          ? 'Call for Price'
+          : product.variants.nodes.length > 1
           ? 'Select Options'
           : 'Add to cart'}
       </AddToCartButton>

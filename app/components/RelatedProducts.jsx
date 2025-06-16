@@ -102,14 +102,10 @@ function RelatedProductItem({product, index}) {
           />
           <div className="product-title">{product.title}</div>
           <div className="product-price">
-            {product.priceRange.minVariantPrice.amount === '0' ||
-            product.priceRange.minVariantPrice.amount === '0.0' ? (
-              <span>Call for price</span>
+            {Number(product.priceRange.minVariantPrice.amount) === 0 ? (
+              <span>Call For Price</span>
             ) : (
-              <>
-                {product.priceRange.minVariantPrice.currencyCode}&nbsp;
-                {product.priceRange.minVariantPrice.amount}
-              </>
+              <Money data={product.priceRange.minVariantPrice} />
             )}
           </div>
         </Link>
