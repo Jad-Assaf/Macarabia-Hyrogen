@@ -522,18 +522,35 @@ export function ProductForm({
 
       <div className="product-form">
         <AddToCartButton
-          disabled={!selectedVariant || !selectedVariant.availableForSale}
+          disabled={
+            !selectedVariant ||
+            !selectedVariant.availableForSale ||
+            (selectedVariant?.price &&
+              Number(selectedVariant.price.amount) === 0)
+          }
           onClick={() => {
-            handleAddToCart();
-            open('cart'); // open cart aside
+            if (
+              !(
+                selectedVariant?.price &&
+                Number(selectedVariant.price.amount) === 0
+              )
+            ) {
+              handleAddToCart();
+              open('cart');
+            }
           }}
           lines={
             selectedVariant
               ? [{merchandiseId: selectedVariant.id, quantity: safeQuantity}]
               : []
           }
+          contentId={product.id}
         >
-          {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+          {selectedVariant?.price && Number(selectedVariant.price.amount) === 0
+            ? 'Call For Price'
+            : selectedVariant?.availableForSale
+            ? 'Add to cart'
+            : 'Sold out'}
         </AddToCartButton>
 
         {isProductPage && (
