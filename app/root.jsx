@@ -31,20 +31,16 @@ export const shouldRevalidate = ({
   formMethod,
   currentUrl,
   nextUrl,
-  defaultShouldRevalidate,
 }) => {
   if (formMethod && formMethod !== 'GET') return true;
   if (currentUrl.toString() === nextUrl.toString()) return true;
-  return defaultShouldRevalidate;
+  return false;
 };
 
 const PIXEL_ID = '321309553208857'; // Replace with your actual Pixel ID
 
 export function links() {
   return [
-    {rel: 'stylesheet', href: appStyles},
-    {rel: 'stylesheet', href: resetStyles},
-    {rel: 'stylesheet', href: tailwindCss},
     {rel: 'preconnect', href: 'https://cdn.shopify.com'},
     {rel: 'preconnect', href: 'https://shop.app'},
     {rel: 'icon', type: 'image/svg+xml', href: favicon},
@@ -180,6 +176,9 @@ export function Layout({children}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <link rel="stylesheet" href={resetStyles}></link>
+        <link rel="stylesheet" href={appStyles}></link>
+        <link rel="stylesheet" href={tailwindCss}></link>
         <meta
           name="google-site-verification"
           content="tGAcrZ3TpRDtQqmjqfYOuQpdBqsLCTr5YzcG7syVPEk"
